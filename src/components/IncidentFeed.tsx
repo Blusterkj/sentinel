@@ -52,6 +52,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
+  const [isAlertSent, setIsAlertSent] = React.useState(false);
+  const [isCopied, setIsCopied] = React.useState(false);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -152,6 +154,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   onClick={() => {
                     onSelectIncident?.(incident);
                     setModalIncident(incident);
+                    setShowProof(false);
+                    setIsAlertSent(false);
+                    setIsCopied(false);
                   }}
                   animDelay={idx * 50}
                 />
@@ -214,22 +219,36 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 {modalIncident.description}
               </p>
 
-              {/* Actions */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <button 
-                  onClick={() => alert('Feature coming soon')} 
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  onClick={() => setIsAlertSent(true)} 
+                  disabled={isAlertSent}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: isAlertSent ? '#166534' : '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: isAlertSent ? 'default' : 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
                 >
-                  <Bell size={14} /> Alert Contacts
+                  {isAlertSent ? (
+                    <><CheckCircle size={14} /> Alerts Sent</>
+                  ) : (
+                    <><Bell size={14} /> Alert Contacts</>
+                  )}
                 </button>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(`${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}`);
-                    alert('Copied to clipboard');
+                    const text = `${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}`;
+                    if (navigator.share) {
+                      navigator.share({ title: 'Sentinel Alert', text }).catch(console.error);
+                    } else {
+                      navigator.clipboard.writeText(text);
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2000);
+                    }
                   }} 
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: isCopied ? '#4ade80' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }}
                 >
-                  <Share size={14} /> Share Incident
+                  {isCopied ? (
+                    <><CheckCircle size={14} /> Copied</>
+                  ) : (
+                    <><Share size={14} /> Share Incident</>
+                  )}
                 </button>
               </div>
 
