@@ -204,11 +204,16 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 <Brain size={16} color="#8b5cf6" />
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e5e5' }}>AI Agent Analysis</span>
               </div>
+              {(() => {
+                const similarCount = incidents.filter(i => i.type === modalIncident.type && i.id !== modalIncident.id).length;
+                return (
               <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa', fontSize: '13px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <li><strong>Threat Level:</strong> {modalIncident.severity.toUpperCase()} - Requires {modalIncident.severity === 'critical' ? 'immediate' : 'standard'} protocol execution.</li>
-                <li><strong>Correlations:</strong> 2 similar incidents in this sector within the past 14 days.</li>
+                <li><strong>Correlations:</strong> {similarCount} similar {modalIncident.type.replace('_', ' ')} incident{similarCount !== 1 ? 's' : ''} recorded in the system.</li>
                 <li><strong>Recommendation:</strong> Dispatch nearest available {modalIncident.type === 'medical' ? 'EMS units' : 'response team'} and monitor area telemetry.</li>
               </ul>
+                );
+              })()}
             </div>
           </div>
         </div>

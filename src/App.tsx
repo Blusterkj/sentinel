@@ -311,7 +311,7 @@ export default function App() {
   const seeding = useWalrusSeeding(incidents, updateIncident);
 
   const activeIncidentCount = incidents.filter(
-    (i) => i.severity === 'high' && i.status === 'active'
+    (i) => (i.severity === 'high' || i.severity === 'critical') && i.status === 'active'
   ).length;
 
   return (

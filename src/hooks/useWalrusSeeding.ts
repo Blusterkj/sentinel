@@ -87,11 +87,15 @@ export function useWalrusSeeding(
   const [failedCount, setFailedCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const seedingRef = useRef(false);
+  const incidentsRef = useRef(incidents);
+  incidentsRef.current = incidents;
 
   const seed = useCallback(async () => {
     // Prevent double-invocation from React StrictMode
     if (seedingRef.current) return;
     seedingRef.current = true;
+
+    const currentIncidents = incidentsRef.current;
 
     // ── Strategy 1: Load from blob-map.json (seed script output) ──
     const fileBlobMap = await loadBlobMapFromFile();
@@ -101,7 +105,7 @@ export function useWalrusSeeding(
       localStorage.setItem(STORAGE_KEY, new Date().toISOString());
 
       let synced = 0;
-      for (const inc of incidents) {
+      for (const inc of currentIncidents) {
         if (fileBlobMap[inc.id]) {
           updateIncident(inc.id, {
             walrusBlobId: fileBlobMap[inc.id],
@@ -111,7 +115,7 @@ export function useWalrusSeeding(
         }
       }
       setSuccessCount(synced);
-      setFailedCount(incidents.length - synced);
+      setFailedCount(currentIncidents.length - synced);
       setIsDone(true);
       return;
     }
@@ -121,7 +125,7 @@ export function useWalrusSeeding(
     if (alreadySeeded) {
       const storageBlobMap = loadBlobMapFromStorage();
       let synced = 0;
-      for (const inc of incidents) {
+      for (const inc of currentIncidents) {
         if (storageBlobMap[inc.id]) {
           updateIncident(inc.id, {
             walrusBlobId: storageBlobMap[inc.id],
@@ -143,8 +147,8 @@ export function useWalrusSeeding(
     let successes = 0;
     let failures = 0;
 
-    for (let i = 0; i < incidents.length; i++) {
-      const incident = incidents[i];
+    for (let i = 0; i < currentIncidents.length; i++) {
+      const incident = currentIncidents[i];
       setProgress(i + 1);
 
       // Mark as syncing
@@ -175,7 +179,7 @@ export function useWalrusSeeding(
       }
 
       // Small delay between requests to be gentle on the relayer
-      if (i < incidents.length - 1) {
+      if (i < currentIncidents.length - 1) {
         await new Promise((r) => setTimeout(r, 500));
       }
     }
@@ -184,7 +188,7 @@ export function useWalrusSeeding(
     localStorage.setItem(STORAGE_KEY, new Date().toISOString());
     setIsSeeding(false);
     setIsDone(true);
-  }, [incidents, updateIncident]);
+  }, [updateIncident]);
 
   useEffect(() => {
     seed();
