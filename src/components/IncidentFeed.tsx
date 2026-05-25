@@ -1,7 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
-import { Clock, MapPin, AlertTriangle, CheckCircle, Copy, ExternalLink, Brain, X } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Bell, Share, ChevronRight, ChevronDown } from 'lucide-react';
 import type { Incident, IncidentType } from '../types/incident';
 import { SeverityBadge } from './SeverityBadge';
 
@@ -49,6 +49,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
+  const [showProof, setShowProof] = React.useState(false);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -158,62 +159,98 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', backdropFilter: 'blur(4px)'
-        }} onClick={() => setModalIncident(null)}>
+        }} onClick={() => { setModalIncident(null); setShowProof(false); }}>
           <div style={{
             background: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '16px',
-            width: '100%', maxWidth: '560px', padding: '24px', position: 'relative',
-            boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '20px'
+            width: '100%', maxWidth: '480px', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column'
           }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setModalIncident(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>
-              <X size={20} />
-            </button>
-            
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{TYPE_ICONS[modalIncident.type]}</span>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{TYPE_LABELS[modalIncident.type]}</h2>
-                <SeverityBadge severity={modalIncident.severity} />
-              </div>
-              <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {new Date(modalIncident.timestamp).toLocaleString()}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {modalIncident.location.address}</span>
-              </div>
-            </div>
-
-            <div style={{ background: '#111', padding: '16px', borderRadius: '8px', border: '1px solid #1a1a1a' }}>
-              <p style={{ fontSize: '14px', color: '#ddd', lineHeight: 1.6, margin: 0 }}>{modalIncident.description}</p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <button onClick={() => navigator.clipboard.writeText(JSON.stringify(modalIncident, null, 2))} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                <Copy size={14} /> Copy Details
+            {/* Map Header */}
+            <div style={{ width: '100%', height: '140px', background: '#1a1a1a', position: 'relative' }}>
+              <img 
+                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${modalIncident.location.lat},${modalIncident.location.lng}&zoom=15&size=480x140&markers=${modalIncident.location.lat},${modalIncident.location.lng},red`} 
+                alt="Map location" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} 
+              />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)' }} />
+              <button onClick={() => { setModalIncident(null); setShowProof(false); }} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
+                <X size={16} />
               </button>
-              {modalIncident.suiTxDigest ? (
-                <a href={`https://suiscan.xyz/testnet/tx/${modalIncident.suiTxDigest}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', color: '#60a5fa', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-                  <ExternalLink size={14} /> View on Sui Explorer
-                </a>
-              ) : (
-                <button disabled style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', color: '#555', fontSize: '13px', fontWeight: 600, cursor: 'not-allowed' }}>
-                  Not Verified on Sui
-                </button>
-              )}
             </div>
 
-            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <Brain size={16} color="#8b5cf6" />
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e5e5' }}>AI Agent Analysis</span>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Header Info */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '24px' }}>{TYPE_ICONS[modalIncident.type]}</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{TYPE_LABELS[modalIncident.type]}</h2>
+                  <SeverityBadge severity={modalIncident.severity} />
+                </div>
+                <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {formatRelativeTime(modalIncident.timestamp)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {modalIncident.location.address}</span>
+                </div>
               </div>
-              {(() => {
-                const similarCount = incidents.filter(i => i.type === modalIncident.type && i.id !== modalIncident.id).length;
-                return (
-              <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa', fontSize: '13px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <li><strong>Threat Level:</strong> {modalIncident.severity.toUpperCase()} - Requires {modalIncident.severity === 'critical' ? 'immediate' : 'standard'} protocol execution.</li>
-                <li><strong>Correlations:</strong> {similarCount} similar {modalIncident.type.replace('_', ' ')} incident{similarCount !== 1 ? 's' : ''} recorded in the system.</li>
-                <li><strong>Recommendation:</strong> Dispatch nearest available {modalIncident.type === 'medical' ? 'EMS units' : 'response team'} and monitor area telemetry.</li>
-              </ul>
-                );
-              })()}
+
+              {/* Warning Banner */}
+              {(modalIncident.severity === 'critical' || modalIncident.severity === 'high') ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#ef4444', fontSize: '14px', fontWeight: 600 }}>
+                  <AlertTriangle size={16} /> ⚠️ Stay clear of this area
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '8px', color: '#eab308', fontSize: '14px', fontWeight: 600 }}>
+                  <AlertTriangle size={16} /> ℹ️ Be cautious in this area
+                </div>
+              )}
+
+              {/* Description */}
+              <p style={{ fontSize: '15px', color: '#ddd', lineHeight: 1.6, margin: 0 }}>
+                {modalIncident.description}
+              </p>
+
+              {/* Actions */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <button 
+                  onClick={() => alert('Feature coming soon')} 
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  <Bell size={14} /> Alert Contacts
+                </button>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}`);
+                    alert('Copied to clipboard');
+                  }} 
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  <Share size={14} /> Share Incident
+                </button>
+              </div>
+
+              {/* Blockchain Proof (Collapsible) */}
+              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '4px' }}>
+                <button 
+                  onClick={() => setShowProof(!showProof)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                >
+                  {showProof ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  Verified on Walrus Blockchain
+                </button>
+                
+                {showProof && (
+                  <div style={{ marginTop: '12px', padding: '12px', background: '#111', borderRadius: '8px', border: '1px solid #1a1a1a', fontSize: '12px', color: '#888' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span>Blob ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: '#ccc' }}>{modalIncident.walrusBlobId || 'Pending'}</span>
+                    </div>
+                    {modalIncident.suiTxDigest && (
+                      <a href={`https://suiscan.xyz/testnet/tx/${modalIncident.suiTxDigest}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', textDecoration: 'none', marginTop: '8px' }}>
+                        <ExternalLink size={12} /> View anchor on Sui Explorer
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

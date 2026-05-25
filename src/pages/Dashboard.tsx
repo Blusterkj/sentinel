@@ -24,22 +24,24 @@ interface DashboardProps {
 const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
 
 export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
-  const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [center, setCenter] = useState<[number, number]>(() => {
+    if (incidents.length > 0) {
+      const centerLat = incidents.reduce((sum, i) => sum + i.location.lat, 0) / incidents.length;
+      const centerLng = incidents.reduce((sum, i) => sum + i.location.lng, 0) / incidents.length;
+      return [centerLat, centerLng];
+    }
+    return DEFAULT_CENTER;
+  });
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);
 
-  // Try to get user location on mount
+  // Still fetch location for nearby alerts, but don't recenter the map
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setCenter([pos.coords.latitude, pos.coords.longitude]);
-          setLocationObtained(true);
-        },
-        () => {
-          // Silently fall back to default center
-        },
+        () => setLocationObtained(true),
+        () => {},
         { timeout: 5000 }
       );
     }

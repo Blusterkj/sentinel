@@ -88,7 +88,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Incident Trends (Past 14 Days)</h2>
-          <div style={{ height: '300px' }}>
+          <div style={{ width: '100%', height: 300, minHeight: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendsData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />
@@ -103,7 +103,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
 
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Incident Types</h2>
-          <div style={{ height: '300px' }}>
+          <div style={{ width: '100%', height: 300, minHeight: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={typeData} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
@@ -121,7 +121,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Severity Breakdown</h2>
-          <div style={{ height: '250px' }}>
+          <div style={{ width: '100%', height: 250, minHeight: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={severityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />

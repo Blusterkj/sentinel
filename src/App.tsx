@@ -310,8 +310,8 @@ export default function App() {
   // Walrus seeding — stores all seed incidents on-chain on first load
   const seeding = useWalrusSeeding(incidents, updateIncident);
 
-  const activeIncidentCount = incidents.filter(
-    (i) => (i.severity === 'high' || i.severity === 'critical') && i.status === 'active'
+  const criticalIncidentCount = incidents.filter(
+    (i) => i.severity === 'critical' && i.status === 'active'
   ).length;
 
   return (
@@ -506,7 +506,7 @@ export default function App() {
           }}
         >
           {/* Critical alert badge */}
-          {activeIncidentCount > 0 && !sidebarCollapsed && (
+          {criticalIncidentCount > 0 && !sidebarCollapsed && (
             <div
               className="glow-high"
               style={{
@@ -529,7 +529,7 @@ export default function App() {
                 }}
               />
               <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
-                {activeIncidentCount} critical
+                {criticalIncidentCount} critical
               </span>
             </div>
           )}
