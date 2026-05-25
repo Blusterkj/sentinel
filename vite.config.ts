@@ -9,4 +9,9 @@ export default defineConfig({
     // Make process available for libraries that use it
     'process.env': {},
   },
+  build: {
+    rolldownOptions: {
+      external: ['@mysten/seal'],
+    },
+  },
 })
