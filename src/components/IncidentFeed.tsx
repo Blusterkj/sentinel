@@ -11,6 +11,7 @@ interface IncidentFeedProps {
   selectedId?: string;
   criticalFilter?: boolean;
   activeFilter?: boolean;
+  onResolveIncident?: (id: string) => void;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -48,6 +49,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   selectedId,
   criticalFilter,
   activeFilter,
+  onResolveIncident,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
@@ -245,6 +247,17 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     <><Share size={14} /> Share Incident</>
                   )}
                 </button>
+                {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
+                  <button 
+                    onClick={() => {
+                      onResolveIncident(modalIncident.id);
+                      setModalIncident({ ...modalIncident, status: 'resolved' });
+                    }} 
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'background 0.2s' }}
+                  >
+                    <CheckCircle size={14} /> Mark as Resolved
+                  </button>
+                )}
               </div>
 
               {/* Blockchain Proof (Collapsible) */}

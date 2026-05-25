@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Brain, User, Loader2, AlertCircle, Cpu, Zap } from 'lucide-react';
-import type { AgentMessage } from '../types/incident';
+import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
@@ -17,7 +17,7 @@ const SUGGESTED_QUERIES = [
   "What should I watch for near Silk Board Junction?",
 ];
 
-export const AgentChat: React.FC = () => {
+export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   const [messages, setMessages] = useState<AgentMessage[]>([
     {
       id: 'welcome',
@@ -63,7 +63,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       const res = await fetch(`${PROXY_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify({ message: text, history, currentIncidents: incidents }),
       });
 
       if (!res.ok) {

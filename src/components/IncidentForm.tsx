@@ -51,6 +51,11 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
 
+  React.useEffect(() => {
+    handleGetLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation not supported by your browser.');
@@ -102,8 +107,9 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         address: address || 'Location not set',
       },
       timestamp: new Date().toISOString(),
-      reportedBy: 'Anonymous',
+      reportedBy: 'You',
       status: 'active',
+      createdByMe: true,
     };
 
     setFormState('submitting');

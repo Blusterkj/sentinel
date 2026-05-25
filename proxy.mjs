@@ -233,7 +233,7 @@ Status: ${incident.status || 'active'}`;
  * Returns: { response }
  */
 app.post('/api/chat', async (req, res) => {
-  const { message, history = [] } = req.body;
+  const { message, history = [], currentIncidents = [] } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Missing message field' });
   }
@@ -256,8 +256,18 @@ app.post('/api/chat', async (req, res) => {
     console.warn(`   ⚠️  Recall failed (non-fatal):`, err.message);
   }
 
-  // Step 2: Call Groq with system prompt + recalled context + conversation
+  // Step 2: Call Groq with system prompt + recalled context + live context + conversation
+  let liveContext = '';
+  if (currentIncidents && currentIncidents.length > 0) {
+    const activeCount = currentIncidents.filter(i => i.status === 'active').length;
+    const resolvedCount = currentIncidents.filter(i => i.status === 'resolved').length;
+    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Pay close attention to whether an incident is marked as "active" or "resolved".\n\n${
+      currentIncidents.map(i => `- [${i.status.toUpperCase()}] ${i.type} at ${i.location.address} (Severity: ${i.severity}) - "${i.description}"`).join('\n')
+    }`;
+  }
+
   const SYSTEM_PROMPT = `You are **Sentinel**, an AI-powered emergency operations agent deployed for the city of Bengaluru. You have permanent, cryptographically-verified memory of every safety incident ever reported — stored immutably on the Walrus blockchain via the MemWal protocol. Your memory cannot be tampered with, erased, or altered.
+${liveContext}
 
 ## Your Core Identity
 You are NOT a generic chatbot. You are a precision intelligence system for community safety. Every response you give should feel like it comes from a senior emergency operations analyst who has been watching this city's safety data for years.

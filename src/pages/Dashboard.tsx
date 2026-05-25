@@ -23,6 +23,7 @@ interface DashboardProps {
   setCriticalFilter: (val: boolean) => void;
   activeFilter: boolean;
   setActiveFilter: (val: boolean) => void;
+  onResolveIncident?: (id: string) => void;
 }
 
 const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
@@ -32,7 +33,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   criticalFilter,
   setCriticalFilter,
   activeFilter,
-  setActiveFilter
+  setActiveFilter,
+  onResolveIncident
 }) => {
   const [center, setCenter] = useState<[number, number]>(() => {
     if (incidents.length > 0) {
@@ -216,6 +218,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             selectedId={selectedIncident?.id}
             criticalFilter={criticalFilter}
             activeFilter={activeFilter}
+            onResolveIncident={onResolveIncident}
           />
         </div>
       </div>

@@ -4,8 +4,9 @@
 import React from 'react';
 import { AgentChat } from '../components/AgentChat';
 import { Brain, Database, Network } from 'lucide-react';
+import type { Incident } from '../types/incident';
 
-export const Agent: React.FC = () => {
+export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   return (
     <div
       style={{
@@ -41,7 +42,7 @@ export const Agent: React.FC = () => {
 
       {/* Chat — fills rest of space */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <AgentChat />
+        <AgentChat incidents={incidents} />
       </div>
     </div>
   );

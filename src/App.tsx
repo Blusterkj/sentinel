@@ -614,6 +614,7 @@ export default function App() {
             setCriticalFilter={setCriticalFilter}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
+            onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
           />
         )}
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}
@@ -621,7 +622,7 @@ export default function App() {
           <Report onIncidentSubmitted={handleNewIncident} />
         )}
         {currentPage === 'memory' && <Memory incidents={incidents} />}
-        {currentPage === 'agent' && <Agent />}
+        {currentPage === 'agent' && <Agent incidents={incidents} />}
       </main>
     </div>
   );

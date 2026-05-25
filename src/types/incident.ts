@@ -31,6 +31,8 @@ export interface Incident {
   walrusStatus?: WalrusStatus;
   /** Sui testnet transaction digest for on-chain anchoring */
   suiTxDigest?: string;
+  /** Whether the current user created this incident in this session */
+  createdByMe?: boolean;
 }
 
 export interface RecalledMemory {
