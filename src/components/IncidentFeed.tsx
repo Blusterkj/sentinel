@@ -1,7 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
-import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Bell, Share, ChevronRight, ChevronDown, Loader } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown } from 'lucide-react';
 import type { Incident, IncidentType } from '../types/incident';
 import { SeverityBadge } from './SeverityBadge';
 
@@ -52,7 +52,6 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
-  const [alertState, setAlertState] = React.useState<'idle' | 'sending' | 'sent'>('idle');
   const [isCopied, setIsCopied] = React.useState(false);
 
   React.useEffect(() => {
@@ -155,7 +154,6 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     onSelectIncident?.(incident);
                     setModalIncident(incident);
                     setShowProof(false);
-                    setAlertState('idle');
                     setIsCopied(false);
                   }}
                   animDelay={idx * 50}
@@ -219,23 +217,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 {modalIncident.description}
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <button 
-                  onClick={() => {
-                    setAlertState('sending');
-                    setTimeout(() => setAlertState('sent'), 1500);
-                  }} 
-                  disabled={alertState !== 'idle'}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: alertState === 'sent' ? '#166534' : '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: alertState !== 'idle' ? 'default' : 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', opacity: alertState === 'sending' ? 0.7 : 1 }}
-                >
-                  {alertState === 'sent' ? (
-                    <><CheckCircle size={14} /> Alerts Sent</>
-                  ) : alertState === 'sending' ? (
-                    <><Loader size={14} className="animate-spin" /> Sending...</>
-                  ) : (
-                    <><Bell size={14} /> Alert Contacts</>
-                  )}
-                </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
                   onClick={() => {
                     const text = `${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}`;
@@ -247,7 +229,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                       setTimeout(() => setIsCopied(false), 2000);
                     }
                   }} 
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: isCopied ? '#4ade80' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: isCopied ? '#4ade80' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }}
                 >
                   {isCopied ? (
                     <><CheckCircle size={14} /> Copied</>
@@ -256,33 +238,6 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   )}
                 </button>
               </div>
-
-              {/* Alert Status Card */}
-              {alertState !== 'idle' && (
-                <div style={{ marginTop: '4px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {alertState === 'sending' ? (
-                      <><Loader size={14} className="animate-spin" color="#3b82f6" /> Notifying Emergency Contacts...</>
-                    ) : (
-                      <><CheckCircle size={14} color="#4ade80" /> Emergency Contacts Notified</>
-                    )}
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#888' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Sarah (Spouse) - SMS</span>
-                      <span style={{ color: alertState === 'sent' ? '#4ade80' : '#888', fontWeight: 500 }}>{alertState === 'sent' ? 'Sent' : 'Sending...'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>John (Brother) - WhatsApp</span>
-                      <span style={{ color: alertState === 'sent' ? '#4ade80' : '#888', fontWeight: 500 }}>{alertState === 'sent' ? 'Sent' : 'Sending...'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Local Police - Auto-Dispatch</span>
-                      <span style={{ color: alertState === 'sent' ? '#4ade80' : '#888', fontWeight: 500 }}>{alertState === 'sent' ? 'Sent' : 'Sending...'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Blockchain Proof (Collapsible) */}
               <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '4px' }}>
