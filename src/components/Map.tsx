@@ -94,11 +94,11 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick }) 
 
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}
-        maxClusterRadius={50}
+        maxClusterRadius={60}
         spiderfyOnMaxZoom={true}
         showCoverageOnHover={false}
         zoomToBoundsOnClick={true}
-        disableClusteringAtZoom={15}
+        disableClusteringAtZoom={16}
         animate={true}
         chunkedLoading={true}
       >

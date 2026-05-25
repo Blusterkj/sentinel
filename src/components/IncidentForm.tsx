@@ -581,7 +581,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             }}
           >
             {formState === 'locating' ? (
-              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
             ) : (
               <MapPin size={14} />
             )}
@@ -651,7 +651,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
       >
         {formState === 'submitting' && (
           <>
-            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 className="animate-spin w-4 h-4 mr-2" />
             Storing on Walrus…
           </>
         )}

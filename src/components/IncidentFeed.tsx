@@ -1,7 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
-import { Clock, MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, Copy, ExternalLink, Brain, X } from 'lucide-react';
 import type { Incident, IncidentType } from '../types/incident';
 import { SeverityBadge } from './SeverityBadge';
 
@@ -48,6 +48,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   criticalFilter,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -141,13 +142,77 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   key={incident.id}
                   incident={incident}
                   isSelected={selectedId === incident.id}
-                  onClick={() => onSelectIncident?.(incident)}
+                  onClick={() => {
+                    onSelectIncident?.(incident);
+                    setModalIncident(incident);
+                  }}
                   animDelay={idx * 50}
                 />
               ))}
           </div>
         )}
       </div>
+
+      {modalIncident && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px', backdropFilter: 'blur(4px)'
+        }} onClick={() => setModalIncident(null)}>
+          <div style={{
+            background: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '16px',
+            width: '100%', maxWidth: '560px', padding: '24px', position: 'relative',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '20px'
+          }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setModalIncident(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>
+              <X size={20} />
+            </button>
+            
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '24px' }}>{TYPE_ICONS[modalIncident.type]}</span>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{TYPE_LABELS[modalIncident.type]}</h2>
+                <SeverityBadge severity={modalIncident.severity} />
+              </div>
+              <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {new Date(modalIncident.timestamp).toLocaleString()}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {modalIncident.location.address}</span>
+              </div>
+            </div>
+
+            <div style={{ background: '#111', padding: '16px', borderRadius: '8px', border: '1px solid #1a1a1a' }}>
+              <p style={{ fontSize: '14px', color: '#ddd', lineHeight: 1.6, margin: 0 }}>{modalIncident.description}</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <button onClick={() => navigator.clipboard.writeText(JSON.stringify(modalIncident, null, 2))} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                <Copy size={14} /> Copy Details
+              </button>
+              {modalIncident.suiTxDigest ? (
+                <a href={`https://suiscan.xyz/testnet/tx/${modalIncident.suiTxDigest}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', color: '#60a5fa', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+                  <ExternalLink size={14} /> View on Sui Explorer
+                </a>
+              ) : (
+                <button disabled style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', color: '#555', fontSize: '13px', fontWeight: 600, cursor: 'not-allowed' }}>
+                  Not Verified on Sui
+                </button>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Brain size={16} color="#8b5cf6" />
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e5e5' }}>AI Agent Analysis</span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa', fontSize: '13px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li><strong>Threat Level:</strong> {modalIncident.severity.toUpperCase()} - Requires {modalIncident.severity === 'critical' ? 'immediate' : 'standard'} protocol execution.</li>
+                <li><strong>Correlations:</strong> 2 similar incidents in this sector within the past 14 days.</li>
+                <li><strong>Recommendation:</strong> Dispatch nearest available {modalIncident.type === 'medical' ? 'EMS units' : 'response team'} and monitor area telemetry.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

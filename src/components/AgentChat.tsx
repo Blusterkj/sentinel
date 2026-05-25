@@ -277,39 +277,48 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
         <div
           style={{
             padding: '0 20px 16px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '12px',
             flexShrink: 0,
           }}
         >
-          {SUGGESTED_QUERIES.map((q) => (
-            <button
-              key={q}
-              onClick={() => handleSend(q)}
-              disabled={isLoading}
-              style={{
-                padding: '6px 12px',
-                background: '#111',
-                border: '1px solid #222',
-                borderRadius: '20px',
-                color: '#888',
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(59, 130, 246, 0.4)';
-                (e.currentTarget as HTMLButtonElement).style.color = '#3b82f6';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = '#222';
-                (e.currentTarget as HTMLButtonElement).style.color = '#888';
-              }}
-            >
-              {q}
-            </button>
-          ))}
+          {SUGGESTED_QUERIES.slice(0, 4).map((q, idx) => {
+            const icons = [<AlertCircle size={16} color="#ef4444" />, <Brain size={16} color="#8b5cf6" />, <Zap size={16} color="#3b82f6" />, <Cpu size={16} color="#22c55e" />];
+            return (
+              <button
+                key={q}
+                onClick={() => handleSend(q)}
+                disabled={isLoading}
+                style={{
+                  padding: '16px',
+                  background: '#111',
+                  border: '1px solid #222',
+                  borderRadius: '12px',
+                  color: '#ccc',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  alignItems: 'flex-start',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = '#111';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#222';
+                }}
+              >
+                {icons[idx]}
+                {q}
+              </button>
+            )
+          })}
         </div>
       )}
 

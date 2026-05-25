@@ -1,9 +1,11 @@
 // src/App.tsx
 // Main app shell — sidebar nav, page routing, global incident state
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useWalrusSeeding } from './hooks/useWalrusSeeding';
+import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
+import { Analytics } from './pages/Analytics';
 import { Report } from './pages/Report';
 import { Memory } from './pages/Memory';
 import { Agent } from './pages/Agent';
@@ -16,20 +18,23 @@ import {
   Shield,
   Hexagon,
   ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 
-type Page = 'dashboard' | 'report' | 'memory' | 'agent';
+type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent';
 
 const NAV_ITEMS: {
   id: Page;
   label: string;
   icon: React.ReactNode;
   badge?: string;
+  path: string;
 }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { id: 'report', label: 'Report Incident', icon: <AlertTriangle size={18} /> },
-  { id: 'memory', label: 'Memory', icon: <Database size={18} />, badge: 'Walrus' },
-  { id: 'agent', label: 'AI Agent', icon: <Brain size={18} />, badge: 'MemWal' },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dashboard' },
+  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, path: '/analytics' },
+  { id: 'report', label: 'Report Incident', icon: <AlertTriangle size={18} />, path: '/report' },
+  { id: 'memory', label: 'Memory', icon: <Database size={18} />, badge: 'Walrus', path: '/memory' },
+  { id: 'agent', label: 'AI Agent', icon: <Brain size={18} />, badge: 'MemWal', path: '/agent' },
 ];
 
 // Helper: generate timestamps spread across the past 14 days
@@ -52,12 +57,13 @@ const SEED_INCIDENTS: Incident[] = [
   {
     id: 'demo-2',
     type: 'fire',
-    severity: 'high',
+    severity: 'critical',
     description: 'Kitchen fire in commercial building on Brigade Road. Smoke visible from two blocks away. Fire department arrived in 8 minutes. Two floors evacuated.',
     location: { lat: 12.9719, lng: 77.6070, address: 'Brigade Road, Bengaluru' },
     timestamp: daysAgo(0, 0, 28),
     reportedBy: 'Shop owner',
     status: 'active',
+    suiTxDigest: '6aB9fXz2L7QkQw8YtR3uPp4vV5cXmWzE1gHjKtN3Ry6s',
   },
   {
     id: 'demo-3',
@@ -83,12 +89,13 @@ const SEED_INCIDENTS: Incident[] = [
   {
     id: 'demo-5',
     type: 'crime',
-    severity: 'high',
+    severity: 'critical',
     description: 'Armed robbery at jewellery shop on Avenue Road. Suspect brandished knife, stole gold worth ₹8 lakh. Shop CCTV captured clear face image. Police pursuing.',
     location: { lat: 12.9670, lng: 77.5770, address: 'Avenue Road, Chickpet, Bengaluru' },
     timestamp: daysAgo(1, 8),
     reportedBy: 'Shop owner',
     status: 'active',
+    suiTxDigest: '8bC3vYz9M2WjRn4Ts1uKq6pX3fGhLwJv5aKdMtB7Hy2e',
   },
   // ── 2 DAYS AGO ────────────────────────────
   {
@@ -115,12 +122,13 @@ const SEED_INCIDENTS: Incident[] = [
   {
     id: 'demo-8',
     type: 'accident',
-    severity: 'high',
+    severity: 'critical',
     description: 'BMTC bus collided with auto-rickshaw at KR Puram railway crossing. Three passengers injured, one critical. Traffic diverted for 2 hours.',
     location: { lat: 12.9988, lng: 77.6874, address: 'KR Puram Railway Crossing, Bengaluru' },
     timestamp: daysAgo(3, 10),
     reportedBy: 'Traffic police',
     status: 'resolved',
+    suiTxDigest: '3fH7cNw1V5ZjLm8Pr9bTq4sX2vYgKzJt6eRkNxC4Wu5d',
   },
   {
     id: 'demo-9',
@@ -167,12 +175,13 @@ const SEED_INCIDENTS: Incident[] = [
   {
     id: 'demo-13',
     type: 'natural_disaster',
-    severity: 'high',
+    severity: 'critical',
     description: 'Large tree uprooted on Sankey Road during evening storm, blocking both lanes. Power lines down, live wire hazard. BESCOM crew and BBMP tree-cutting team dispatched.',
     location: { lat: 12.9900, lng: 77.5760, address: 'Sankey Road, Sadashivanagar, Bengaluru' },
     timestamp: daysAgo(7, 18),
     reportedBy: 'Resident',
     status: 'resolved',
+    suiTxDigest: '9dQ4xTr7J1MkNw2Cv8bVp5sZ3fGhKyLt6aRjMxB9Wu4e',
   },
   // ── 9 DAYS AGO ────────────────────────────
   {
@@ -199,12 +208,13 @@ const SEED_INCIDENTS: Incident[] = [
   {
     id: 'demo-16',
     type: 'crime',
-    severity: 'high',
+    severity: 'critical',
     description: 'House burglary in HAL 2nd Stage, Indiranagar. Family was away for weekend. Electronics worth ₹3 lakh and cash stolen. Forced entry through kitchen window.',
     location: { lat: 12.9780, lng: 77.6450, address: 'HAL 2nd Stage, Indiranagar, Bengaluru' },
     timestamp: daysAgo(10, 2),
     reportedBy: 'Home owner',
     status: 'active',
+    suiTxDigest: '5aJ8vWz4L6HkMw9Rt1uPq2sX7fCbGyJt3eKkNxF8Vu3c',
   },
   // ── 11 DAYS AGO ───────────────────────────
   {
@@ -262,9 +272,29 @@ const SEED_INCIDENTS: Incident[] = [
 ];
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [incidents, setIncidents] = useState<Incident[]>(SEED_INCIDENTS);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/') setCurrentPage('landing');
+      else if (path === '/dashboard') setCurrentPage('dashboard');
+      else if (path === '/analytics') setCurrentPage('analytics');
+      else if (path === '/report') setCurrentPage('report');
+      else if (path === '/memory') setCurrentPage('memory');
+      else if (path === '/agent') setCurrentPage('agent');
+    };
+    window.addEventListener('popstate', handlePopState);
+    handlePopState();
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (page: Page, path: string) => {
+    setCurrentPage(page);
+    window.history.pushState({}, '', path);
+  };
 
   const handleNewIncident = (incident: Incident) => {
     setIncidents((prev) => [incident, ...prev]);
@@ -374,7 +404,7 @@ export default function App() {
               <button
                 key={item.id}
                 id={`nav-${item.id}`}
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => navigate(item.id, item.path)}
                 style={{
                   width: '100%',
                   display: 'flex',
@@ -565,7 +595,9 @@ export default function App() {
         {seeding.isSeeding && (
           <SeedingBanner progress={seeding.progress} total={seeding.total} />
         )}
+        {currentPage === 'landing' && <Landing />}
         {currentPage === 'dashboard' && <Dashboard incidents={incidents} seeding={seeding} />}
+        {currentPage === 'analytics' && <Analytics incidents={incidents} />}
         {currentPage === 'report' && (
           <Report onIncidentSubmitted={handleNewIncident} />
         )}

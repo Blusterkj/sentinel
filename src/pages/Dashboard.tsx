@@ -79,16 +79,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
             pulse={false}
             onClick={() => setCriticalFilter(false)}
           />
-        ) : (
+        ) : criticalCount > 0 ? (
           <StatPill
             icon={<AlertTriangle size={12} color="#ef4444" />}
             label="Critical"
             value={String(criticalCount)}
             color="#ef4444"
-            pulse={criticalCount > 0}
+            pulse={true}
             onClick={() => setCriticalFilter(true)}
           />
-        )}
+        ) : null}
         <StatPill
           icon={<span style={{ fontSize: '12px' }}>📍</span>}
           label="Total"
