@@ -10,6 +10,7 @@ interface IncidentFeedProps {
   onSelectIncident?: (incident: Incident) => void;
   selectedId?: string;
   criticalFilter?: boolean;
+  activeFilter?: boolean;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -46,6 +47,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   onSelectIncident,
   selectedId,
   criticalFilter,
+  activeFilter,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
@@ -57,9 +59,13 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
     }
   }, [criticalFilter]);
 
-  const displayedIncidents = criticalFilter
-    ? incidents.filter((i) => i.severity === 'critical')
-    : incidents;
+  let displayedIncidents = incidents;
+  if (criticalFilter) {
+    displayedIncidents = displayedIncidents.filter((i) => i.severity === 'critical');
+  }
+  if (activeFilter) {
+    displayedIncidents = displayedIncidents.filter((i) => i.status === 'active');
+  }
 
   return (
     <div className="h-full flex flex-col" style={{ overflow: 'hidden' }}>

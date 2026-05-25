@@ -272,9 +272,13 @@ const SEED_INCIDENTS: Incident[] = [
 ];
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent'>(
+    'landing'
+  );
   const [incidents, setIncidents] = useState<Incident[]>(SEED_INCIDENTS);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [criticalFilter, setCriticalFilter] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -311,7 +315,7 @@ export default function App() {
   const seeding = useWalrusSeeding(incidents, updateIncident);
 
   const criticalIncidentCount = incidents.filter(
-    (i) => i.severity === 'critical' && i.status === 'active'
+    (i) => i.severity === 'critical'
   ).length;
 
   return (
@@ -517,6 +521,12 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                setCurrentPage('dashboard');
+                setCriticalFilter(true);
+                setActiveFilter(false);
               }}
             >
               <span
@@ -596,7 +606,16 @@ export default function App() {
           <SeedingBanner progress={seeding.progress} total={seeding.total} />
         )}
         {currentPage === 'landing' && <Landing />}
-        {currentPage === 'dashboard' && <Dashboard incidents={incidents} seeding={seeding} />}
+        {currentPage === 'dashboard' && (
+          <Dashboard 
+            incidents={incidents} 
+            seeding={seeding} 
+            criticalFilter={criticalFilter}
+            setCriticalFilter={setCriticalFilter}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+          />
+        )}
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}
         {currentPage === 'report' && (
           <Report onIncidentSubmitted={handleNewIncident} />

@@ -19,11 +19,21 @@ interface DashboardProps {
     successCount: number;
     failedCount: number;
   };
+  criticalFilter: boolean;
+  setCriticalFilter: (val: boolean) => void;
+  activeFilter: boolean;
+  setActiveFilter: (val: boolean) => void;
 }
 
 const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
 
-export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  incidents, 
+  criticalFilter,
+  setCriticalFilter,
+  activeFilter,
+  setActiveFilter
+}) => {
   const [center, setCenter] = useState<[number, number]>(() => {
     if (incidents.length > 0) {
       const centerLat = incidents.reduce((sum, i) => sum + i.location.lat, 0) / incidents.length;
@@ -34,7 +44,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
   });
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
-  const [criticalFilter, setCriticalFilter] = useState(false);
 
   // Still fetch location for nearby alerts, but don't recenter the map
   useEffect(() => {
@@ -48,7 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
   }, []);
 
   // Stats
-  const criticalCount = incidents.filter((i) => i.severity === 'critical' && i.status === 'active').length;
+  const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
   const activeCount = incidents.filter((i) => i.status === 'active').length;
   const verifiedCount = incidents.filter((i) => !!i.suiTxDigest).length;
 
@@ -66,12 +75,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
           flexShrink: 0,
         }}
       >
-        <StatPill
-          icon={<Activity size={12} color="#3b82f6" />}
-          label="Active"
-          value={String(activeCount)}
-          color="#3b82f6"
-        />
+        {activeFilter ? (
+          <StatPill
+            icon={<Activity size={12} color="#3b82f6" />}
+            label="Showing active only · ×"
+            value=""
+            color="#3b82f6"
+            pulse={false}
+            onClick={() => setActiveFilter(false)}
+          />
+        ) : (
+          <StatPill
+            icon={<Activity size={12} color="#3b82f6" />}
+            label="Active"
+            value={String(activeCount)}
+            color="#3b82f6"
+            onClick={() => setActiveFilter(true)}
+          />
+        )}
         {criticalFilter ? (
           <StatPill
             icon={<AlertTriangle size={12} color="#ef4444" />}
@@ -188,12 +209,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents }) => {
         >
           <IncidentFeed
             incidents={incidents}
-            onSelectIncident={(inc) => {
-              setSelectedIncident(inc);
-              setCenter([inc.location.lat, inc.location.lng]);
+            onSelectIncident={(i) => {
+              setSelectedIncident(i);
+              setCenter([i.location.lat, i.location.lng]);
             }}
             selectedId={selectedIncident?.id}
             criticalFilter={criticalFilter}
+            activeFilter={activeFilter}
           />
         </div>
       </div>
