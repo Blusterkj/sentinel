@@ -168,7 +168,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
             {/* Map Header */}
             <div style={{ width: '100%', height: '140px', background: '#1a1a1a', position: 'relative' }}>
               <img 
-                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${modalIncident.location.lat},${modalIncident.location.lng}&zoom=15&size=480x140&markers=${modalIncident.location.lat},${modalIncident.location.lng},red`} 
+                src={`https://static-maps.yandex.ru/1.x/?ll=${modalIncident.location.lng},${modalIncident.location.lat}&size=480,140&z=15&l=map&pt=${modalIncident.location.lng},${modalIncident.location.lat},pm2rdm`} 
                 alt="Map location" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} 
               />
