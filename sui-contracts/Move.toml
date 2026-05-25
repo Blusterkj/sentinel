@@ -1,0 +1,9 @@
+[package]
+name = "sentinel"
+edition = "2024.beta"
+
+[dependencies]
+# Sui framework dependencies are automatically managed by the CLI.
+
+[addresses]
+sentinel = "0x0"
