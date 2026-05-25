@@ -176,12 +176,19 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
           }} onClick={e => e.stopPropagation()}>
             {/* Map Header */}
             <div style={{ width: '100%', height: '140px', background: '#1a1a1a', position: 'relative' }}>
-              <img 
-                src={`https://static-maps.yandex.ru/1.x/?ll=${modalIncident.location.lng},${modalIncident.location.lat}&size=480,140&z=15&l=map&pt=${modalIncident.location.lng},${modalIncident.location.lat},pm2rdm`} 
-                alt="Map location" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} 
-              />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)' }} />
+              <a 
+                href={`https://www.google.com/maps?q=${modalIncident.location.lat},${modalIncident.location.lng}`}
+                target="_blank" 
+                rel="noreferrer"
+                style={{ display: 'block', width: '100%', height: '100%' }}
+              >
+                <img 
+                  src={`https://static-maps.yandex.ru/1.x/?ll=${modalIncident.location.lng},${modalIncident.location.lat}&size=480,140&z=15&l=map&pt=${modalIncident.location.lng},${modalIncident.location.lat},pm2rdm`} 
+                  alt="Map location" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} 
+                />
+              </a>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)', pointerEvents: 'none' }} />
               <button onClick={() => { setModalIncident(null); setShowProof(false); }} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
                 <X size={16} />
               </button>
@@ -220,7 +227,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
                   onClick={() => {
-                    const text = `${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}`;
+                    const mapLink = `https://www.google.com/maps?q=${modalIncident.location.lat},${modalIncident.location.lng}`;
+                    const text = `${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}\n\nLocation: ${mapLink}`;
                     if (navigator.share) {
                       navigator.share({ title: 'Sentinel Alert', text }).catch(console.error);
                     } else {
