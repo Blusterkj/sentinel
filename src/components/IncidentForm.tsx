@@ -50,54 +50,42 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     Array<{ text: string; distance: number }>
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
-  const [locationStatus, setLocationStatus] = useState<'idle' | 'locating' | 'located' | 'error'>('idle');
 
-  // Shared reverse-geocode helper
-  const reverseGeocode = async (latitude: number, longitude: number) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const data = await res.json();
-      return data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    } catch {
-      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    }
-  };
-
-  const handleLocationSuccess = async (pos: GeolocationPosition) => {
-    const { latitude, longitude } = pos.coords;
-    setCoords({ lat: latitude, lng: longitude });
-    const addr = await reverseGeocode(latitude, longitude);
-    setAddress(addr);
-    setLocationStatus('located');
-    setFormState('idle');
-  };
-
-  const handleLocationError = (err: GeolocationPositionError) => {
-    setError(`Location unavailable: ${err.message}. Please type your address manually.`);
-    setLocationStatus('error');
-    setFormState('idle');
-  };
-
-
+  React.useEffect(() => {
+    handleGetLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation not supported by your browser.');
       return;
     }
-    setLocationStatus('locating');
     setFormState('locating');
-    setError(''); // Clear previous error
     navigator.geolocation.getCurrentPosition(
-      handleLocationSuccess,
-      handleLocationError,
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lng: longitude });
+
+        // Reverse geocode with Nominatim
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } catch {
+          setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        }
+        setFormState('idle');
+      },
+      (err) => {
+        setError(`Location error: ${err.message}`);
+        setFormState('error');
+      },
       { timeout: 10000 }
     );
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -539,7 +527,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             color: '#e5e5e5',
             fontSize: '13px',
             padding: '12px',
-            resize: 'none',
+            resize: 'vertical',
             outline: 'none',
             fontFamily: 'Inter, sans-serif',
             lineHeight: '1.5',
@@ -558,46 +546,26 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           LOCATION
         </label>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {locationStatus === 'locating' ? (
-            <div style={{
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Address or area description"
+            style={{
               flex: 1,
               background: '#0d0d0d',
               border: '1px solid #1f1f1f',
               borderRadius: '8px',
-              color: '#555',
+              color: '#e5e5e5',
               fontSize: '13px',
               padding: '10px 12px',
+              outline: 'none',
               fontFamily: 'Inter, sans-serif',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}>
-              <span style={{ fontSize: '14px' }}>📍</span>
-              <span>Locating…</span>
-            </div>
-          ) : (
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Address or area description"
-              style={{
-                flex: 1,
-                background: '#0d0d0d',
-                border: '1px solid #1f1f1f',
-                borderRadius: '8px',
-                color: '#e5e5e5',
-                fontSize: '13px',
-                padding: '10px 12px',
-                outline: 'none',
-                fontFamily: 'Inter, sans-serif',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)')}
-              onBlur={(e) => (e.target.style.borderColor = '#1f1f1f')}
-            />
-          )}
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={(e) => (e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)')}
+            onBlur={(e) => (e.target.style.borderColor = '#1f1f1f')}
+          />
           <button
             type="button"
             onClick={handleGetLocation}
