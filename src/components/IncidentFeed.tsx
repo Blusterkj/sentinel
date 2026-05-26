@@ -148,7 +148,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
             </span>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {[...displayedIncidents]
               .sort(
                 (a, b) =>
@@ -326,8 +326,6 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   const isHigh = incident.severity === 'high';
   const isCritical = incident.severity === 'critical';
   const highlightColor = isCritical ? '#ef4444' : isHigh ? '#f97316' : null;
-  const highlightBg = isCritical ? 'rgba(239, 68, 68, 0.05)' : isHigh ? 'rgba(249, 115, 22, 0.05)' : '#111';
-  const highlightBorder = isCritical ? 'rgba(239, 68, 68, 0.25)' : isHigh ? 'rgba(249, 115, 22, 0.25)' : '#1f1f1f';
 
   return (
     <div
@@ -335,30 +333,20 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       className="fade-in-up"
       style={{
         animationDelay: `${animDelay}ms`,
-        padding: '14px',
-        borderRadius: '10px',
-        border: isSelected
-          ? '1px solid rgba(59, 130, 246, 0.5)'
-          : highlightBorder,
-        background: isSelected
-          ? 'rgba(59, 130, 246, 0.08)'
-          : highlightBg,
+        padding: '14px 4px',
+        borderRadius: '0',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'transparent',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: 'background 0.15s ease',
         position: 'relative',
         overflow: 'hidden',
       }}
       onMouseEnter={(e) => {
-        if (!isSelected) {
-          (e.currentTarget as HTMLDivElement).style.background = '#1a1a1a';
-          (e.currentTarget as HTMLDivElement).style.borderColor = '#333';
-        }
+        (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.025)';
       }}
       onMouseLeave={(e) => {
-        if (!isSelected) {
-          (e.currentTarget as HTMLDivElement).style.background = highlightBg;
-          (e.currentTarget as HTMLDivElement).style.borderColor = highlightBorder;
-        }
+        (e.currentTarget as HTMLDivElement).style.background = 'transparent';
       }}
     >
       {/* High severity left bar */}

@@ -187,10 +187,9 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '12px',
-          padding: '16px 20px',
-          borderBottom: '1px solid #1a1a1a',
-          background: '#0a0a0a',
+          padding: '20px 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'transparent',
           flexShrink: 0,
         }}
       >
@@ -199,18 +198,21 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           label="Total Memories"
           value={String(incidents.length)}
           color="#3b82f6"
+          showDivider
         />
         <StatCard
           icon={<Clock size={14} color="#8b5cf6" />}
           label="Oldest Memory"
           value={oldestTs ? timeAgo(oldestTs) : '—'}
           color="#8b5cf6"
+          showDivider
         />
         <StatCard
           icon={<Activity size={14} color="#22c55e" />}
           label="Newest Memory"
           value={newestTs ? timeAgo(newestTs) : '—'}
           color="#22c55e"
+          showDivider
         />
         <StatCard
           icon={<HardDrive size={14} color="#f59e0b" />}
@@ -225,10 +227,10 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '12px 20px',
-          borderBottom: '1px solid #1a1a1a',
-          background: '#0d0d0d',
+          gap: '16px',
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'transparent',
           flexShrink: 0,
         }}
       >
@@ -239,13 +241,13 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: '#111',
-            border: '1px solid #222',
-            borderRadius: '8px',
-            padding: '7px 12px',
+            background: 'rgba(255,255,255,0.03)',
+            borderRadius: '20px',
+            padding: '8px 16px',
+            transition: 'background 0.2s',
           }}
         >
-          <Search size={14} color="#555" />
+          <Search size={14} color="#888" />
           <input
             type="text"
             placeholder="Search memories by location, type, or description…"
@@ -256,37 +258,36 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: '#ccc',
-              fontSize: '12px',
+              color: '#eee',
+              fontSize: '13px',
               fontFamily: 'Inter, sans-serif',
             }}
           />
         </div>
 
         {/* Type filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Filter size={12} color="#555" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Filter size={14} color="#888" />
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as IncidentType | 'all')}
             style={{
-              background: '#111',
-              border: '1px solid #222',
-              borderRadius: '6px',
-              color: '#aaa',
-              fontSize: '11px',
-              padding: '6px 8px',
+              background: 'transparent',
+              border: 'none',
+              color: '#bbb',
+              fontSize: '13px',
               outline: 'none',
               cursor: 'pointer',
               fontFamily: 'Inter, sans-serif',
+              fontWeight: 500,
             }}
           >
-            <option value="all">All Types</option>
-            <option value="medical">Medical</option>
-            <option value="fire">Fire</option>
-            <option value="crime">Crime</option>
-            <option value="accident">Accident</option>
-            <option value="natural_disaster">Natural Disaster</option>
+            <option value="all" style={{ background: '#111' }}>All Types</option>
+            <option value="medical" style={{ background: '#111' }}>Medical</option>
+            <option value="fire" style={{ background: '#111' }}>Fire</option>
+            <option value="crime" style={{ background: '#111' }}>Crime</option>
+            <option value="accident" style={{ background: '#111' }}>Accident</option>
+            <option value="natural_disaster" style={{ background: '#111' }}>Natural Disaster</option>
           </select>
         </div>
 
@@ -295,26 +296,25 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
           style={{
-            background: '#111',
-            border: '1px solid #222',
-            borderRadius: '6px',
-            color: '#aaa',
-            fontSize: '11px',
-            padding: '6px 8px',
+            background: 'transparent',
+            border: 'none',
+            color: '#bbb',
+            fontSize: '13px',
             outline: 'none',
             cursor: 'pointer',
             fontFamily: 'Inter, sans-serif',
+            fontWeight: 500,
           }}
         >
-          <option value="all">All Severities</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
+          <option value="all" style={{ background: '#111' }}>All Severities</option>
+          <option value="high" style={{ background: '#111' }}>High</option>
+          <option value="medium" style={{ background: '#111' }}>Medium</option>
+          <option value="low" style={{ background: '#111' }}>Low</option>
         </select>
 
         {/* Result count */}
-        <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-          {filtered.length}/{incidents.length}
+        <span style={{ fontSize: '12px', color: '#666', fontFamily: 'monospace', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
+          {filtered.length} / {incidents.length} results
         </span>
       </div>
 
@@ -690,25 +690,24 @@ const StatCard: React.FC<{
   label: string;
   value: string;
   color: string;
-}> = ({ icon, label, value, color }) => (
+  showDivider?: boolean;
+}> = ({ icon, label, value, color, showDivider }) => (
   <div
     style={{
-      background: '#111',
-      border: '1px solid #1f1f1f',
-      borderRadius: '10px',
-      padding: '14px 16px',
+      padding: '4px 20px',
       display: 'flex',
       flexDirection: 'column',
       gap: '8px',
+      borderRight: showDivider ? '1px solid rgba(255,255,255,0.06)' : 'none',
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       {icon}
-      <span style={{ fontSize: '11px', color: '#555', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>{label}</span>
     </div>
     <span
       style={{
-        fontSize: '20px',
+        fontSize: '22px',
         fontWeight: 700,
         color,
         fontFamily: 'monospace',
