@@ -489,7 +489,6 @@ export default function App() {
         <div
           style={{
             padding: '12px 8px',
-            borderTop: '1px solid #1a1a1a',
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
