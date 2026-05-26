@@ -189,7 +189,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '12px',
           padding: '16px 20px',
-          borderBottom: '1px solid #1a1a1a',
           background: '#0a0a0a',
           flexShrink: 0,
         }}
@@ -691,7 +690,7 @@ const StatCard: React.FC<{
   <div
     style={{
       background: '#111',
-      border: '1px solid #1f1f1f',
+      border: 'none',
       borderRadius: '10px',
       padding: '14px 16px',
       display: 'flex',
