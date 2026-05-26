@@ -50,43 +50,73 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     Array<{ text: string; distance: number }>
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'locating' | 'located' | 'error'>('idle');
 
+  // Shared reverse-geocode helper
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      return data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    } catch {
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+  };
 
+  const handleLocationSuccess = async (pos: GeolocationPosition) => {
+    const { latitude, longitude } = pos.coords;
+    setCoords({ lat: latitude, lng: longitude });
+    const addr = await reverseGeocode(latitude, longitude);
+    setAddress(addr);
+    setLocationStatus('located');
+    setFormState('idle');
+  };
+
+  const handleLocationError = (err: GeolocationPositionError) => {
+    setError(`Location unavailable: ${err.message}. Please type your address manually.`);
+    setLocationStatus('error');
+    setFormState('idle');
+  };
+
+  // Two-stage GPS on mount: try fast first, retry if accuracy is poor
+  React.useEffect(() => {
+    if (!navigator.geolocation) return;
+    setLocationStatus('locating');
+    setFormState('locating');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (position.coords.accuracy <= 500) {
+          // Good fix — use it immediately
+          handleLocationSuccess(position);
+        } else {
+          // Poor accuracy (IP-based) — try again with longer timeout
+          navigator.geolocation.getCurrentPosition(
+            handleLocationSuccess,
+            handleLocationError,
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+          );
+        }
+      },
+      handleLocationError,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation not supported by your browser.');
       return;
     }
+    setLocationStatus('locating');
     setFormState('locating');
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        setCoords({ lat: latitude, lng: longitude });
-
-        // Reverse geocode with Nominatim — zoom=18 for street-level detail
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en' } }
-          );
-          const data = await res.json();
-          setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        } catch {
-          setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        }
-
-        // Warn if accuracy is poor (> 500m means likely IP-based)
-        if (accuracy > 500) {
-          setError(`⚠️ Low GPS accuracy (±${Math.round(accuracy)}m). Try enabling precise location in your browser settings, or type your address manually.`);
-        }
-
-        setFormState('idle');
-      },
-      (err) => {
-        setError(`Location error: ${err.message}. Please type your address manually.`);
-        setFormState('error');
-      },
+      handleLocationSuccess,
+      handleLocationError,
       { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
@@ -551,26 +581,46 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           LOCATION
         </label>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Address or area description"
-            style={{
+          {locationStatus === 'locating' ? (
+            <div style={{
               flex: 1,
               background: '#0d0d0d',
               border: '1px solid #1f1f1f',
               borderRadius: '8px',
-              color: '#e5e5e5',
+              color: '#555',
               fontSize: '13px',
               padding: '10px 12px',
-              outline: 'none',
               fontFamily: 'Inter, sans-serif',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={(e) => (e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)')}
-            onBlur={(e) => (e.target.style.borderColor = '#1f1f1f')}
-          />
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }}>
+              <span style={{ fontSize: '14px' }}>📍</span>
+              <span>Locating…</span>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Address or area description"
+              style={{
+                flex: 1,
+                background: '#0d0d0d',
+                border: '1px solid #1f1f1f',
+                borderRadius: '8px',
+                color: '#e5e5e5',
+                fontSize: '13px',
+                padding: '10px 12px',
+                outline: 'none',
+                fontFamily: 'Inter, sans-serif',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={(e) => (e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)')}
+              onBlur={(e) => (e.target.style.borderColor = '#1f1f1f')}
+            />
+          )}
           <button
             type="button"
             onClick={handleGetLocation}
