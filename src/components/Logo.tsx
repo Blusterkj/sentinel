@@ -19,7 +19,7 @@ export const Logo: React.FC<{ size?: number; className?: string }> = ({ size = 2
         </defs>
         <path d="M50 10 L55 45 L90 50 L55 55 L50 90 L45 55 L10 50 L45 45 Z" fill="url(#starGrad)"/>
         <circle cx="50" cy="50" r="10" fill="#111"/>
-        <path d="M47 45 C47 45, 53 45, 53 50 C53 55, 47 55, 47 55" fill="none" stroke="#eab308" stroke-width="2"/>
+        <path d="M47 45 C47 45, 53 45, 53 50 C53 55, 47 55, 47 55" fill="none" stroke="#eab308" strokeWidth="2"/>
     </svg>
   );
 };

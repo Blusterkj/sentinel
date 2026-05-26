@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Database,
   Brain,
-  Shield,
   Hexagon,
   ChevronRight,
   BarChart3,
