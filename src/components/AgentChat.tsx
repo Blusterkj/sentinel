@@ -272,54 +272,95 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggested queries */}
+      {/* Status cards + Suggested queries — only in empty state */}
       {messages.length <= 1 && (
-        <div
-          style={{
-            padding: '0 20px 16px',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            flexShrink: 0,
-          }}
-        >
-          {SUGGESTED_QUERIES.slice(0, 4).map((q, idx) => {
-            const icons = [<AlertCircle size={16} color="#ef4444" />, <Brain size={16} color="#8b5cf6" />, <Zap size={16} color="#3b82f6" />, <Cpu size={16} color="#22c55e" />];
-            return (
-              <button
-                key={q}
-                onClick={() => handleSend(q)}
-                disabled={isLoading}
+        <>
+          {/* 2x2 Status Cards */}
+          <div
+            style={{
+              padding: '0 16px 12px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+              flexShrink: 0,
+            }}
+          >
+            {[
+              { icon: '🧠', label: 'Memories loaded', value: '21 from Walrus' },
+              { icon: '⛓', label: 'Blockchain', value: 'Walrus Testnet' },
+              { icon: '🤖', label: 'AI Model', value: 'Llama 3.3 70B' },
+              { icon: '📍', label: 'Coverage area', value: 'Bengaluru Metro' },
+            ].map((card) => (
+              <div
+                key={card.label}
                 style={{
-                  padding: '16px',
-                  background: '#111',
-                  border: '1px solid #222',
-                  borderRadius: '12px',
-                  color: '#ccc',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  alignItems: 'flex-start',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = '#111';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#222';
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  padding: '12px',
                 }}
               >
-                {icons[idx]}
-                {q}
-              </button>
-            )
-          })}
-        </div>
+                <div style={{ fontSize: '18px', marginBottom: '6px' }}>{card.icon}</div>
+                <div style={{ fontSize: '11px', color: '#666', marginBottom: '3px', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600 }}>
+                  {card.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggested queries */}
+          <div
+            style={{
+              padding: '0 16px 16px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '10px',
+              flexShrink: 0,
+            }}
+          >
+            {SUGGESTED_QUERIES.slice(0, 4).map((q, idx) => {
+              const icons = [<AlertCircle size={14} color="#ef4444" />, <Brain size={14} color="#8b5cf6" />, <Zap size={14} color="#3b82f6" />, <Cpu size={14} color="#22c55e" />];
+              return (
+                <button
+                  key={q}
+                  onClick={() => handleSend(q)}
+                  disabled={isLoading}
+                  style={{
+                    padding: '12px',
+                    background: '#111',
+                    border: '1px solid #1f1f1f',
+                    borderRadius: '10px',
+                    color: '#aaa',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = '#181818';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#ccc';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = '#111';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#1f1f1f';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
+                  }}
+                >
+                  {icons[idx]}
+                  {q}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Input */}
