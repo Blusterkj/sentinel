@@ -50,12 +50,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
 
-  // Still fetch location for nearby alerts, but don't recenter the map
+  // Try to get user location on mount and center the map on them
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        () => setLocationObtained(true),
-        () => {},
+        (pos) => {
+          setCenter([pos.coords.latitude, pos.coords.longitude]);
+          setLocationObtained(true);
+        },
+        () => {
+          // Silently fall back to default center if denied
+        },
         { timeout: 5000 }
       );
     }
