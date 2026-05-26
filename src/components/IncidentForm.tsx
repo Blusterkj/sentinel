@@ -682,7 +682,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               {addressSuggestions.map((s, i) => (
                 <div
                   key={i}
-                  onClick={() => selectSuggestion(s)}
+                  onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s); }}
                   style={{
                     padding: '10px 12px',
                     fontSize: '12px',
