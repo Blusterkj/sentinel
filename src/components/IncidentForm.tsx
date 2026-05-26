@@ -64,28 +64,36 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     setFormState('locating');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
         setCoords({ lat: latitude, lng: longitude });
 
-        // Reverse geocode with Nominatim
+        // Reverse geocode with Nominatim — zoom=18 for street-level detail
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=18&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } }
           );
           const data = await res.json();
           setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         } catch {
           setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         }
+
+        // Warn if accuracy is poor (> 500m means likely IP-based)
+        if (accuracy > 500) {
+          setError(`⚠️ Low GPS accuracy (±${Math.round(accuracy)}m). Try enabling precise location in your browser settings, or type your address manually.`);
+        }
+
         setFormState('idle');
       },
       (err) => {
-        setError(`Location error: ${err.message}`);
+        setError(`Location error: ${err.message}. Please type your address manually.`);
         setFormState('error');
       },
-      { timeout: 10000 }
+      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
