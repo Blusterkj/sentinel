@@ -51,10 +51,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
 
-  React.useEffect(() => {
-    handleGetLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
