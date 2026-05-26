@@ -187,8 +187,10 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          padding: '20px 20px',
-          background: 'transparent',
+          gap: '12px',
+          padding: '16px 20px',
+          borderBottom: '1px solid #1a1a1a',
+          background: '#0a0a0a',
           flexShrink: 0,
         }}
       >
@@ -197,21 +199,18 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           label="Total Memories"
           value={String(incidents.length)}
           color="#3b82f6"
-          showDivider
         />
         <StatCard
           icon={<Clock size={14} color="#8b5cf6" />}
           label="Oldest Memory"
           value={oldestTs ? timeAgo(oldestTs) : '—'}
           color="#8b5cf6"
-          showDivider
         />
         <StatCard
           icon={<Activity size={14} color="#22c55e" />}
           label="Newest Memory"
           value={newestTs ? timeAgo(newestTs) : '—'}
           color="#22c55e"
-          showDivider
         />
         <StatCard
           icon={<HardDrive size={14} color="#f59e0b" />}
@@ -228,7 +227,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           alignItems: 'center',
           gap: '16px',
           padding: '16px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
           background: 'transparent',
           flexShrink: 0,
         }}
@@ -689,24 +687,25 @@ const StatCard: React.FC<{
   label: string;
   value: string;
   color: string;
-  showDivider?: boolean;
-}> = ({ icon, label, value, color, showDivider }) => (
+}> = ({ icon, label, value, color }) => (
   <div
     style={{
-      padding: '4px 20px',
+      background: '#111',
+      border: '1px solid #1f1f1f',
+      borderRadius: '10px',
+      padding: '14px 16px',
       display: 'flex',
       flexDirection: 'column',
       gap: '8px',
-      borderRight: showDivider ? '1px solid rgba(255,255,255,0.06)' : 'none',
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       {icon}
-      <span style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '11px', color: '#555', fontWeight: 500 }}>{label}</span>
     </div>
     <span
       style={{
-        fontSize: '22px',
+        fontSize: '20px',
         fontWeight: 700,
         color,
         fontFamily: 'monospace',
