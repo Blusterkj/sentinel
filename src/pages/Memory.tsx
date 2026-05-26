@@ -309,7 +309,17 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         </select>
 
         {/* Result count */}
-        <span style={{ fontSize: '12px', color: '#666', fontFamily: 'monospace', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
+        <span style={{
+          fontSize: '12px',
+          color: '#888',
+          fontFamily: 'monospace',
+          whiteSpace: 'nowrap',
+          marginLeft: 'auto',
+          padding: '3px 12px',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '999px',
+          background: 'rgba(255,255,255,0.03)',
+        }}>
           {filtered.length} / {incidents.length} results
         </span>
       </div>
