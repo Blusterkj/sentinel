@@ -92,6 +92,46 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     setAddressSuggestions([]);
   };
 
+  // Helper: reverse geocode and set address + coords
+  const applyPosition = async (pos: GeolocationPosition) => {
+    const { latitude, longitude } = pos.coords;
+    setCoords({ lat: latitude, lng: longitude });
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+      );
+      const data = await res.json();
+      setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+    } catch {
+      setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+    }
+    setFormState('idle');
+  };
+
+  // Two-stage auto GPS on mount
+  React.useEffect(() => {
+    if (!navigator.geolocation) return;
+    setFormState('locating');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (position.coords.accuracy <= 500) {
+          // Good fix — use it
+          applyPosition(position);
+        } else {
+          // Poor accuracy (IP-based) — retry with longer timeout
+          navigator.geolocation.getCurrentPosition(
+            applyPosition,
+            () => setFormState('idle'), // silently give up, user can search
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+          );
+        }
+      },
+      () => setFormState('idle'), // silently give up, user can search
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -588,7 +628,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               type="text"
               value={address}
               onChange={(e) => handleAddressChange(e.target.value)}
-              placeholder="Type your city, area or address to search..."
+              placeholder={formState === 'locating' ? '📍 Locating...' : 'Type your city, area or address to search...'}
               style={{
                 flex: 1,
                 background: '#0d0d0d',
