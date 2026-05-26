@@ -31,6 +31,20 @@ function MapController({ center }: { center: [number, number] }) {
   return null;
 }
 
+// Force map to recalculate size when container resizes (e.g. sidebar collapse)
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [map]);
+  return null;
+}
+
 // Custom cluster icon with severity-aware colors
 function createClusterIcon(cluster: any) {
   const childCount = cluster.getChildCount();
@@ -91,6 +105,7 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick }) 
         attribution=""
       />
       <MapController center={center} />
+      <MapResizer />
 
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}
