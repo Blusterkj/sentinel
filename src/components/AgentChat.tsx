@@ -114,7 +114,6 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #1f1f1f',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -367,7 +366,6 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       <div
         style={{
           padding: '16px 20px',
-          borderTop: '1px solid #1f1f1f',
           background: '#0d0d0d',
           flexShrink: 0,
         }}
