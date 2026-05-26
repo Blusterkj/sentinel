@@ -319,7 +319,7 @@ interface IncidentCardProps {
 
 const IncidentCard: React.FC<IncidentCardProps> = ({
   incident,
-  isSelected,
+  isSelected: _isSelected,
   onClick,
   animDelay,
 }) => {
