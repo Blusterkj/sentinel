@@ -311,12 +311,12 @@ export default function App() {
     );
   }, []);
 
+  const deleteIncident = useCallback((id: string) => {
+    setIncidents((prev) => prev.filter((inc) => inc.id !== id));
+  }, []);
+
   // Walrus seeding — stores all seed incidents on-chain on first load
   const seeding = useWalrusSeeding(incidents, updateIncident);
-
-  const criticalIncidentCount = incidents.filter(
-    (i) => i.severity === 'critical'
-  ).length;
 
   return (
     <div
@@ -509,40 +509,7 @@ export default function App() {
             gap: '8px',
           }}
         >
-          {/* Critical alert badge */}
-          {criticalIncidentCount > 0 && !sidebarCollapsed && (
-            <div
-              className="glow-high"
-              style={{
-                padding: '8px 12px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                setCurrentPage('dashboard');
-                setCriticalFilter(true);
-                setActiveFilter(false);
-              }}
-            >
-              <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
-                {criticalIncidentCount} critical
-              </span>
-            </div>
-          )}
+          {/* Critical alert badge removed */}
 
           {/* Collapse toggle */}
           <button
@@ -615,6 +582,7 @@ export default function App() {
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
             onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
+            onDeleteIncident={deleteIncident}
           />
         )}
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}

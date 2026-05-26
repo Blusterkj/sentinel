@@ -24,6 +24,7 @@ interface DashboardProps {
   activeFilter: boolean;
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
+  onDeleteIncident?: (id: string) => void;
 }
 
 const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
@@ -34,8 +35,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   setCriticalFilter,
   activeFilter,
   setActiveFilter,
-  onResolveIncident
+  onResolveIncident,
+  onDeleteIncident
 }) => {
+  const [myReportsFilter, setMyReportsFilter] = useState(false);
   const [center, setCenter] = useState<[number, number]>(() => {
     if (incidents.length > 0) {
       const centerLat = incidents.reduce((sum, i) => sum + i.location.lat, 0) / incidents.length;
@@ -62,6 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
   const activeCount = incidents.filter((i) => i.status === 'active').length;
   const verifiedCount = incidents.filter((i) => !!i.suiTxDigest).length;
+  const myReportsCount = incidents.filter((i) => i.createdByMe).length;
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -112,6 +116,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
             color="#ef4444"
             pulse={true}
             onClick={() => setCriticalFilter(true)}
+          />
+        ) : null}
+        {myReportsFilter ? (
+          <StatPill
+            icon={<span style={{ fontSize: '12px' }}>👤</span>}
+            label="Showing my reports · ×"
+            value=""
+            color="#a855f7"
+            pulse={false}
+            onClick={() => setMyReportsFilter(false)}
+          />
+        ) : myReportsCount > 0 ? (
+          <StatPill
+            icon={<span style={{ fontSize: '12px' }}>👤</span>}
+            label="My Reports"
+            value={String(myReportsCount)}
+            color="#a855f7"
+            onClick={() => setMyReportsFilter(true)}
           />
         ) : null}
         <StatPill
@@ -218,7 +240,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             selectedId={selectedIncident?.id}
             criticalFilter={criticalFilter}
             activeFilter={activeFilter}
+            myReportsFilter={myReportsFilter}
             onResolveIncident={onResolveIncident}
+            onDeleteIncident={onDeleteIncident}
           />
         </div>
       </div>

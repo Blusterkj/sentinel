@@ -11,7 +11,9 @@ interface IncidentFeedProps {
   selectedId?: string;
   criticalFilter?: boolean;
   activeFilter?: boolean;
+  myReportsFilter?: boolean;
   onResolveIncident?: (id: string) => void;
+  onDeleteIncident?: (id: string) => void;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -49,7 +51,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   selectedId,
   criticalFilter,
   activeFilter,
+  myReportsFilter,
   onResolveIncident,
+  onDeleteIncident,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
@@ -68,6 +72,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   }
   if (activeFilter) {
     displayedIncidents = displayedIncidents.filter((i) => i.status === 'active');
+  }
+  if (myReportsFilter) {
+    displayedIncidents = displayedIncidents.filter((i) => i.createdByMe);
   }
 
   return (
@@ -256,6 +263,17 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'background 0.2s' }}
                   >
                     <CheckCircle size={14} /> Mark as Resolved
+                  </button>
+                )}
+                {modalIncident.createdByMe && onDeleteIncident && (
+                  <button 
+                    onClick={() => {
+                      onDeleteIncident(modalIncident.id);
+                      setModalIncident(null);
+                    }} 
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'background 0.2s' }}
+                  >
+                    <X size={14} /> Delete
                   </button>
                 )}
               </div>
