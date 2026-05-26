@@ -341,46 +341,77 @@ export default function App() {
           overflow: 'hidden',
         }}
       >
-        {/* Logo */}
+        {/* Header: Hamburger + Logo */}
         <div
           style={{
-            padding: sidebarCollapsed ? '20px 12px' : '20px 20px',
+            padding: sidebarCollapsed ? '16px 12px' : '16px 20px',
             borderBottom: '1px solid #1a1a1a',
             display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
+            flexDirection: 'column',
+            gap: '16px',
             flexShrink: 0,
           }}
         >
-          <Logo size={28} />
-          {!sidebarCollapsed && (
-            <div>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #e5e5e5, #999)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                SENTINEL
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            style={{
+              alignSelf: sidebarCollapsed ? 'center' : 'flex-end',
+              padding: '6px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#555',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              (e.currentTarget as HTMLButtonElement).style.color = '#555';
+            }}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <Menu size={16} />
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: '10px' }}>
+            <Logo size={28} />
+            {!sidebarCollapsed && (
+              <div>
+                <div
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #e5e5e5, #999)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  SENTINEL
+                </div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    color: '#444',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.08em',
+                    marginTop: '1px',
+                  }}
+                >
+                  SUI OVERFLOW 2026
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: '9px',
-                  color: '#444',
-                  fontFamily: 'monospace',
-                  letterSpacing: '0.08em',
-                  marginTop: '1px',
-                }}
-              >
-                SUI OVERFLOW 2026
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Nav items */}
@@ -496,34 +527,7 @@ export default function App() {
         >
           {/* Critical alert badge removed */}
 
-          {/* Collapse toggle */}
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#555',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
-              (e.currentTarget as HTMLButtonElement).style.color = '#fff';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-              (e.currentTarget as HTMLButtonElement).style.color = '#555';
-            }}
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <Menu size={16} />
-          </button>
+
 
           {/* Walrus badge */}
           {!sidebarCollapsed && (
