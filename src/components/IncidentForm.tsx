@@ -51,10 +51,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
 
-  React.useEffect(() => {
-    handleGetLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -527,7 +524,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             color: '#e5e5e5',
             fontSize: '13px',
             padding: '12px',
-            resize: 'vertical',
+            resize: 'none',
             outline: 'none',
             fontFamily: 'Inter, sans-serif',
             lineHeight: '1.5',
