@@ -128,7 +128,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
                 <XAxis dataKey="name" stroke="#666" fontSize={12} />
                 <YAxis stroke="#666" fontSize={12} />
                 <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px' }} cursor={{ fill: '#222' }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" radius={4}>
                   {severityData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={(SEVERITY_COLORS as any)[entry.name]} />
                   ))}
