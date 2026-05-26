@@ -114,11 +114,11 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          borderBottom: '1px solid #1f1f1f',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          background: 'transparent',
+          background: '#111',
           flexShrink: 0,
         }}
       >
@@ -294,10 +294,10 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
               <div
                 key={card.label}
                 style={{
-                  background: 'transparent',
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  borderRadius: '0',
-                  padding: '14px 12px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  padding: '12px',
                 }}
               >
                 <div style={{ fontSize: '18px', marginBottom: '6px' }}>{card.icon}</div>
@@ -330,10 +330,9 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
                   disabled={isLoading}
                   style={{
                     padding: '12px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    borderRadius: '0',
+                    background: '#111',
+                    border: '1px solid #1f1f1f',
+                    borderRadius: '10px',
                     color: '#aaa',
                     fontSize: '12px',
                     cursor: 'pointer',
@@ -345,11 +344,13 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
                     textAlign: 'left',
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+                    (e.currentTarget as HTMLButtonElement).style.background = '#181818';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a';
                     (e.currentTarget as HTMLButtonElement).style.color = '#ccc';
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.background = '#111';
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#1f1f1f';
                     (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
                   }}
                 >
@@ -376,16 +377,17 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
             display: 'flex',
             gap: '10px',
             alignItems: 'flex-end',
-            background: 'rgba(255,255,255,0.03)',
-            borderRadius: '16px',
+            background: '#111',
+            border: '1px solid #222',
+            borderRadius: '12px',
             padding: '10px 14px',
-            transition: 'background 0.15s',
+            transition: 'border-color 0.15s',
           }}
           onFocusCapture={(e) => {
-            (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
+            (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(59, 130, 246, 0.4)';
           }}
           onBlurCapture={(e) => {
-            (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)';
+            (e.currentTarget as HTMLDivElement).style.borderColor = '#222';
           }}
         >
           <textarea
