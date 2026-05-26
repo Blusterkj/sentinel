@@ -17,7 +17,7 @@ import {
   Database,
   Brain,
   Hexagon,
-  ChevronRight,
+  Menu,
   BarChart3,
 } from 'lucide-react';
 
@@ -503,24 +503,26 @@ export default function App() {
               width: '100%',
               padding: '8px',
               background: 'transparent',
-              border: '1px solid #1f1f1f',
+              border: 'none',
               borderRadius: '8px',
-              color: '#444',
+              color: '#555',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s',
             }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+              (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              (e.currentTarget as HTMLButtonElement).style.color = '#555';
+            }}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <ChevronRight
-              size={14}
-              style={{
-                transform: sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-                transition: 'transform 0.25s',
-              }}
-            />
+            <Menu size={16} />
           </button>
 
           {/* Walrus badge */}
