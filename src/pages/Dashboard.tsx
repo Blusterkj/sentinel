@@ -82,7 +82,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           gap: '20px',
           padding: '10px 20px',
           background: '#0d0d0d',
-          borderBottom: '1px solid #1a1a1a',
           flexShrink: 0,
         }}
       >

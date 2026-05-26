@@ -83,7 +83,6 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #1f1f1f',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
