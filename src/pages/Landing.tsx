@@ -8,7 +8,7 @@ export const Landing: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100%', width: '100%', overflow: 'auto', background: '#0a0a0a', position: 'relative' }}>
+    <div style={{ height: '100%', width: '100%', overflowX: 'hidden', overflowY: 'auto', background: '#0a0a0a', position: 'relative' }}>
       {/* Background gradients */}
       <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '50%', height: '60%', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(60px)' }} />
       <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '50%', height: '60%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(60px)' }} />

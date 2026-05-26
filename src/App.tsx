@@ -9,6 +9,7 @@ import { Analytics } from './pages/Analytics';
 import { Report } from './pages/Report';
 import { Memory } from './pages/Memory';
 import { Agent } from './pages/Agent';
+import { Logo } from './components/Logo';
 import type { Incident } from './types/incident';
 import {
   LayoutDashboard,
@@ -352,21 +353,7 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 0 16px rgba(59, 130, 246, 0.3)',
-            }}
-          >
-            <Shield size={16} color="#fff" />
-          </div>
+          <Logo size={28} />
           {!sidebarCollapsed && (
             <div>
               <div
