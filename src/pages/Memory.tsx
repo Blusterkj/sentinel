@@ -338,9 +338,9 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             No memories match your filters.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {filtered.map((incident, index) => (
-              <MemoryEntry key={incident.id} incident={incident} index={index} />
+              <MemoryEntry key={incident.id} incident={incident} index={index} isLast={index === filtered.length - 1} />
             ))}
           </div>
         )}
@@ -351,7 +351,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
 // ─── Sub-components ─────────────────────────────────────────
 
-const MemoryEntry: React.FC<{ incident: Incident; index: number }> = ({ incident, index }) => {
+const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolean }> = ({ incident, index, isLast }) => {
   const blobId = incident.walrusBlobId;
   const walrusStatus = incident.walrusStatus || 'pending';
   const byteSize = estimateSize(incident);
@@ -412,17 +412,15 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number }> = ({ incident
     <div
       className="fade-in-up"
       style={{
-        background: hovered ? '#131313' : '#111',
-        border: '1px solid #1f1f1f',
-        borderRadius: '10px',
+        background: hovered ? 'rgba(255,255,255,0.025)' : 'transparent',
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
         padding: '14px 16px',
         display: 'flex',
         alignItems: 'center',
         gap: '14px',
-        transition: 'all 0.15s ease',
+        transition: 'background 0.15s ease',
         animationDelay: `${index * 30}ms`,
         cursor: 'default',
-        borderColor: hovered ? '#2a2a2a' : '#1f1f1f',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
