@@ -164,6 +164,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Map */}
         <div style={{ flex: 1, position: 'relative' }}>
           <NearbyAlerts />
+          <WeatherStatus />
           <Map
             incidents={incidents}
             center={center}
@@ -293,3 +294,58 @@ const StatPill: React.FC<{
     </span>
   </div>
 );
+
+// ─── Floating weather-style status on the map ─────────────────
+const WeatherStatus: React.FC = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const hours = time.getHours();
+  const isNight = hours < 6 || hours >= 19;
+  const weatherIcon = isNight ? '🌙' : '⛅';
+  const greeting = isNight ? 'Night' : hours < 12 ? 'Morning' : hours < 17 ? 'Afternoon' : 'Evening';
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '16px',
+        right: '16px',
+        zIndex: 800,
+        background: 'rgba(13, 13, 13, 0.85)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '14px',
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        minWidth: '200px',
+      }}
+    >
+      <span style={{ fontSize: '28px', lineHeight: 1 }}>{weatherIcon}</span>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+          <span style={{ fontSize: '18px', fontWeight: 700, color: '#e5e5e5', fontFamily: 'monospace' }}>
+            28°C
+          </span>
+          <span style={{ fontSize: '11px', color: '#666' }}>Partly Cloudy</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+          <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
+            {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+          </span>
+          <span style={{ fontSize: '10px', color: '#444' }}>·</span>
+          <span style={{ fontSize: '11px', color: '#666' }}>
+            Bengaluru · Good {greeting}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
