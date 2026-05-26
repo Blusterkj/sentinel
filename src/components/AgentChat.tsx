@@ -165,36 +165,6 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
               ONLINE
             </span>
           </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              marginTop: '3px',
-            }}
-          >
-            <Cpu size={10} color="#555" />
-            <span style={{ fontSize: '11px', color: '#555' }}>
-              Llama 3.3 70B (Groq) + MemWal persistent memory
-            </span>
-          </div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            color: '#8b5cf6',
-            fontFamily: 'monospace',
-            background: 'rgba(139, 92, 246, 0.1)',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-          }}
-        >
-          <Zap size={10} />
-          WALRUS
         </div>
       </div>
 
@@ -274,41 +244,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       {/* Status cards + Suggested queries — only in empty state */}
       {messages.length <= 1 && (
         <>
-          {/* 2x2 Status Cards */}
-          <div
-            style={{
-              padding: '0 16px 12px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '12px',
-              flexShrink: 0,
-            }}
-          >
-            {[
-              { icon: '🧠', label: 'Memories loaded', value: '21 from Walrus' },
-              { icon: '⛓', label: 'Blockchain', value: 'Walrus Testnet' },
-              { icon: '🤖', label: 'AI Model', value: 'Llama 3.3 70B' },
-              { icon: '📍', label: 'Coverage area', value: 'Bengaluru Metro' },
-            ].map((card) => (
-              <div
-                key={card.label}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '10px',
-                  padding: '12px',
-                }}
-              >
-                <div style={{ fontSize: '18px', marginBottom: '6px' }}>{card.icon}</div>
-                <div style={{ fontSize: '11px', color: '#666', marginBottom: '3px', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
-                  {card.label}
-                </div>
-                <div style={{ fontSize: '13px', color: '#e5e5e5', fontWeight: 600 }}>
-                  {card.value}
-                </div>
-              </div>
-            ))}
-          </div>
+
 
           {/* Suggested queries */}
           <div
