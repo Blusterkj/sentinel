@@ -110,63 +110,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
         background: '#0a0a0a',
       }}
     >
-      {/* Agent Header */}
-      <div
-        style={{
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          background: '#111',
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Brain size={18} color="#fff" />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#e5e5e5' }}>
-              Sentinel Agent
-            </span>
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '10px',
-                color: '#22c55e',
-                background: 'rgba(34, 197, 94, 0.1)',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-              }}
-            >
-              <span
-                style={{
-                  width: '5px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  background: '#22c55e',
-                  boxShadow: '0 0 6px #22c55e',
-                }}
-              />
-              ONLINE
-            </span>
-          </div>
-        </div>
-      </div>
+
 
       {/* Messages */}
       <div
@@ -302,7 +246,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       <div
         style={{
           padding: '16px 20px',
-          background: '#0d0d0d',
+          background: 'transparent',
           flexShrink: 0,
         }}
       >
