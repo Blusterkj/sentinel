@@ -57,20 +57,23 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
   // Forward geocode: search for an address and get coordinates
   const searchAddress = async (query: string) => {
-    if (query.trim().length < 3) {
+    if (query.trim().length < 2) {
       setAddressSuggestions([]);
       setShowSuggestions(false);
       return;
     }
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Search failed: ${res.status}`);
       const data = await res.json();
       setAddressSuggestions(data);
-      setShowSuggestions(data.length > 0);
-    } catch {
+      // Always force-show the dropdown when search completes
+      if (data.length > 0) {
+        setShowSuggestions(true);
+      }
+    } catch (err) {
+      console.error('Address search error:', err);
       setAddressSuggestions([]);
     }
   };
@@ -605,7 +608,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               onBlur={(e) => {
                 e.target.style.borderColor = '#1f1f1f';
                 // Delay hiding so click on suggestion registers
-                setTimeout(() => setShowSuggestions(false), 200);
+                setTimeout(() => setShowSuggestions(false), 300);
               }}
             />
             <button
