@@ -188,7 +188,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           padding: '20px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
           background: 'transparent',
           flexShrink: 0,
         }}
