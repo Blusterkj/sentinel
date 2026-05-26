@@ -81,31 +81,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     setFormState('idle');
   };
 
-  // Two-stage GPS on mount: try fast first, retry if accuracy is poor
-  React.useEffect(() => {
-    if (!navigator.geolocation) return;
-    setLocationStatus('locating');
-    setFormState('locating');
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (position.coords.accuracy <= 500) {
-          // Good fix — use it immediately
-          handleLocationSuccess(position);
-        } else {
-          // Poor accuracy (IP-based) — try again with longer timeout
-          navigator.geolocation.getCurrentPosition(
-            handleLocationSuccess,
-            handleLocationError,
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-          );
-        }
-      },
-      handleLocationError,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -114,10 +90,11 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     }
     setLocationStatus('locating');
     setFormState('locating');
+    setError(''); // Clear previous error
     navigator.geolocation.getCurrentPosition(
       handleLocationSuccess,
       handleLocationError,
-      { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
+      { timeout: 10000 }
     );
   };
 
