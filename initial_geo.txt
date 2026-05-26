@@ -1,0 +1,15 @@
+﻿
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation not supported by your browser.');
+    navigator.geolocation.getCurrentPosition(
+        setError(`Location error: ${err.message}`);
+      { timeout: 10000 }
+      location: {
+        address: address || 'Location not set',
+            `${incident.type} incident near ${incident.location.address} severity ${incident.severity}`
+      {/* Location */}
+          LOCATION
+            onClick={handleGetLocation}
+
+

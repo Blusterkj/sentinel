@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Brain,
   ExternalLink,
+  Search,
 } from 'lucide-react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
@@ -50,7 +51,43 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     Array<{ text: string; distance: number }>
   >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Forward geocode: search for an address and get coordinates
+  const searchAddress = async (query: string) => {
+    if (query.trim().length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      setAddressSuggestions(data);
+      setShowSuggestions(data.length > 0);
+    } catch {
+      setAddressSuggestions([]);
+    }
+  };
+
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+    // Debounce the search
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => searchAddress(value), 400);
+  };
+
+  const selectSuggestion = (suggestion: { display_name: string; lat: string; lon: string }) => {
+    setAddress(suggestion.display_name);
+    setCoords({ lat: parseFloat(suggestion.lat), lng: parseFloat(suggestion.lon) });
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+  };
 
 
   const handleGetLocation = () => {
@@ -542,54 +579,124 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           LOCATION
         </label>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Address or area description"
-            style={{
-              flex: 1,
-              background: '#0d0d0d',
-              border: '1px solid #1f1f1f',
-              borderRadius: '8px',
-              color: '#e5e5e5',
-              fontSize: '13px',
-              padding: '10px 12px',
-              outline: 'none',
-              fontFamily: 'Inter, sans-serif',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={(e) => (e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)')}
-            onBlur={(e) => (e.target.style.borderColor = '#1f1f1f')}
-          />
-          <button
-            type="button"
-            onClick={handleGetLocation}
-            disabled={formState === 'locating'}
-            style={{
-              padding: '10px 14px',
-              background: coords ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-              border: coords ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              color: coords ? '#22c55e' : '#3b82f6',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              transition: 'all 0.15s',
-            }}
-          >
-            {formState === 'locating' ? (
-              <Loader2 className="animate-spin w-4 h-4 mr-2" />
-            ) : (
-              <MapPin size={14} />
-            )}
-            {coords ? 'Located' : 'Use GPS'}
-          </button>
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => handleAddressChange(e.target.value)}
+              placeholder="Type your city, area or address to search..."
+              style={{
+                flex: 1,
+                background: '#0d0d0d',
+                border: '1px solid #1f1f1f',
+                borderRadius: '8px',
+                color: '#e5e5e5',
+                fontSize: '13px',
+                padding: '10px 12px',
+                outline: 'none',
+                fontFamily: 'Inter, sans-serif',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                if (addressSuggestions.length > 0) setShowSuggestions(true);
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#1f1f1f';
+                // Delay hiding so click on suggestion registers
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => searchAddress(address)}
+              style={{
+                padding: '10px 14px',
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                color: '#3b82f6',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+              }}
+            >
+              <Search size={14} />
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={formState === 'locating'}
+              style={{
+                padding: '10px 14px',
+                background: coords ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                border: coords ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                color: coords ? '#22c55e' : '#3b82f6',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+              }}
+            >
+              {formState === 'locating' ? (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              ) : (
+                <MapPin size={14} />
+              )}
+              GPS
+            </button>
+          </div>
+
+          {/* Address search suggestions dropdown */}
+          {showSuggestions && addressSuggestions.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: '4px',
+                background: '#111',
+                border: '1px solid #2a2a2a',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                zIndex: 50,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}
+            >
+              {addressSuggestions.map((s, i) => (
+                <div
+                  key={i}
+                  onClick={() => selectSuggestion(s)}
+                  style={{
+                    padding: '10px 12px',
+                    fontSize: '12px',
+                    color: '#ccc',
+                    cursor: 'pointer',
+                    borderBottom: i < addressSuggestions.length - 1 ? '1px solid #1a1a1a' : 'none',
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#1a1a1a')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span style={{ marginRight: '8px' }}>📍</span>
+                  {s.display_name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         {coords && (
           <div
