@@ -527,7 +527,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             color: '#e5e5e5',
             fontSize: '13px',
             padding: '12px',
-            resize: 'vertical',
+            resize: 'none',
             outline: 'none',
             fontFamily: 'Inter, sans-serif',
             lineHeight: '1.5',
