@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell,
   BarChart, Bar
 } from 'recharts';
@@ -89,23 +89,23 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Incident Trends (Past 14 Days)</h2>
           <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendsData}>
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+              <LineChart width={700} height={300} data={trendsData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />
                 <XAxis dataKey="date" stroke="#666" fontSize={12} />
                 <YAxis stroke="#666" fontSize={12} />
                 <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px' }} />
                 <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6' }} />
               </LineChart>
-            </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Incident Types</h2>
           <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <PieChart width={300} height={300}>
                 <Pie data={typeData} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
                   {typeData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -113,7 +113,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
                 </Pie>
                 <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px' }} />
               </PieChart>
-            </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>
@@ -122,8 +122,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
         <div style={cardStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: '#ccc' }}>Severity Breakdown</h2>
           <div style={{ width: '100%', height: 250, minHeight: 250 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={severityData}>
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+              <BarChart width={500} height={250} data={severityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />
                 <XAxis dataKey="name" stroke="#666" fontSize={12} />
                 <YAxis stroke="#666" fontSize={12} />
@@ -134,7 +134,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+            </div>
           </div>
         </div>
         
