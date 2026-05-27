@@ -361,7 +361,7 @@ export default function App() {
             </div>
             <div style={{ 
               opacity: sidebarCollapsed ? 0 : 1, 
-              width: sidebarCollapsed ? 0 : '130px',
+              width: sidebarCollapsed ? 0 : '110px',
               transition: 'all 0.15s ease', 
               whiteSpace: 'nowrap',
               display: 'flex',
