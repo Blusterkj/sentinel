@@ -57,6 +57,61 @@ export const Landing: React.FC = () => {
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
         style={{ position: 'absolute', bottom: '-10%', right: '5%', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} 
       />
+
+      {/* Extra floating orbs behind hero text */}
+      <motion.div
+        animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.15, 1], opacity: [0.2, 0.45, 0.2] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: 'absolute', top: '15%', left: '35%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }}
+      />
+      <motion.div
+        animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1, 1.2, 1], opacity: [0.15, 0.35, 0.15] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        style={{ position: 'absolute', top: '25%', right: '25%', width: '280px', height: '280px', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none' }}
+      />
+      <motion.div
+        animate={{ x: [0, 25, 0], y: [0, -15, 0], opacity: [0.1, 0.3, 0.1] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        style={{ position: 'absolute', top: '10%', right: '15%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }}
+      />
+
+      {/* Animated wavy SVG pattern */}
+      <div style={{ position: 'absolute', top: '5%', left: 0, right: 0, height: '500px', overflow: 'hidden', pointerEvents: 'none', opacity: 0.08 }}>
+        <svg viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
+          <motion.path
+            d="M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z"
+            fill="url(#wave1)"
+            animate={{ d: [
+              'M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z',
+              'M0,250 C240,150 480,350 720,250 C960,150 1200,350 1440,250 L1440,500 L0,500 Z',
+              'M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z'
+            ] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.path
+            d="M0,280 C360,180 720,380 1080,280 C1260,230 1380,310 1440,280 L1440,500 L0,500 Z"
+            fill="url(#wave2)"
+            animate={{ d: [
+              'M0,280 C360,180 720,380 1080,280 C1260,230 1380,310 1440,280 L1440,500 L0,500 Z',
+              'M0,310 C360,210 720,410 1080,310 C1260,260 1380,340 1440,310 L1440,500 L0,500 Z',
+              'M0,280 C360,180 720,380 1080,280 C1260,230 1380,310 1440,280 L1440,500 L0,500 Z'
+            ] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          />
+          <defs>
+            <linearGradient id="wave1" x1="0" y1="0" x2="1440" y2="0">
+              <stop offset="0%" stopColor="#3b82f6" />
+              <stop offset="50%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+            <linearGradient id="wave2" x1="0" y1="0" x2="1440" y2="0">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="50%" stopColor="#06b6d4" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
       
       <motion.div 
         variants={containerVariants}
@@ -69,8 +124,11 @@ export const Landing: React.FC = () => {
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#93c5fd', letterSpacing: '0.1em', textTransform: 'uppercase' }}>SUI OVERFLOW 2026</span>
         </motion.div>
         
-        <motion.h1 variants={itemVariants} style={{ fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 800, textAlign: 'center', marginBottom: '24px', lineHeight: 1.1, letterSpacing: '-0.02em', background: 'linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Next-Gen Community <br /> Safety Platform
+        <motion.h1 variants={itemVariants} style={{ fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 800, textAlign: 'center', marginBottom: '24px', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+          <span style={{ background: 'linear-gradient(180deg, #ffffff 0%, #d4d4d8 40%, #a1a1aa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Next-Gen Community</span>
+          <br />
+          <span style={{ background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 40%, #2563eb 70%, #1d4ed8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 30px rgba(59,130,246,0.4))' }}>Safety</span>
+          <span style={{ background: 'linear-gradient(180deg, #ffffff 0%, #d4d4d8 40%, #a1a1aa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}> Platform</span>
         </motion.h1>
         
         <motion.p variants={itemVariants} style={{ fontSize: '20px', color: '#a1a1aa', textAlign: 'center', maxWidth: '750px', marginBottom: '48px', lineHeight: 1.6, fontWeight: 400 }}>
