@@ -77,9 +77,9 @@ export const Landing: React.FC = () => {
         style={{ position: 'absolute', top: '10%', right: '15%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)', pointerEvents: 'none' }}
       />
 
-      {/* Animated wavy SVG pattern */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', opacity: 0.08 }}>
-        <svg viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
+      {/* Animated wavy SVG pattern - width 100vw prevents costly resize reflows during sidebar toggle */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', bottom: 0, pointerEvents: 'none', opacity: 0.08 }}>
+        <svg viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100vw', height: '100%' }} preserveAspectRatio="none">
           <motion.path
             d="M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z"
             fill="url(#wave1)"

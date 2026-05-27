@@ -337,8 +337,9 @@ export default function App() {
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
-          transition: 'width 0.25s ease',
+          transition: 'width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',
           overflow: 'hidden',
+          willChange: 'width',
         }}
       >
         {/* Header: Hamburger + Logo */}
