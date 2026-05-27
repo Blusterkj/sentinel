@@ -355,7 +355,7 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: sidebarCollapsed ? '0px' : '10px' }}>
             <div style={{ flexShrink: 0 }}>
               <Logo size={28} />
             </div>
@@ -480,7 +480,7 @@ export default function App() {
                 }}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                <div style={{ width: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {item.icon}
                 </div>
                 
@@ -490,7 +490,8 @@ export default function App() {
                   flex: 1, 
                   opacity: sidebarCollapsed ? 0 : 1, 
                   transition: 'opacity 0.15s', 
-                  whiteSpace: 'nowrap' 
+                  whiteSpace: 'nowrap',
+                  marginLeft: sidebarCollapsed ? '0px' : '10px'
                 }}>
                   <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left' }}>
                     {item.label}
