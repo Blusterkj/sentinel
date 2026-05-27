@@ -29,9 +29,9 @@ export const Landing: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100%', width: '100%', position: 'relative', backgroundColor: '#050505' }}>
-      {/* Static Background Layer */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+    <div style={{ height: '100%', width: '100%', overflowX: 'hidden', overflowY: 'auto', backgroundColor: '#050505' }}>
+      <div style={{ position: 'relative', minHeight: '100%', width: '100%', overflow: 'hidden' }}>
+      
       
       {/* Premium Grid Background with Radial Mask */}
       <div 
@@ -78,7 +78,7 @@ export const Landing: React.FC = () => {
       />
 
       {/* Animated wavy SVG pattern */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.08 }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', opacity: 0.08 }}>
         <svg viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
           <motion.path
             d="M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z"
@@ -114,10 +114,6 @@ export const Landing: React.FC = () => {
           </defs>
         </svg>
       </div>
-      </div> {/* End Static Background Layer */}
-
-      {/* Scrolling Content Layer */}
-      <div style={{ position: 'absolute', inset: 0, overflowX: 'hidden', overflowY: 'auto', zIndex: 1 }}>
       <motion.div 
         variants={containerVariants}
         initial="hidden"
@@ -201,7 +197,7 @@ export const Landing: React.FC = () => {
           ))}
         </motion.div>
       </motion.div>
-      </div> {/* End Scrolling Content Layer */}
+      </div> {/* End Inner Relative Container */}
     </div>
   );
 };
