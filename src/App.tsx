@@ -409,7 +409,6 @@ export default function App() {
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s',
-              marginRight: sidebarCollapsed ? '0' : '-6px',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
