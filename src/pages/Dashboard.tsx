@@ -296,18 +296,91 @@ const StatPill: React.FC<{
 );
 
 // ─── Floating weather-style status on the map ─────────────────
+const WMO_CODES: Record<number, string> = {
+  0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+  45: 'Fog', 48: 'Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Heavy Drizzle',
+  61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 73: 'Snow',
+  75: 'Heavy Snow', 80: 'Light Showers', 81: 'Showers', 82: 'Heavy Showers',
+  95: 'Thunderstorm', 96: 'Thunderstorm + Hail', 99: 'Heavy Thunderstorm',
+};
+
+const getWeatherEmoji = (code: number, isNight: boolean): string => {
+  if (isNight && code <= 1) return '🌙';
+  if (code === 0) return '☀️';
+  if (code <= 2) return '⛅';
+  if (code === 3) return '☁️';
+  if (code <= 48) return '🌫️';
+  if (code <= 55) return '🌦️';
+  if (code <= 65) return '🌧️';
+  if (code <= 75) return '❄️';
+  if (code <= 82) return '🌧️';
+  return '⛈️';
+};
+
 const WeatherStatus: React.FC = () => {
   const [time, setTime] = useState(new Date());
+  const [weather, setWeather] = useState<{
+    temp: number;
+    code: number;
+    city: string;
+  } | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchWeather = async (lat: number, lon: number) => {
+      try {
+        // Fetch weather from Open-Meteo (free, no API key)
+        const weatherRes = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`
+        );
+        const weatherData = await weatherRes.json();
+
+        // Reverse geocode city name
+        let city = 'Your Location';
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`
+          );
+          const geoData = await geoRes.json();
+          city = geoData.address?.city || geoData.address?.town || geoData.address?.county || geoData.address?.state || 'Your Location';
+        } catch { /* fallback to default */ }
+
+        setWeather({
+          temp: Math.round(weatherData.current.temperature_2m),
+          code: weatherData.current.weather_code,
+          city,
+        });
+      } catch {
+        // Fallback to hardcoded if API fails
+        setWeather({ temp: 28, code: 2, city: 'Bengaluru' });
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+        () => {
+          // Permission denied — fallback to Bengaluru
+          fetchWeather(12.9716, 77.5946);
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      fetchWeather(12.9716, 77.5946);
+    }
+  }, []);
+
   const hours = time.getHours();
   const isNight = hours < 6 || hours >= 19;
-  const weatherIcon = isNight ? '🌙' : '⛅';
+  const weatherIcon = weather ? getWeatherEmoji(weather.code, isNight) : (isNight ? '🌙' : '⛅');
   const greeting = isNight ? 'Night' : hours < 12 ? 'Morning' : hours < 17 ? 'Afternoon' : 'Evening';
+  const condition = weather ? (WMO_CODES[weather.code] || 'Partly Cloudy') : 'Loading...';
+  const temp = weather ? `${weather.temp}°C` : '...';
+  const cityName = weather?.city || '...';
 
   return (
     <div
@@ -332,9 +405,9 @@ const WeatherStatus: React.FC = () => {
       <div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
           <span style={{ fontSize: '18px', fontWeight: 700, color: '#e5e5e5', fontFamily: 'monospace' }}>
-            28°C
+            {temp}
           </span>
-          <span style={{ fontSize: '11px', color: '#666' }}>Partly Cloudy</span>
+          <span style={{ fontSize: '11px', color: '#666' }}>{condition}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
           <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
@@ -342,7 +415,7 @@ const WeatherStatus: React.FC = () => {
           </span>
           <span style={{ fontSize: '10px', color: '#444' }}>·</span>
           <span style={{ fontSize: '11px', color: '#666' }}>
-            Bengaluru · Good {greeting}
+            {cityName} · Good {greeting}
           </span>
         </div>
       </div>
