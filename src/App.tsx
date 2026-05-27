@@ -355,36 +355,42 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Logo size={28} />
-            {!sidebarCollapsed && (
-              <div>
-                <div
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: 800,
-                    background: 'linear-gradient(135deg, #e5e5e5, #999)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  SENTINEL
-                </div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    color: '#444',
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.08em',
-                    marginTop: '1px',
-                  }}
-                >
-                  SUI OVERFLOW 2026
-                </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+            <div style={{ flexShrink: 0 }}>
+              <Logo size={28} />
+            </div>
+            <div style={{ 
+              opacity: sidebarCollapsed ? 0 : 1, 
+              transition: 'opacity 0.15s ease', 
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #e5e5e5, #999)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                SENTINEL
               </div>
-            )}
+              <div
+                style={{
+                  fontSize: '9px',
+                  color: '#444',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.08em',
+                  marginTop: '1px',
+                }}
+              >
+                SUI OVERFLOW 2026
+              </div>
+            </div>
           </div>
 
           {/* Collapse toggle */}
@@ -421,7 +427,6 @@ export default function App() {
         <nav style={{ padding: '12px 8px', flex: 1 }}>
           {NAV_ITEMS.map((item) => {
             const isActive = currentPage === item.id;
-            const showBadge = item.badge && !sidebarCollapsed;
             const isReport = item.id === 'report';
 
             return (
@@ -433,8 +438,7 @@ export default function App() {
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  padding: sidebarCollapsed ? '10px' : '10px 12px',
+                  padding: '10px',
                   borderRadius: '8px',
                   border: isReport && !isActive
                     ? '1px solid rgba(239, 68, 68, 0.2)'
@@ -454,8 +458,8 @@ export default function App() {
                   cursor: 'pointer',
                   marginBottom: '4px',
                   transition: 'all 0.15s',
-                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
@@ -475,29 +479,38 @@ export default function App() {
                 }}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                {!sidebarCollapsed && (
-                  <>
-                    <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left' }}>
-                      {item.label}
+                <div style={{ width: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {item.icon}
+                </div>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  flex: 1, 
+                  opacity: sidebarCollapsed ? 0 : 1, 
+                  transition: 'opacity 0.15s', 
+                  whiteSpace: 'nowrap' 
+                }}>
+                  <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left' }}>
+                    {item.label}
+                  </span>
+                  {item.badge && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        color: '#8b5cf6',
+                        background: 'rgba(139, 92, 246, 0.12)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        marginLeft: '8px'
+                      }}
+                    >
+                      {item.badge}
                     </span>
-                    {showBadge && (
-                      <span
-                        style={{
-                          fontSize: '9px',
-                          color: '#8b5cf6',
-                          background: 'rgba(139, 92, 246, 0.12)',
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          fontFamily: 'monospace',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
+                  )}
+                </div>
 
                 {/* Active dot on collapsed sidebar */}
                 {sidebarCollapsed && isActive && (
@@ -533,30 +546,34 @@ export default function App() {
 
 
           {/* Walrus badge */}
-          {!sidebarCollapsed && (
-            <div
+          <div
+            style={{
+              padding: '6px 10px',
+              background: 'rgba(139, 92, 246, 0.06)',
+              border: '1px solid rgba(139, 92, 246, 0.15)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              opacity: sidebarCollapsed ? 0 : 1,
+              transition: 'opacity 0.15s',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ flexShrink: 0, display: 'flex' }}>
+              <Hexagon size={10} color="#8b5cf6" />
+            </div>
+            <span
               style={{
-                padding: '6px 10px',
-                background: 'rgba(139, 92, 246, 0.06)',
-                border: '1px solid rgba(139, 92, 246, 0.15)',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
+                fontSize: '10px',
+                color: '#666',
+                fontFamily: 'monospace',
               }}
             >
-              <Hexagon size={10} color="#8b5cf6" />
-              <span
-                style={{
-                  fontSize: '10px',
-                  color: '#666',
-                  fontFamily: 'monospace',
-                }}
-              >
-                Powered by Walrus
-              </span>
-            </div>
-          )}
+              Powered by Walrus
+            </span>
+          </div>
         </div>
       </aside>
 
