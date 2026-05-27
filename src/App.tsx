@@ -355,16 +355,18 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ flexShrink: 0 }}>
               <Logo size={28} />
             </div>
             <div style={{ 
               opacity: sidebarCollapsed ? 0 : 1, 
-              transition: 'opacity 0.15s ease', 
+              width: sidebarCollapsed ? 0 : '130px',
+              transition: 'all 0.15s ease', 
               whiteSpace: 'nowrap',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              overflow: 'hidden'
             }}>
               <div
                 style={{
