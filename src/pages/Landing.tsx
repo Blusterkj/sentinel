@@ -52,29 +52,29 @@ export const Landing: React.FC = () => {
       <motion.div 
         animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        style={{ position: 'absolute', top: '0%', left: '10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} 
+        style={{ position: 'absolute', top: '0%', left: '10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none' }} 
       />
       <motion.div 
         animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        style={{ position: 'absolute', bottom: '-10%', right: '5%', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} 
+        style={{ position: 'absolute', bottom: '-10%', right: '5%', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none' }} 
       />
 
       {/* Extra floating orbs behind hero text */}
       <motion.div
         animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.15, 1], opacity: [0.2, 0.45, 0.2] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        style={{ position: 'absolute', top: '15%', left: '35%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', top: '15%', left: '35%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
       />
       <motion.div
         animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1, 1.2, 1], opacity: [0.15, 0.35, 0.15] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        style={{ position: 'absolute', top: '25%', right: '25%', width: '280px', height: '280px', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', top: '25%', right: '25%', width: '280px', height: '280px', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
       />
       <motion.div
         animate={{ x: [0, 25, 0], y: [0, -15, 0], opacity: [0.1, 0.3, 0.1] }}
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        style={{ position: 'absolute', top: '10%', right: '15%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', top: '10%', right: '15%', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)', pointerEvents: 'none' }}
       />
 
       {/* Animated wavy SVG pattern */}
