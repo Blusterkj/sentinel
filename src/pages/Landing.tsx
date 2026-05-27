@@ -76,7 +76,7 @@ export const Landing: React.FC = () => {
       />
 
       {/* Animated wavy SVG pattern */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.08 }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.08 }}>
         <svg viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
           <motion.path
             d="M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,500 L0,500 Z"
@@ -125,10 +125,10 @@ export const Landing: React.FC = () => {
         </motion.div>
         
         <motion.h1 variants={itemVariants} style={{ fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 800, textAlign: 'center', marginBottom: '24px', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-          <span style={{ background: 'linear-gradient(135deg, #f0f0f0 0%, #c084fc 30%, #a78bfa 50%, #e0e7ff 80%, #ffffff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Next-Gen Community</span>
+          <span style={{ background: 'linear-gradient(180deg, #ffffff 0%, #e4e4e7 40%, #a1a1aa 80%, #71717a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Next-Gen Community</span>
           <br />
-          <span style={{ background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 30%, #2563eb 60%, #1d4ed8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 30px rgba(59,130,246,0.4))' }}>Safety</span>
-          <span style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #a78bfa 30%, #c084fc 60%, #f0f0f0 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}> Platform</span>
+          <span style={{ background: 'linear-gradient(180deg, #60a5fa 0%, #3b82f6 40%, #2563eb 70%, #1d4ed8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 30px rgba(59,130,246,0.4))' }}>Safety</span>
+          <span style={{ background: 'linear-gradient(180deg, #ffffff 0%, #e4e4e7 40%, #a1a1aa 80%, #71717a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}> Platform</span>
         </motion.h1>
         
         <motion.p variants={itemVariants} style={{ fontSize: '20px', color: '#a1a1aa', textAlign: 'center', maxWidth: '750px', marginBottom: '48px', lineHeight: 1.6, fontWeight: 400 }}>
