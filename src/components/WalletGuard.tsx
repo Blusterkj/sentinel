@@ -20,7 +20,10 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
         border: '1px solid rgba(255, 255, 255, 0.05)',
       }}
     >
-      <div className="relative flex flex-col items-center gap-6 pt-10 px-8 pb-12 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center">
+      <div 
+        className="relative flex flex-col items-center gap-6 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center"
+        style={{ padding: '56px 32px 64px 32px' }}
+      >
         {/* Close Button */}
         <button
           onClick={() => window.history.back()}
@@ -38,7 +41,7 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
           </p>
         </div>
 
-        <div className="mt-2">
+        <div style={{ marginTop: '16px', marginBottom: '8px' }}>
           <ConnectButton />
         </div>
       </div>
