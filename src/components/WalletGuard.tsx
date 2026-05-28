@@ -21,7 +21,7 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
     >
       <div 
         className="relative flex flex-col items-center gap-6 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center"
-        style={{ padding: '48px 32px 48px 32px' }}
+        style={{ padding: '36px 24px 36px 24px' }}
       >
         <Logo size={48} />
         
