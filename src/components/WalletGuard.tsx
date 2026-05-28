@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { Logo } from './Logo';
 
 export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -19,7 +20,15 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
         border: '1px solid rgba(255, 255, 255, 0.05)',
       }}
     >
-      <div className="flex flex-col items-center gap-6 p-8 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center">
+      <div className="relative flex flex-col items-center gap-6 pt-10 px-8 pb-12 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center">
+        {/* Close Button */}
+        <button
+          onClick={() => window.history.back()}
+          className="absolute top-4 right-4 text-[#666] hover:text-white transition-colors p-2 rounded-full hover:bg-white/5 cursor-pointer"
+        >
+          <X size={20} />
+        </button>
+
         <Logo size={48} />
         
         <div className="space-y-2">
@@ -29,7 +38,7 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
           </p>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-2">
           <ConnectButton />
         </div>
       </div>
