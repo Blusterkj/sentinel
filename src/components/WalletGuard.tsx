@@ -1,7 +1,6 @@
 import React from 'react';
 import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
 import { Logo } from './Logo';
 
 export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,16 +21,8 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
     >
       <div 
         className="relative flex flex-col items-center gap-6 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center"
-        style={{ padding: '56px 32px 64px 32px' }}
+        style={{ padding: '48px 32px 48px 32px' }}
       >
-        {/* Close Button */}
-        <button
-          onClick={() => window.history.back()}
-          className="absolute top-4 right-4 text-[#666] hover:text-white transition-colors p-2 rounded-full hover:bg-white/5 cursor-pointer"
-        >
-          <X size={20} />
-        </button>
-
         <Logo size={48} />
         
         <div className="space-y-2">
@@ -41,8 +32,26 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
           </p>
         </div>
 
-        <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
           <ConnectButton />
+          
+          <button
+            onClick={() => window.history.back()}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#666',
+              fontSize: '13px',
+              fontWeight: 500,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </motion.div>
