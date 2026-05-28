@@ -5,9 +5,10 @@ import React, { useState, useEffect } from 'react';
 import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon } from 'lucide-react';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus } from 'lucide-react';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { NearbyAlerts } from '../components/NearbyAlerts';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 
 interface DashboardProps {
   incidents: Incident[];
@@ -49,6 +50,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   });
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const account = useCurrentAccount();
 
   // Try to get user location on mount and center the map on them
   useEffect(() => {
@@ -250,6 +253,51 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onDeleteIncident={onDeleteIncident}
           />
         </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <div style={{ position: 'absolute', bottom: '24px', right: '344px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+        {showToast && (
+          <div className="fade-in-up" style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)' }}>
+            Please connect your wallet first
+          </div>
+        )}
+        <button
+          onClick={() => {
+            if (!account) {
+              setShowToast(true);
+              setTimeout(() => setShowToast(false), 3000);
+            } else {
+              window.history.pushState({}, '', '/report');
+              window.dispatchEvent(new Event('popstate'));
+            }
+          }}
+          title={!account ? "Connect wallet to report" : "Report Incident"}
+          style={{
+            background: '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '50%',
+            width: '56px',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(59, 130, 246, 0.5)',
+            transition: 'transform 0.2s, background 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.05)';
+            (e.currentTarget as HTMLButtonElement).style.background = '#2563eb';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+            (e.currentTarget as HTMLButtonElement).style.background = '#3b82f6';
+          }}
+        >
+          <Plus size={24} />
+        </button>
       </div>
     </div>
   );

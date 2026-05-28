@@ -19,7 +19,11 @@ import {
   Hexagon,
   Menu,
   BarChart3,
+  Lock,
+  LogOut,
 } from 'lucide-react';
+import { ConnectButton, useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
+import { WalletGuard } from './components/WalletGuard';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent';
 
@@ -272,6 +276,9 @@ const SEED_INCIDENTS: Incident[] = [
 ];
 
 export default function App() {
+  const account = useCurrentAccount();
+  const { mutate: disconnect } = useDisconnectWallet();
+  const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent'>(
     'landing'
   );
@@ -328,6 +335,41 @@ export default function App() {
         overflow: 'hidden',
       }}
     >
+      {/* Top Right Wallet Button */}
+      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1000 }}>
+        {account ? (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowWalletMenu((v) => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer' }}
+            >
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+              <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
+                {account.address.slice(0, 6)}...{account.address.slice(-4)}
+              </span>
+            </button>
+
+            {showWalletMenu && (
+              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '4px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                <button
+                  onClick={() => {
+                    disconnect();
+                    setShowWalletMenu(false);
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left', transition: 'background 0.2s' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                >
+                  <LogOut size={14} /> Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <ConnectButton />
+        )}
+      </div>
+
       {/* Sidebar */}
       <aside
         style={{
@@ -494,8 +536,11 @@ export default function App() {
                   whiteSpace: 'nowrap',
                   marginLeft: sidebarCollapsed ? '0px' : '10px'
                 }}>
-                  <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left' }}>
+                  <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {item.label}
+                    {!account && (item.id === 'report' || item.id === 'agent') && (
+                      <Lock size={12} color="#666" />
+                    )}
                   </span>
                   {item.badge && (
                     <span
@@ -601,10 +646,16 @@ export default function App() {
         )}
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}
         {currentPage === 'report' && (
-          <Report onIncidentSubmitted={handleNewIncident} />
+          <WalletGuard>
+            <Report onIncidentSubmitted={handleNewIncident} />
+          </WalletGuard>
         )}
         {currentPage === 'memory' && <Memory incidents={incidents} />}
-        {currentPage === 'agent' && <Agent incidents={incidents} />}
+        {currentPage === 'agent' && (
+          <WalletGuard>
+            <Agent incidents={incidents} />
+          </WalletGuard>
+        )}
       </main>
     </div>
   );

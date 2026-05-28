@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
-
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 
@@ -40,6 +41,9 @@ const SEVERITIES: { value: Severity; label: string; desc: string; color: string 
 type FormState = 'idle' | 'locating' | 'submitting' | 'recalling' | 'done' | 'error';
 
 export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted }) => {
+  const account = useCurrentAccount();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const suiClient = useSuiClient();
   const [type, setType] = useState<IncidentType>('other');
   const [severity, setSeverity] = useState<Severity>('medium');
   const [description, setDescription] = useState('');
@@ -196,6 +200,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
       // Store on Walrus via the proxy (bypasses CORS)
       let blobId: string | null = null;
       let txDigest: string | null = null;
+      let suiObjectId: string | undefined = undefined;
+      
       try {
         const storeRes = await fetch(`${PROXY_URL}/api/store`, {
           method: 'POST',
@@ -205,7 +211,35 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         const storeData = await storeRes.json();
         if (storeData.success && storeData.blobId) {
           blobId = storeData.blobId;
-          txDigest = storeData.tx_digest || null;
+
+          // Step B & C — Build and Execute Sui transaction
+          const tx = new Transaction();
+          tx.moveCall({
+            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
+            arguments: [
+              tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
+              tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
+              tx.object('0x6'), // Clock object ID on Sui
+            ],
+          });
+          const txResult = await signAndExecute({ transaction: tx });
+          txDigest = txResult.digest;
+          
+          try {
+            const txRes = await suiClient.waitForTransaction({
+              digest: txDigest,
+              options: { showObjectChanges: true },
+            });
+            if (txRes.objectChanges) {
+               const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
+               if (createdObj && 'objectId' in createdObj) {
+                 suiObjectId = createdObj.objectId;
+               }
+            }
+          } catch (e) {
+            console.warn("Could not fetch object changes", e);
+          }
+
           // Save blob ID mapping to localStorage so Memory page picks it up
           try {
             const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
@@ -223,6 +257,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         walrusBlobId: blobId || undefined,
         walrusStatus: blobId ? 'synced' : 'pending',
         suiTxDigest: txDigest || undefined,
+        suiObjectId: suiObjectId || undefined,
+        reporter: account?.address,
       };
 
       setSubmittedIncident(storedIncident);
@@ -773,54 +809,60 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
       )}
 
       {/* Submit */}
-      <button
-        type="submit"
-        id="submit-incident-btn"
-        disabled={['submitting', 'recalling', 'locating'].includes(formState)}
-        style={{
-          width: '100%',
-          padding: '14px',
-          background:
-            formState === 'submitting' || formState === 'recalling'
-              ? '#1a1a1a'
-              : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-          border: 'none',
-          borderRadius: '10px',
-          color:
-            formState === 'submitting' || formState === 'recalling' ? '#666' : '#fff',
-          fontSize: '14px',
-          fontWeight: 700,
-          cursor:
-            formState === 'submitting' || formState === 'recalling'
-              ? 'not-allowed'
-              : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          transition: 'all 0.2s',
-          letterSpacing: '0.02em',
-        }}
-      >
-        {formState === 'submitting' && (
-          <>
-            <Loader2 className="animate-spin w-4 h-4 mr-2" />
-            Storing on Walrus…
-          </>
-        )}
-        {formState === 'recalling' && (
-          <>
-            <Brain size={16} />
-            Agent recalling patterns…
-          </>
-        )}
-        {!['submitting', 'recalling'].includes(formState) && (
-          <>
-            <Send size={16} />
-            Submit to Walrus
-          </>
-        )}
-      </button>
+      {account ? (
+        <button
+          type="submit"
+          id="submit-incident-btn"
+          disabled={['submitting', 'recalling', 'locating'].includes(formState)}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background:
+              formState === 'submitting' || formState === 'recalling'
+                ? '#1a1a1a'
+                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+            border: 'none',
+            borderRadius: '10px',
+            color:
+              formState === 'submitting' || formState === 'recalling' ? '#666' : '#fff',
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor:
+              formState === 'submitting' || formState === 'recalling'
+                ? 'not-allowed'
+                : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            transition: 'all 0.2s',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {formState === 'submitting' && (
+            <>
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              Storing on Walrus & Sui…
+            </>
+          )}
+          {formState === 'recalling' && (
+            <>
+              <Brain size={16} />
+              Agent recalling patterns…
+            </>
+          )}
+          {!['submitting', 'recalling'].includes(formState) && (
+            <>
+              <Send size={16} />
+              Submit to Walrus
+            </>
+          )}
+        </button>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '14px', background: '#1a1a1a', borderRadius: '10px', color: '#888', fontSize: '14px', fontWeight: 600 }}>
+          Connect Wallet to Report Incident
+        </div>
+      )}
 
       <p
         style={{

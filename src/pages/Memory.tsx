@@ -4,6 +4,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { SeverityBadge } from '../components/SeverityBadge';
+import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import {
   Database,
   Search,
@@ -358,6 +360,34 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 // ─── Sub-components ─────────────────────────────────────────
 
 const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolean }> = ({ incident, index, isLast }) => {
+  const account = useCurrentAccount();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const [resolving, setResolving] = useState(false);
+  const [resolvedLocal, setResolvedLocal] = useState(incident.status === 'resolved');
+
+  useEffect(() => {
+    setResolvedLocal(incident.status === 'resolved');
+  }, [incident.status]);
+
+  const handleResolve = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!incident.suiObjectId) return;
+    setResolving(true);
+    try {
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::resolve_incident`,
+        arguments: [tx.object(incident.suiObjectId)],
+      });
+      await signAndExecute({ transaction: tx });
+      setResolvedLocal(true);
+    } catch (err: any) {
+      alert(`Error resolving: ${err.message}`);
+    } finally {
+      setResolving(false);
+    }
+  };
+
   const blobId = incident.walrusBlobId;
   const walrusStatus = incident.walrusStatus || 'pending';
   const byteSize = estimateSize(incident);
@@ -453,6 +483,30 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>{typeLabel}</span>
           <SeverityBadge severity={incident.severity} size="sm" />
+          {resolvedLocal ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontSize: '11px', fontWeight: 600, background: 'rgba(34, 197, 94, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+              <CheckCircle size={11} /> Resolved
+            </div>
+          ) : (
+            account?.address === incident.reporter && incident.suiObjectId && (
+              <button 
+                onClick={handleResolve}
+                disabled={resolving}
+                style={{ 
+                  background: 'rgba(34, 197, 94, 0.1)', 
+                  border: '1px solid rgba(34, 197, 94, 0.3)', 
+                  color: '#22c55e', 
+                  fontSize: '11px', 
+                  fontWeight: 600, 
+                  padding: '2px 6px', 
+                  borderRadius: '4px',
+                  cursor: resolving ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {resolving ? '...' : 'Resolve'}
+              </button>
+            )
+          )}
           <span
             style={{
               fontSize: '10px',

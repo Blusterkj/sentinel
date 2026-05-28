@@ -31,6 +31,10 @@ export interface Incident {
   walrusStatus?: WalrusStatus;
   /** Sui testnet transaction digest for on-chain anchoring */
   suiTxDigest?: string;
+  /** Sui object ID of the created Incident contract */
+  suiObjectId?: string;
+  /** Wallet address of the reporter */
+  reporter?: string;
   /** Whether the current user created this incident in this session */
   createdByMe?: boolean;
 }
