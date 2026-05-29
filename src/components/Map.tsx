@@ -101,8 +101,8 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick }) 
       attributionControl={false}
     >
       <TileLayer
-        url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-        attribution="&copy; Google Maps"
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution="&copy; OpenStreetMap contributors &copy; CARTO"
       />
       <MapController center={center} />
       <MapResizer />
