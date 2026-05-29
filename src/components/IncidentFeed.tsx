@@ -506,11 +506,11 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
-          marginBottom: '8px',
+          marginBottom: (incident.suiTxDigest || incident.walrusBlobId) ? '6px' : '10px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0, paddingRight: '8px' }}>
+          <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0, marginTop: '1px' }}>
             {TYPE_ICONS[incident.type]}
           </span>
           <span
@@ -519,13 +519,18 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               fontWeight: 600, 
               color: '#ddd', 
               lineHeight: '1.3',
-              flex: 1,
               wordBreak: 'break-word',
-              marginTop: '1px'
             }}
           >
             {TYPE_LABELS[incident.type]}
           </span>
+        </div>
+        <SeverityBadge severity={incident.severity} size="sm" pulse />
+      </div>
+
+      {/* Row 2: Verification Badges */}
+      {(incident.suiTxDigest || incident.walrusBlobId) && (
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
           {incident.suiTxDigest && (
             <span style={{
               fontSize: '10px',
@@ -537,8 +542,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '3px',
-              flexShrink: 0
+              gap: '3px'
             }}>
               ⛓ Verified on Sui
             </span>
@@ -554,15 +558,13 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '3px',
-              flexShrink: 0
+              gap: '3px'
             }}>
               ⬡ Verified on Walrus
             </span>
           )}
         </div>
-        <SeverityBadge severity={incident.severity} size="sm" pulse />
-      </div>
+      )}
 
       {/* Description */}
       <p
