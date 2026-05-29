@@ -45,7 +45,7 @@ body {
 }
 
 .leaflet-tile-pane {
-  /* Removed inversion filter for Google Satellite tiles */
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9);
 }
 
 /* Hide scrollbar for a cleaner look */
