@@ -509,7 +509,7 @@ const WeatherStatus: React.FC = () => {
           transition: 'all 0.3s ease',
         }}
       >
-        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+        <div style={{ marginTop: '12px', paddingTop: '4px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AQI</span>
             <span style={{ fontSize: '14px', color: getAqiColor(weather?.aqi), fontWeight: 700, fontFamily: 'monospace' }}>
