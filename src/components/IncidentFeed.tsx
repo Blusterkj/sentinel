@@ -504,17 +504,17 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'space-between',
           marginBottom: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px', lineHeight: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+          <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>
             {TYPE_ICONS[incident.type]}
           </span>
           <span
-            style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}
+            style={{ fontSize: '13px', fontWeight: 600, color: '#ddd', whiteSpace: 'nowrap' }}
           >
             {TYPE_LABELS[incident.type]}
           </span>
