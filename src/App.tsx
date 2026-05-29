@@ -642,6 +642,7 @@ export default function App() {
             setActiveFilter={setActiveFilter}
             onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
             onDeleteIncident={deleteIncident}
+            sidebarCollapsed={sidebarCollapsed}
           />
         )}
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}

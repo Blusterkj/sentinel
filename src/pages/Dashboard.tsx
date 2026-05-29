@@ -26,6 +26,7 @@ interface DashboardProps {
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
+  sidebarCollapsed?: boolean;
 }
 
 const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
@@ -37,7 +38,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   activeFilter,
   setActiveFilter,
   onResolveIncident,
-  onDeleteIncident
+  onDeleteIncident,
+  sidebarCollapsed
 }) => {
   const [myReportsFilter, setMyReportsFilter] = useState(false);
   const [center, setCenter] = useState<[number, number]>(() => {
@@ -256,7 +258,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Floating Action Button */}
-      <div style={{ position: 'absolute', bottom: '24px', right: '344px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+      {sidebarCollapsed && (
+        <div style={{ position: 'absolute', bottom: '24px', right: '344px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
         {showToast && (
           <div className="fade-in-up" style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)' }}>
             Please connect your wallet first
@@ -299,6 +302,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <Plus size={24} />
         </button>
       </div>
+      )}
     </div>
   );
 };
