@@ -1,7 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
-import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import type { Incident, IncidentType } from '../types/incident';
@@ -61,6 +61,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
   const [isCopied, setIsCopied] = React.useState(false);
+  const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [walrusData, setWalrusData] = React.useState<string | null>(null);
+  const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -165,6 +168,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     setModalIncident(incident);
                     setShowProof(false);
                     setIsCopied(false);
+                    setWalrusFetchState('idle');
+                    setWalrusData(null);
+                    setWalrusFetchError(null);
                   }}
                   animDelay={idx * 50}
                 />
@@ -280,29 +286,129 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               </div>
 
               {/* Blockchain Proof (Collapsible) */}
-              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '4px' }}>
-                <button 
-                  onClick={() => setShowProof(!showProof)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer', padding: 0 }}
-                >
-                  {showProof ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  Verified on Walrus Blockchain
-                </button>
-                
-                {showProof && (
-                  <div style={{ marginTop: '12px', padding: '12px', background: '#111', borderRadius: '8px', border: '1px solid #1a1a1a', fontSize: '12px', color: '#888' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span>Blob ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: '#ccc' }}>{modalIncident.walrusBlobId || 'Pending'}</span>
+              {(modalIncident.walrusBlobId || modalIncident.suiTxDigest) ? (
+                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '4px' }}>
+                  <button 
+                    onClick={() => setShowProof(!showProof)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                  >
+                    {showProof ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    {modalIncident.walrusBlobId ? '⬡ Verified on Walrus Blockchain' : '⛓ Verified on Sui'}
+                  </button>
+                  
+                  {showProof && (
+                    <div style={{ marginTop: '12px', padding: '12px', background: '#111', borderRadius: '8px', border: '1px solid #1a1a1a', fontSize: '12px', color: '#888' }}>
+                      {/* Walrus Blob ID + Fetch button */}
+                      {modalIncident.walrusBlobId && (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span>Blob ID:</span>
+                            <span style={{ fontFamily: 'monospace', color: '#a78bfa', fontSize: '11px' }}>
+                              {modalIncident.walrusBlobId.slice(0, 12)}...{modalIncident.walrusBlobId.slice(-8)}
+                            </span>
+                          </div>
+
+                          {/* View on WalrusScan */}
+                          <a 
+                            href={`https://walruscan.com/testnet/blob/${modalIncident.walrusBlobId}`}
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a78bfa', textDecoration: 'none', marginBottom: '10px', fontSize: '12px' }}
+                          >
+                            <ExternalLink size={12} /> View on WalrusScan
+                          </a>
+
+                          {/* Fetch from Walrus Aggregator */}
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              setWalrusFetchState('loading');
+                              setWalrusData(null);
+                              setWalrusFetchError(null);
+                              try {
+                                const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/${modalIncident.walrusBlobId}`);
+                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                const text = await res.text();
+                                setWalrusData(text);
+                                setWalrusFetchState('done');
+                              } catch (err: any) {
+                                setWalrusFetchError(err.message || 'Failed to fetch');
+                                setWalrusFetchState('error');
+                              }
+                            }}
+                            disabled={walrusFetchState === 'loading'}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              padding: '8px',
+                              background: 'rgba(139, 92, 246, 0.08)',
+                              border: '1px solid rgba(139, 92, 246, 0.25)',
+                              borderRadius: '6px',
+                              color: '#a78bfa',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: walrusFetchState === 'loading' ? 'wait' : 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {walrusFetchState === 'loading' ? (
+                              <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Fetching from Walrus…</>
+                            ) : walrusFetchState === 'done' ? (
+                              <><CheckCircle size={12} /> Data verified — fetched from Walrus</>
+                            ) : (
+                              <><Download size={12} /> Fetch raw data from Walrus</>
+                            )}
+                          </button>
+
+                          {/* Display fetched data */}
+                          {walrusFetchState === 'done' && walrusData && (
+                            <pre style={{
+                              marginTop: '10px',
+                              padding: '10px',
+                              background: '#0a0a0a',
+                              border: '1px solid rgba(139, 92, 246, 0.2)',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              color: '#ccc',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              maxHeight: '180px',
+                              overflowY: 'auto',
+                              lineHeight: '1.5',
+                              fontFamily: 'monospace',
+                            }}>
+                              {walrusData}
+                            </pre>
+                          )}
+
+                          {walrusFetchState === 'error' && walrusFetchError && (
+                            <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', color: '#ef4444', fontSize: '11px' }}>
+                              Failed to fetch: {walrusFetchError}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Sui Explorer link — only for real transactions */}
+                      {modalIncident.suiTxDigest && (
+                        <>
+                          {modalIncident.walrusBlobId && <div style={{ height: '1px', background: '#1a1a1a', margin: '10px 0' }} />}
+                          <a href={`https://suiscan.xyz/testnet/tx/${modalIncident.suiTxDigest}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#22c55e', textDecoration: 'none', fontSize: '12px' }}>
+                            <ExternalLink size={12} /> View transaction on Sui Explorer
+                          </a>
+                        </>
+                      )}
                     </div>
-                    {modalIncident.suiTxDigest && (
-                      <a href={`https://suiscan.xyz/testnet/tx/${modalIncident.suiTxDigest}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', textDecoration: 'none', marginTop: '8px' }}>
-                        <ExternalLink size={12} /> View anchor on Sui Explorer
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '16px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '12px', color: '#444' }}>⏳ Blockchain verification pending</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -427,6 +533,23 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               gap: '3px'
             }}>
               ⛓ Verified on Sui
+            </span>
+          )}
+          {!incident.suiTxDigest && incident.walrusBlobId && (
+            <span style={{
+              marginLeft: '6px',
+              fontSize: '10px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              color: '#a78bfa',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              padding: '2px 6px',
+              borderRadius: '12px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px'
+            }}>
+              ⬡ Verified on Walrus
             </span>
           )}
         </div>

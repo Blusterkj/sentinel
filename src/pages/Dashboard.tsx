@@ -74,7 +74,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Stats
   const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
   const activeCount = incidents.filter((i) => i.status === 'active').length;
-  const verifiedCount = incidents.filter((i) => !!i.suiTxDigest).length;
+  const verifiedOnSuiCount = incidents.filter((i) => !!i.suiTxDigest).length;
+  const walrusVerifiedCount = incidents.filter((i) => !!i.walrusBlobId).length;
   const myReportsCount = incidents.filter((i) => i.createdByMe).length;
 
   return (
@@ -152,11 +153,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
           color="#888"
         />
         <StatPill
-          icon={<LinkIcon size={12} color="#22c55e" />}
-          label="Verified On-Chain"
-          value={String(verifiedCount)}
-          color="#22c55e"
+          icon={<LinkIcon size={12} color="#a78bfa" />}
+          label="Stored on Walrus"
+          value={String(walrusVerifiedCount)}
+          color="#a78bfa"
         />
+        {verifiedOnSuiCount > 0 && (
+          <StatPill
+            icon={<LinkIcon size={12} color="#22c55e" />}
+            label="Verified on Sui"
+            value={String(verifiedOnSuiCount)}
+            color="#22c55e"
+          />
+        )}
         {!locationObtained && (
           <span style={{ fontSize: '11px', color: '#444', marginLeft: 'auto' }}>
             Allow location for accurate centering

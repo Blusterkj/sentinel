@@ -1,6 +1,10 @@
 // src/App.tsx
 // Main app shell — sidebar nav, page routing, global incident state
 
+// localStorage keys for persistence
+const USER_INCIDENTS_KEY = 'sentinel_user_incidents';
+const INCIDENT_UPDATES_KEY = 'sentinel_incident_updates';
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useWalrusSeeding } from './hooks/useWalrusSeeding';
 import { Landing } from './pages/Landing';
@@ -67,7 +71,6 @@ const SEED_INCIDENTS: Incident[] = [
     timestamp: daysAgo(0, 0, 28),
     reportedBy: 'Shop owner',
     status: 'active',
-    suiTxDigest: '6aB9fXz2L7QkQw8YtR3uPp4vV5cXmWzE1gHjKtN3Ry6s',
   },
   {
     id: 'demo-3',
@@ -99,7 +102,6 @@ const SEED_INCIDENTS: Incident[] = [
     timestamp: daysAgo(1, 8),
     reportedBy: 'Shop owner',
     status: 'active',
-    suiTxDigest: '8bC3vYz9M2WjRn4Ts1uKq6pX3fGhLwJv5aKdMtB7Hy2e',
   },
   // ── 2 DAYS AGO ────────────────────────────
   {
@@ -132,7 +134,6 @@ const SEED_INCIDENTS: Incident[] = [
     timestamp: daysAgo(3, 10),
     reportedBy: 'Traffic police',
     status: 'resolved',
-    suiTxDigest: '3fH7cNw1V5ZjLm8Pr9bTq4sX2vYgKzJt6eRkNxC4Wu5d',
   },
   {
     id: 'demo-9',
@@ -185,7 +186,6 @@ const SEED_INCIDENTS: Incident[] = [
     timestamp: daysAgo(7, 18),
     reportedBy: 'Resident',
     status: 'resolved',
-    suiTxDigest: '9dQ4xTr7J1MkNw2Cv8bVp5sZ3fGhKyLt6aRjMxB9Wu4e',
   },
   // ── 9 DAYS AGO ────────────────────────────
   {
@@ -218,7 +218,6 @@ const SEED_INCIDENTS: Incident[] = [
     timestamp: daysAgo(10, 2),
     reportedBy: 'Home owner',
     status: 'active',
-    suiTxDigest: '5aJ8vWz4L6HkMw9Rt1uPq2sX7fCbGyJt3eKkNxF8Vu3c',
   },
   // ── 11 DAYS AGO ───────────────────────────
   {
@@ -282,7 +281,49 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent'>(
     'landing'
   );
-  const [incidents, setIncidents] = useState<Incident[]>(SEED_INCIDENTS);
+
+  // ── Load persisted incidents on mount ──
+  const [incidents, setIncidents] = useState<Incident[]>(() => {
+    // Start with seed data
+    let merged = [...SEED_INCIDENTS];
+
+    // Load user-created incidents from localStorage
+    try {
+      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
+      if (raw) {
+        const userIncidents: Incident[] = JSON.parse(raw);
+        // Prepend user incidents (newest first) — avoid duplicates by ID
+        const seedIds = new Set(SEED_INCIDENTS.map((s) => s.id));
+        const unique = userIncidents.filter((inc) => !seedIds.has(inc.id));
+        merged = [...unique, ...merged];
+      }
+    } catch {
+      // Corrupted data — ignore
+    }
+
+    // Apply persisted updates (resolved / status changes)
+    try {
+      const raw = localStorage.getItem(INCIDENT_UPDATES_KEY);
+      if (raw) {
+        const updates: Record<string, Partial<Incident>> = JSON.parse(raw);
+        merged = merged
+          .filter((inc) => {
+            const u = updates[inc.id];
+            // If marked as __deleted, remove it
+            return !(u && (u as any).__deleted);
+          })
+          .map((inc) => {
+            const u = updates[inc.id];
+            return u ? { ...inc, ...u } : inc;
+          });
+      }
+    } catch {
+      // Corrupted data — ignore
+    }
+
+    return merged;
+  });
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
@@ -307,8 +348,34 @@ export default function App() {
     window.history.pushState({}, '', path);
   };
 
+  // ── Persist user-created incidents to localStorage ──
+  const persistUserIncident = (incident: Incident) => {
+    try {
+      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
+      const existing: Incident[] = raw ? JSON.parse(raw) : [];
+      // Prepend new incident, dedupe by ID
+      const updated = [incident, ...existing.filter((i) => i.id !== incident.id)];
+      localStorage.setItem(USER_INCIDENTS_KEY, JSON.stringify(updated));
+    } catch {
+      // Storage full or unavailable — not fatal
+    }
+  };
+
+  // ── Persist status updates (resolve, etc.) to localStorage ──
+  const persistIncidentUpdate = (id: string, updates: Partial<Incident> & { __deleted?: boolean }) => {
+    try {
+      const raw = localStorage.getItem(INCIDENT_UPDATES_KEY);
+      const existing: Record<string, Partial<Incident>> = raw ? JSON.parse(raw) : {};
+      existing[id] = { ...(existing[id] || {}), ...updates };
+      localStorage.setItem(INCIDENT_UPDATES_KEY, JSON.stringify(existing));
+    } catch {
+      // Storage full or unavailable — not fatal
+    }
+  };
+
   const handleNewIncident = (incident: Incident) => {
     setIncidents((prev) => [incident, ...prev]);
+    persistUserIncident(incident);
   };
 
   // Callback to update a single incident's fields (used by seeding hook)
@@ -316,10 +383,27 @@ export default function App() {
     setIncidents((prev) =>
       prev.map((inc) => (inc.id === id ? { ...inc, ...updates } : inc))
     );
+    // Persist status changes (e.g. resolved) so they survive refresh
+    if (updates.status) {
+      persistIncidentUpdate(id, updates);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const deleteIncident = useCallback((id: string) => {
     setIncidents((prev) => prev.filter((inc) => inc.id !== id));
+    // Mark as deleted in persisted updates
+    persistIncidentUpdate(id, { __deleted: true } as any);
+    // Also remove from user incidents if it was user-created
+    try {
+      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
+      if (raw) {
+        const existing: Incident[] = JSON.parse(raw);
+        const updated = existing.filter((i) => i.id !== id);
+        localStorage.setItem(USER_INCIDENTS_KEY, JSON.stringify(updated));
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Walrus seeding — stores all seed incidents on-chain on first load
