@@ -369,13 +369,27 @@ const getWeatherEmoji = (code: number, isNight: boolean): string => {
   return '⛈️';
 };
 
+const getAqiColor = (aqi?: number) => {
+  if (aqi === undefined) return '#888';
+  if (aqi <= 50) return '#22c55e';
+  if (aqi <= 100) return '#eab308';
+  if (aqi <= 150) return '#f97316';
+  if (aqi <= 200) return '#ef4444';
+  if (aqi <= 300) return '#a855f7';
+  return '#9f1239';
+};
+
 const WeatherStatus: React.FC = () => {
   const [time, setTime] = useState(new Date());
   const [weather, setWeather] = useState<{
     temp: number;
     code: number;
     city: string;
+    humidity?: number;
+    windSpeed?: number;
+    aqi?: number;
   } | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -387,9 +401,18 @@ const WeatherStatus: React.FC = () => {
       try {
         // Fetch weather from Open-Meteo (free, no API key)
         const weatherRes = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&timezone=auto`
         );
         const weatherData = await weatherRes.json();
+
+        let aqi = 45; // Default fallback
+        try {
+          const aqiRes = await fetch(
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`
+          );
+          const aqiData = await aqiRes.json();
+          if (aqiData?.current?.us_aqi) aqi = aqiData.current.us_aqi;
+        } catch { /* ignore AQI failure */ }
 
         // Reverse geocode city name
         let city = 'Your Location';
@@ -404,11 +427,14 @@ const WeatherStatus: React.FC = () => {
         setWeather({
           temp: Math.round(weatherData.current.temperature_2m),
           code: weatherData.current.weather_code,
+          humidity: weatherData.current.relative_humidity_2m,
+          windSpeed: weatherData.current.wind_speed_10m,
+          aqi,
           city,
         });
       } catch {
         // Fallback to hardcoded if API fails
-        setWeather({ temp: 28, code: 2, city: 'Bengaluru' });
+        setWeather({ temp: 28, code: 2, city: 'Bengaluru', humidity: 65, windSpeed: 12, aqi: 45 });
       }
     };
 
@@ -436,6 +462,7 @@ const WeatherStatus: React.FC = () => {
 
   return (
     <div
+      onClick={() => setExpanded(!expanded)}
       style={{
         position: 'absolute',
         top: '16px',
@@ -446,29 +473,61 @@ const WeatherStatus: React.FC = () => {
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: '14px',
         padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '14px',
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         minWidth: '200px',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
       }}
     >
-      <span style={{ fontSize: '28px', lineHeight: 1 }}>{weatherIcon}</span>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-          <span style={{ fontSize: '18px', fontWeight: 700, color: '#e5e5e5', fontFamily: 'monospace' }}>
-            {temp}
-          </span>
-          <span style={{ fontSize: '11px', color: '#666' }}>{condition}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <span style={{ fontSize: '28px', lineHeight: 1 }}>{weatherIcon}</span>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#e5e5e5', fontFamily: 'monospace' }}>
+              {temp}
+            </span>
+            <span style={{ fontSize: '11px', color: '#666' }}>{condition}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+            <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
+              {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </span>
+            <span style={{ fontSize: '10px', color: '#444' }}>·</span>
+            <span style={{ fontSize: '11px', color: '#666' }}>
+              {cityName} · Good {greeting}
+            </span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-          <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
-            {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-          </span>
-          <span style={{ fontSize: '10px', color: '#444' }}>·</span>
-          <span style={{ fontSize: '11px', color: '#666' }}>
-            {cityName} · Good {greeting}
-          </span>
+      </div>
+
+      {/* Expanded details */}
+      <div
+        style={{
+          maxHeight: expanded ? '100px' : '0',
+          opacity: expanded ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+        }}
+      >
+        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AQI</span>
+            <span style={{ fontSize: '14px', color: getAqiColor(weather?.aqi), fontWeight: 700, fontFamily: 'monospace' }}>
+              {weather?.aqi || '--'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Humidity</span>
+            <span style={{ fontSize: '14px', color: '#e5e5e5', fontWeight: 700, fontFamily: 'monospace' }}>
+              {weather?.humidity || '--'}%
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wind</span>
+            <span style={{ fontSize: '14px', color: '#e5e5e5', fontWeight: 700, fontFamily: 'monospace' }}>
+              {weather?.windSpeed || '--'} <span style={{ fontSize: '10px', color: '#888' }}>km/h</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
