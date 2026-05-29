@@ -509,18 +509,25 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           marginBottom: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
-          <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>
             {TYPE_ICONS[incident.type]}
           </span>
           <span
-            style={{ fontSize: '13px', fontWeight: 600, color: '#ddd', whiteSpace: 'nowrap' }}
+            style={{ 
+              fontSize: '13px', 
+              fontWeight: 600, 
+              color: '#ddd', 
+              lineHeight: '1.3',
+              flex: 1,
+              wordBreak: 'break-word',
+              marginTop: '1px'
+            }}
           >
             {TYPE_LABELS[incident.type]}
           </span>
           {incident.suiTxDigest && (
             <span style={{
-              marginLeft: '6px',
               fontSize: '10px',
               background: 'rgba(34, 197, 94, 0.1)',
               color: '#22c55e',
@@ -530,14 +537,14 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '3px',
+              flexShrink: 0
             }}>
               ⛓ Verified on Sui
             </span>
           )}
           {!incident.suiTxDigest && incident.walrusBlobId && (
             <span style={{
-              marginLeft: '6px',
               fontSize: '10px',
               background: 'rgba(139, 92, 246, 0.1)',
               color: '#a78bfa',
@@ -547,7 +554,8 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '3px',
+              flexShrink: 0
             }}>
               ⬡ Verified on Walrus
             </span>
