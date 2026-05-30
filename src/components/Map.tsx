@@ -14,6 +14,7 @@ interface MapProps {
   center: [number, number];
   onIncidentClick?: (incident: Incident) => void;
   onClusterClick?: (incidents: Incident[]) => void;
+  selectedIncident?: Incident | null;
 }
 
 
@@ -96,7 +97,7 @@ function createClusterIcon(cluster: any) {
   });
 }
 
-export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, onClusterClick }) => {
+export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, onClusterClick, selectedIncident }) => {
   return (
     <MapContainer
       center={center}
@@ -197,6 +198,11 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, on
               severity={incident.severity}
               // @ts-ignore
               incident={incident}
+              ref={(r) => {
+                if (r && selectedIncident?.id === incident.id) {
+                  r.openPopup();
+                }
+              }}
             >
               {/* @ts-ignore - popup closeButton prop type mismatch */}
               <Popup closeButton={false} className="sentinel-popup">

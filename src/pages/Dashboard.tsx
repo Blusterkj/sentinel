@@ -207,6 +207,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <Map
             incidents={incidents}
             center={center}
+            selectedIncident={selectedIncident}
             onIncidentClick={(i) => {
               setSelectedCluster(null);
               setSelectedIncident(i);
@@ -293,59 +294,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
 
-          {/* Selected incident overlay */}
-          {selectedIncident && (
-            <div
-              className="fade-in-up"
-              style={{
-                position: 'absolute',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(17, 17, 17, 0.95)',
-                border: '1px solid #2a2a2a',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                backdropFilter: 'blur(12px)',
-                minWidth: '320px',
-                maxWidth: '420px',
-                zIndex: 1000,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                }}
-              >
-                <SeverityBadge severity={selectedIncident.severity} pulse />
-                <button
-                  onClick={() => setSelectedIncident(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#555',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    lineHeight: 1,
-                    padding: '0',
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              <p style={{ fontSize: '13px', color: '#ccc', lineHeight: '1.5', marginBottom: '8px' }}>
-                {selectedIncident.description}
-              </p>
-              <div style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>
-                {selectedIncident.location.address} ·{' '}
-                {new Date(selectedIncident.timestamp).toLocaleTimeString()}
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Feed sidebar */}
