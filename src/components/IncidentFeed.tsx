@@ -4,9 +4,10 @@ import React from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
 import type { Incident, IncidentType } from '../types/incident';
-import { SeverityBadge } from './SeverityBadge';
+import { SeverityBadge, getSeverityColor } from './SeverityBadge';
 
 interface IncidentFeedProps {
   incidents: Incident[];
@@ -212,11 +213,33 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   keyboard={false}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="" />
-                  <CircleMarker
-                    center={[modalIncident.location.lat, modalIncident.location.lng]}
-                    radius={10}
-                    pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 2 }}
-                  />
+                  {(() => {
+                    const color = getSeverityColor(modalIncident.severity);
+                    const customIcon = L.divIcon({
+                      html: `<div style="
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        background: ${color}33;
+                        border: 2px solid ${color};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 16px;
+                        box-shadow: 0 0 20px ${color}99;
+                        backdrop-filter: blur(4px);
+                      ">${TYPE_ICONS[modalIncident.type]}</div>`,
+                      className: '', // Prevents default leaflet styling
+                      iconSize: [32, 32],
+                      iconAnchor: [16, 16],
+                    });
+                    return (
+                      <Marker
+                        position={[modalIncident.location.lat, modalIncident.location.lng]}
+                        icon={customIcon}
+                      />
+                    );
+                  })()}
                 </MapContainer>
               </a>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)', pointerEvents: 'none' }} />
