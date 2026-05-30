@@ -284,6 +284,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <span style={{ fontSize: '11px', color: '#666', fontFamily: 'monospace' }}>
                         {new Date(inc.timestamp).toLocaleTimeString()}
                       </span>
+                      {inc.status === 'resolved' && (
+                        <span
+                          style={{
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            color: '#22c55e',
+                            background: 'rgba(34, 197, 94, 0.2)',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                            fontFamily: 'monospace',
+                            marginLeft: 'auto'
+                          }}
+                        >
+                          RESOLVED
+                        </span>
+                      )}
                     </div>
                     <p style={{ fontSize: '12px', color: '#999', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {inc.description}
