@@ -4,6 +4,7 @@ import React from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
+import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import type { Incident, IncidentType } from '../types/incident';
 import { SeverityBadge } from './SeverityBadge';
 
@@ -198,58 +199,25 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 rel="noreferrer"
                 style={{ display: 'block', width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
               >
-                {/* Dark CartoDB tiles — matching main dashboard map */}
-                {(() => {
-                  const z = 15;
-                  const lat = modalIncident.location.lat;
-                  const lng = modalIncident.location.lng;
-                  const n = Math.pow(2, z);
-                  const centerX = ((lng + 180) / 360) * n;
-                  const centerY = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
-                  const baseTileX = Math.floor(centerX);
-                  const baseTileY = Math.floor(centerY);
-                  // Render a 3x3 grid of tiles to fill the 480x140 area
-                  const tiles = [];
-                  for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                      const tx = baseTileX + dx;
-                      const ty = baseTileY + dy;
-                      // Pixel offset: each tile is 256px, offset from center
-                      const pixelOffsetX = (dx * 256) - ((centerX - baseTileX) * 256) + 240;
-                      const pixelOffsetY = (dy * 256) - ((centerY - baseTileY) * 256) + 70;
-                      tiles.push(
-                        <img
-                          key={`${tx}-${ty}`}
-                          src={`https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png`}
-                          alt=""
-                          style={{
-                            position: 'absolute',
-                            left: `${pixelOffsetX}px`,
-                            top: `${pixelOffsetY}px`,
-                            width: '256px',
-                            height: '256px',
-                            pointerEvents: 'none',
-                          }}
-                        />
-                      );
-                    }
-                  }
-                  return tiles;
-                })()}
-                {/* Red marker dot at center */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '14px',
-                  height: '14px',
-                  background: '#ef4444',
-                  borderRadius: '50%',
-                  border: '2px solid #fff',
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)',
-                  zIndex: 10,
-                }} />
+                <MapContainer
+                  center={[modalIncident.location.lat, modalIncident.location.lng]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%', background: '#0d1117' }}
+                  zoomControl={false}
+                  attributionControl={false}
+                  dragging={false}
+                  scrollWheelZoom={false}
+                  doubleClickZoom={false}
+                  touchZoom={false}
+                  keyboard={false}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="" />
+                  <CircleMarker
+                    center={[modalIncident.location.lat, modalIncident.location.lng]}
+                    radius={10}
+                    pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 2 }}
+                  />
+                </MapContainer>
               </a>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)', pointerEvents: 'none' }} />
               <button onClick={() => { setModalIncident(null); setShowProof(false); }} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
