@@ -2,7 +2,7 @@
 // Dark-themed interactive map with severity-colored incident pins + marker clustering
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Popup, useMap, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Popup, useMap, Marker, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -12,6 +12,7 @@ import { getSeverityColor } from './SeverityBadge';
 interface MapProps {
   incidents: Incident[];
   center: [number, number];
+  userLocation?: [number, number];
   onIncidentClick?: (incident: Incident) => void;
   onClusterClick?: (incidents: Incident[]) => void;
   selectedIncident?: Incident | null;
@@ -48,6 +49,62 @@ function MapResizer() {
     observer.observe(container);
     return () => observer.disconnect();
   }, [map]);
+  return null;
+}
+
+// Shows a button if user pans > 80km away from their location
+function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) {
+  const map = useMap();
+  const [distance, setDistance] = React.useState(0);
+
+  // Update distance whenever the map finishes moving
+  useMapEvents({
+    moveend: () => {
+      const currentCenter = map.getCenter();
+      const baseLatLng = L.latLng(userLocation[0], userLocation[1]);
+      const distMeters = currentCenter.distanceTo(baseLatLng);
+      setDistance(distMeters);
+    }
+  });
+
+  // Check on initial mount too
+  useEffect(() => {
+    const currentCenter = map.getCenter();
+    const baseLatLng = L.latLng(userLocation[0], userLocation[1]);
+    const distMeters = currentCenter.distanceTo(baseLatLng);
+    setDistance(distMeters);
+  }, [map, userLocation]);
+
+  if (distance > 80000) { // 80km
+    return (
+      <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 1000 }}>
+        <button
+          onClick={() => {
+            map.flyTo(userLocation, 12, { animate: true, duration: 1.5 });
+          }}
+          className="glass-card"
+          style={{
+            padding: '10px 16px',
+            color: '#fff',
+            border: '1px solid #333',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#222')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(17,17,17,0.85)')}
+        >
+          <span>📍</span> Navigate to your location
+        </button>
+      </div>
+    );
+  }
   return null;
 }
 
@@ -97,7 +154,7 @@ function createClusterIcon(cluster: any) {
   });
 }
 
-export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, onClusterClick, selectedIncident }) => {
+export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onIncidentClick, onClusterClick, selectedIncident }) => {
   return (
     <MapContainer
       center={center}
@@ -107,11 +164,11 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, on
       attributionControl={false}
     >
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution=""
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       />
       <MapController center={center} />
       <MapResizer />
+      {userLocation && <ReturnToLocation userLocation={userLocation} />}
 
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}

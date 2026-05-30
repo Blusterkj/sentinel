@@ -50,6 +50,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
     return DEFAULT_CENTER;
   });
+  const [userLocation, setUserLocation] = useState<[number, number]>(DEFAULT_CENTER);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<Incident[] | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
@@ -61,7 +62,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setCenter([pos.coords.latitude, pos.coords.longitude]);
+          const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setCenter(loc);
+          setUserLocation(loc);
           setLocationObtained(true);
         },
         () => {
@@ -207,6 +210,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <Map
             incidents={incidents}
             center={center}
+            userLocation={userLocation}
             selectedIncident={selectedIncident}
             onIncidentClick={(i) => {
               setSelectedCluster(null);
