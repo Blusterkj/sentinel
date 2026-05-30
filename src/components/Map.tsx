@@ -250,19 +250,36 @@ const IncidentPopup: React.FC<{ incident: Incident }> = ({ incident }) => {
         <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
           {typeLabels[incident.type] || incident.type}
         </span>
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 700,
-            color: color,
-            background: `${color}20`,
-            padding: '2px 6px',
-            borderRadius: '3px',
-            fontFamily: 'monospace',
-          }}
-        >
-          {incident.severity.toUpperCase()}
-        </span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {incident.status === 'resolved' && (
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#22c55e',
+                background: 'rgba(34, 197, 94, 0.2)',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontFamily: 'monospace',
+              }}
+            >
+              RESOLVED
+            </span>
+          )}
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              color: color,
+              background: `${color}20`,
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontFamily: 'monospace',
+            }}
+          >
+            {incident.severity.toUpperCase()}
+          </span>
+        </div>
       </div>
       <p style={{ fontSize: '12px', color: '#888', lineHeight: '1.4', marginBottom: '8px' }}>
         {incident.description}
