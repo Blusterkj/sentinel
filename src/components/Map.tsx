@@ -75,7 +75,7 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
     setDistance(distMeters);
   }, [map, userLocation]);
 
-  if (distance > 80000) { // 80km
+  if (distance > 30000) { // 30km
     return (
       <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 1000 }}>
         <button
