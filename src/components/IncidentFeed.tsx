@@ -326,7 +326,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                               setWalrusData(null);
                               setWalrusFetchError(null);
                               try {
-                                const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/${modalIncident.walrusBlobId}`);
+                                const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${modalIncident.walrusBlobId}`);
                                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                                 const text = await res.text();
                                 setWalrusData(text);

@@ -1,31 +1,21 @@
 /**
- * seed-walrus.mjs — One-time script to store all 21 seed incidents on Walrus via MemWal.
+ * seed-walrus.mjs — Store all 21 seed incidents directly on Walrus.
+ *
+ * Uses the Walrus Publisher HTTP API directly (not MemWal) so the blob IDs
+ * are real Walrus blob IDs fetchable from the aggregator.
  *
  * Run from the sentinel project root:
  *   node seed-walrus.mjs
  *
- * This runs in Node.js (no CORS issues), stores each incident sequentially,
- * and saves the mapping of incident ID → real blob ID to public/blob-map.json.
- * The React app reads this file to display real, verifiable Walrus blob IDs.
+ * Output: public/blob-map.json  (incident ID → Walrus blob ID)
  */
 
-import { MemWal } from '@mysten-incubation/memwal';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 
 // ─── Config ──────────────────────────────────────────────────
-const MEMWAL_KEY = 'a719e77e3ed1e8215b73daf2a9381979a43c3e012750c36a63f6266897f264b5';
-const MEMWAL_ACCOUNT_ID = '0xb84fc39e2a39d6cf1dcc5dd87b71132634ca698c2951e870bdb9e6f8b2dce227';
-const MEMWAL_SERVER_URL = 'https://relayer.memwal.ai';
-const NAMESPACE = 'sentinel';
+const PUBLISHER_URL = 'https://publisher.walrus-testnet.walrus.space/v1/blobs';
+const EPOCHS = 5; // store for 5 epochs
 const OUTPUT_FILE = 'public/blob-map.json';
-
-// ─── MemWal Client ───────────────────────────────────────────
-const memwal = MemWal.create({
-  key: MEMWAL_KEY,
-  accountId: MEMWAL_ACCOUNT_ID,
-  serverUrl: MEMWAL_SERVER_URL,
-  namespace: NAMESPACE,
-});
 
 // ─── Seed Incidents ──────────────────────────────────────────
 const daysAgo = (d, h = 0, m = 0) =>
@@ -55,7 +45,7 @@ const SEED_INCIDENTS = [
   { id: 'demo-21', type: 'natural_disaster', severity: 'low', description: 'Minor waterlogging reported in Rajajinagar 4th Block underpass. Water depth about 6 inches. Traffic able to pass slowly. BBMP drain clearing scheduled.', location: { lat: 12.9905, lng: 77.5545, address: 'Rajajinagar 4th Block, Bengaluru' }, timestamp: daysAgo(13, 15), reportedBy: 'Resident', status: 'resolved' },
 ];
 
-// ─── Format text for MemWal ──────────────────────────────────
+// ─── Format text for storage ─────────────────────────────────
 function formatIncidentText(incident) {
   return `SENTINEL INCIDENT REPORT
 ID: ${incident.id}
@@ -68,10 +58,37 @@ Reported By: ${incident.reportedBy}
 Status: ${incident.status}`;
 }
 
+// ─── Store a blob directly to Walrus publisher ───────────────
+async function storeOnWalrus(text) {
+  const url = `${PUBLISHER_URL}?epochs=${EPOCHS}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    body: text,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Walrus publisher returned ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+
+  // Response can be { newlyCreated: { blobObject: { blobId } } }
+  // or { alreadyCertified: { blobId } }
+  if (data.newlyCreated) {
+    return data.newlyCreated.blobObject.blobId;
+  } else if (data.alreadyCertified) {
+    return data.alreadyCertified.blobId;
+  } else {
+    throw new Error(`Unexpected Walrus response: ${JSON.stringify(data)}`);
+  }
+}
+
 // ─── Main ────────────────────────────────────────────────────
 async function main() {
-  console.log('\n🔗 SENTINEL — Walrus Seed Script');
-  console.log('================================\n');
+  console.log('\n🔗 SENTINEL — Walrus Direct Seed Script');
+  console.log('========================================\n');
 
   // Load existing blob map to resume from where we left off
   let blobMap = {};
@@ -84,10 +101,29 @@ async function main() {
     }
   }
 
+  // Verify existing blobs are still alive
+  const AGGREGATOR_URL = 'https://aggregator.walrus-testnet.walrus.space/v1/blobs';
+  if (Object.keys(blobMap).length > 0) {
+    const testId = Object.keys(blobMap)[0];
+    const testBlobId = blobMap[testId];
+    process.stdout.write(`🔍 Checking if existing blobs are alive (${testId})... `);
+    try {
+      const checkRes = await fetch(`${AGGREGATOR_URL}/${testBlobId}`);
+      if (checkRes.ok) {
+        console.log('✅ Still alive! Skipping already-seeded entries.\n');
+      } else {
+        console.log('❌ Expired! Re-seeding all.\n');
+        blobMap = {};
+      }
+    } catch {
+      console.log('⚠️  Could not verify, re-seeding all.\n');
+      blobMap = {};
+    }
+  }
+
   const toSeed = SEED_INCIDENTS.filter((inc) => !blobMap[inc.id]);
   if (toSeed.length === 0) {
-    console.log('✅ All 21 incidents already seeded! Nothing to do.\n');
-    console.log('Blob map:', JSON.stringify(blobMap, null, 2));
+    console.log('✅ All 21 incidents already seeded and verified! Nothing to do.\n');
     return;
   }
 
@@ -104,14 +140,10 @@ async function main() {
     process.stdout.write(`${progress} ${incident.id} (${incident.type}) → `);
 
     try {
-      const result = await memwal.rememberAndWait(text, undefined, {
-        pollIntervalMs: 2000,
-        timeoutMs: 120000,
-      });
-
-      blobMap[incident.id] = result.blob_id;
+      const blobId = await storeOnWalrus(text);
+      blobMap[incident.id] = blobId;
       successes++;
-      console.log(`✅ ${result.blob_id}`);
+      console.log(`✅ ${blobId}`);
 
       // Save after each success so we can resume
       writeFileSync(OUTPUT_FILE, JSON.stringify(blobMap, null, 2));
@@ -122,20 +154,37 @@ async function main() {
 
     // Gentle delay between requests
     if (i < toSeed.length - 1) {
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 500));
     }
   }
 
-  console.log('\n================================');
+  console.log('\n========================================');
   console.log(`✅ Successes: ${successes}`);
   console.log(`❌ Failures:  ${failures}`);
   console.log(`📊 Total in blob-map: ${Object.keys(blobMap).length}/21`);
   console.log(`📁 Saved to: ${OUTPUT_FILE}\n`);
 
-  if (Object.keys(blobMap).length > 0) {
-    console.log('🎯 The React app will automatically load real blob IDs from blob-map.json');
-    console.log('   Run `npm run dev` and check the Memory page!\n');
+  // Verify one blob is readable
+  if (successes > 0) {
+    const firstId = Object.keys(blobMap)[0];
+    const firstBlobId = blobMap[firstId];
+    process.stdout.write(`🔍 Verifying read from aggregator (${firstId})... `);
+    try {
+      const verifyRes = await fetch(`${AGGREGATOR_URL}/${firstBlobId}`);
+      if (verifyRes.ok) {
+        const content = await verifyRes.text();
+        console.log(`✅ Got ${content.length} chars back`);
+        console.log(`   Preview: "${content.substring(0, 60)}..."\n`);
+      } else {
+        console.log(`⚠️  HTTP ${verifyRes.status}\n`);
+      }
+    } catch (err) {
+      console.log(`⚠️  ${err.message}\n`);
+    }
   }
+
+  console.log('🎯 Blob IDs are now REAL Walrus blobs, fetchable from the aggregator!');
+  console.log('   The React app will load them from blob-map.json on startup.\n');
 }
 
 main().catch((err) => {
