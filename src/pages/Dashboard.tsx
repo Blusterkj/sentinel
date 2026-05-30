@@ -51,6 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return DEFAULT_CENTER;
   });
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [selectedCluster, setSelectedCluster] = useState<Incident[] | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const account = useCurrentAccount();
@@ -70,6 +71,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
       );
     }
   }, []);
+
+  // Sync selectedIncident with latest data from incidents list (or clear if deleted)
+  useEffect(() => {
+    if (selectedIncident) {
+      const current = incidents.find((i) => i.id === selectedIncident.id);
+      if (!current) {
+        setSelectedIncident(null);
+      } else if (current !== selectedIncident) {
+        setSelectedIncident(current);
+      }
+    }
+  }, [incidents, selectedIncident]);
+
+  // Sync selectedCluster or clear if any incidents are deleted
+  useEffect(() => {
+    if (selectedCluster) {
+      const updatedCluster = selectedCluster.map(inc => incidents.find(i => i.id === inc.id)).filter(Boolean) as Incident[];
+      if (updatedCluster.length === 0) {
+        setSelectedCluster(null);
+      } else if (JSON.stringify(updatedCluster) !== JSON.stringify(selectedCluster)) {
+        setSelectedCluster(updatedCluster);
+      }
+    }
+  }, [incidents, selectedCluster]);
 
   // Stats
   const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
@@ -182,8 +207,91 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <Map
             incidents={incidents}
             center={center}
-            onIncidentClick={setSelectedIncident}
+            onIncidentClick={(i) => {
+              setSelectedCluster(null);
+              setSelectedIncident(i);
+            }}
+            onClusterClick={(clusterIncidents) => {
+              setSelectedIncident(null);
+              setSelectedCluster(clusterIncidents);
+            }}
           />
+
+          {/* Selected cluster overlay */}
+          {selectedCluster && (
+            <div
+              className="fade-in-up"
+              style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(17, 17, 17, 0.95)',
+                border: '1px solid #2a2a2a',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                backdropFilter: 'blur(12px)',
+                width: '380px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                zIndex: 1000,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px',
+                  borderBottom: '1px solid #333',
+                  paddingBottom: '8px',
+                }}
+              >
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e5e5' }}>
+                  {selectedCluster.length} Incidents in this area
+                </span>
+                <button
+                  onClick={() => setSelectedCluster(null)}
+                  style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedCluster.map((inc) => (
+                  <div 
+                    key={inc.id} 
+                    onClick={() => {
+                      setSelectedCluster(null);
+                      setSelectedIncident(inc);
+                      setCenter([inc.location.lat, inc.location.lng]);
+                    }}
+                    style={{ 
+                      padding: '10px', 
+                      background: '#151515', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      border: '1px solid #222',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#1a1a1a')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#151515')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <SeverityBadge severity={inc.severity} pulse={false} />
+                      <span style={{ fontSize: '11px', color: '#666', fontFamily: 'monospace' }}>
+                        {new Date(inc.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#999', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {inc.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Selected incident overlay */}
           {selectedIncident && (

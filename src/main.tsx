@@ -1,4 +1,4 @@
-import React from 'react'
+
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
@@ -21,13 +21,11 @@ link2.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;70
 document.head.appendChild(link2)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <SuiClientProvider networks={{ testnet: { url: 'https://fullnode.testnet.sui.io:443', network: 'testnet' as any } }} defaultNetwork="testnet">
-        <WalletProvider autoConnect={true}>
-          <App />
-        </WalletProvider>
-      </SuiClientProvider>
-    </QueryClientProvider>
-  </React.StrictMode>,
+  <QueryClientProvider client={queryClient}>
+    <SuiClientProvider networks={{ testnet: { url: 'https://fullnode.testnet.sui.io:443', network: 'testnet' as any } }} defaultNetwork="testnet">
+      <WalletProvider autoConnect={true}>
+        <App />
+      </WalletProvider>
+    </SuiClientProvider>
+  </QueryClientProvider>
 )

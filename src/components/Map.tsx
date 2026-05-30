@@ -2,7 +2,7 @@
 // Dark-themed interactive map with severity-colored incident pins + marker clustering
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Popup, useMap, Marker } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,20 +13,25 @@ interface MapProps {
   incidents: Incident[];
   center: [number, number];
   onIncidentClick?: (incident: Incident) => void;
+  onClusterClick?: (incidents: Incident[]) => void;
 }
 
-const severityRadii: Record<string, number> = {
-  low: 10,
-  medium: 14,
-  high: 18,
-  critical: 22,
+
+
+const TYPE_ICONS: Record<string, string> = {
+  medical: '🏥',
+  fire: '🔥',
+  crime: '🚨',
+  accident: '💥',
+  natural_disaster: '🌪️',
+  other: '⚠️',
 };
 
-// Auto-pan to center when it changes
+// Auto-pan and zoom to center when it changes
 function MapController({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
+    map.setView(center, Math.max(map.getZoom(), 16), { animate: true });
   }, [center, map]);
   return null;
 }
@@ -91,7 +96,7 @@ function createClusterIcon(cluster: any) {
   });
 }
 
-export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick }) => {
+export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick, onClusterClick }) => {
   return (
     <MapContainer
       center={center}
@@ -110,63 +115,94 @@ export const Map: React.FC<MapProps> = ({ incidents, center, onIncidentClick }) 
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}
         maxClusterRadius={60}
-        spiderfyOnMaxZoom={true}
+        spiderfyOnMaxZoom={false}
         showCoverageOnHover={false}
-        zoomToBoundsOnClick={true}
+        zoomToBoundsOnClick={false}
         disableClusteringAtZoom={16}
         animate={true}
         chunkedLoading={true}
+        eventHandlers={{
+          clusterclick: (e: any) => {
+            if (e.layer && e.layer.getAllChildMarkers) {
+              const markers = e.layer.getAllChildMarkers();
+              const clusterIncidents = markers.map((m: any) => m.options.incident).filter(Boolean);
+              onClusterClick?.(clusterIncidents);
+            }
+          }
+        }}
+        onClick={(e: any) => {
+          if (e.layer && e.layer.getAllChildMarkers) {
+             const markers = e.layer.getAllChildMarkers();
+             const clusterIncidents = markers.map((m: any) => m.options.incident).filter(Boolean);
+             onClusterClick?.(clusterIncidents);
+          }
+        }}
+        // @ts-ignore - some versions of react-leaflet-cluster use this prop directly
+        onClusterClick={(cluster: any) => {
+          if (cluster && cluster.layer && cluster.layer.getAllChildMarkers) {
+             const markers = cluster.layer.getAllChildMarkers();
+             const clusterIncidents = markers.map((m: any) => m.options.incident).filter(Boolean);
+             onClusterClick?.(clusterIncidents);
+          }
+        }}
       >
         {incidents.map((incident) => {
           const color = getSeverityColor(incident.severity);
-          const radius = severityRadii[incident.severity] || 12;
           const isHighOrCritical = incident.severity === 'high' || incident.severity === 'critical';
-          const pulsePadding = incident.severity === 'critical' ? 12 : incident.severity === 'high' ? 8 : 6;
+          const glow = isHighOrCritical ? `0 0 16px ${color}` : 'none';
+          
+          const iconHtml = `
+            <div style="
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              background: #111;
+              border: 2px solid ${color};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+              box-shadow: ${glow};
+              position: relative;
+            ">
+              ${TYPE_ICONS[incident.type] || '⚠️'}
+              ${isHighOrCritical ? `
+                <div style="
+                  position: absolute;
+                  inset: -6px;
+                  border-radius: 50%;
+                  border: 1px dashed ${color};
+                  opacity: 0.4;
+                "></div>
+              ` : ''}
+            </div>
+          `;
+
+          const customIcon = L.divIcon({
+            html: iconHtml,
+            className: 'sentinel-incident-icon',
+            iconSize: L.point(32, 32),
+            iconAnchor: L.point(16, 16),
+          });
 
           return (
-            <React.Fragment key={incident.id}>
-              {/* Outer pulse ring for all severities */}
-              {/* @ts-ignore - react-leaflet typing issue with radius */}
-              <CircleMarker
-                center={[incident.location.lat, incident.location.lng]}
-                radius={radius + pulsePadding}
-                pathOptions={{
-                  color: color,
-                  fillColor: color,
-                  fillOpacity: 0.1,
-                  weight: 1,
-                  opacity: 0.4,
-                  dashArray: '4 4',
-                }}
-              />
-
-              {/* Main marker — pass severity as option for cluster coloring */}
-              {/* @ts-ignore - react-leaflet typing issue with radius and severity */}
-              <CircleMarker
-                center={[incident.location.lat, incident.location.lng]}
-                radius={radius}
-                pathOptions={{
-                  color: color,
-                  fillColor: color,
-                  fillOpacity: isHighOrCritical ? 0.85 : 0.7,
-                  weight: isHighOrCritical ? 2 : 1.5,
-                  opacity: 1,
-                }}
-                eventHandlers={{
-                  click: () => onIncidentClick?.(incident),
-                }}
-                // @ts-ignore — custom option for cluster icon coloring
-                severity={incident.severity}
-              >
-                {/* @ts-ignore - popup closeButton prop type mismatch */}
-                <Popup
-                  closeButton={false}
-                  className="sentinel-popup"
-                >
-                  <IncidentPopup incident={incident} />
-                </Popup>
-              </CircleMarker>
-            </React.Fragment>
+            <Marker
+              key={incident.id}
+              position={[incident.location.lat, incident.location.lng]}
+              icon={customIcon}
+              eventHandlers={{
+                click: () => onIncidentClick?.(incident),
+              }}
+              // @ts-ignore
+              severity={incident.severity}
+              // @ts-ignore
+              incident={incident}
+            >
+              {/* @ts-ignore - popup closeButton prop type mismatch */}
+              <Popup closeButton={false} className="sentinel-popup">
+                <IncidentPopup incident={incident} />
+              </Popup>
+            </Marker>
           );
         })}
       </MarkerClusterGroup>
