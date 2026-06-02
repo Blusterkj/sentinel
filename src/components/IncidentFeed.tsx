@@ -65,16 +65,26 @@ function useConfirmation(incidentId: string, walletAddress: string | undefined) 
     return parseInt(localStorage.getItem(getConfirmCountKey(incidentId)) || '0', 10);
   });
 
-  const confirm = React.useCallback(() => {
-    if (!walletAddress || confirmed) return;
-    localStorage.setItem(getConfirmKey(incidentId, walletAddress), '1');
-    const newCount = count + 1;
-    localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
-    setConfirmed(true);
-    setCount(newCount);
+  const toggle = React.useCallback(() => {
+    if (!walletAddress) return;
+    if (confirmed) {
+      // Un-confirm
+      localStorage.removeItem(getConfirmKey(incidentId, walletAddress));
+      const newCount = Math.max(0, count - 1);
+      localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
+      setConfirmed(false);
+      setCount(newCount);
+    } else {
+      // Confirm
+      localStorage.setItem(getConfirmKey(incidentId, walletAddress), '1');
+      const newCount = count + 1;
+      localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
+      setConfirmed(true);
+      setCount(newCount);
+    }
   }, [walletAddress, confirmed, incidentId, count]);
 
-  return { confirmed, count, confirm };
+  return { confirmed, count, confirm: toggle };
 }
 
 export const IncidentFeed: React.FC<IncidentFeedProps> = ({
@@ -343,18 +353,27 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 {modalAccount && modalAccount.address !== modalIncident.reporter && modalIncident.status !== 'resolved' && (
                   <button
                     onClick={() => {
-                      if (!modalAccount?.address || modalConfirmed) return;
-                      localStorage.setItem(getConfirmKey(modalIncident.id, modalAccount.address), '1');
-                      const newCount = modalConfirmCount + 1;
-                      localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
-                      setModalConfirmed(true);
-                      setModalConfirmCount(newCount);
+                      if (!modalAccount?.address) return;
+                      if (modalConfirmed) {
+                        // Un-confirm
+                        localStorage.removeItem(getConfirmKey(modalIncident.id, modalAccount.address));
+                        const newCount = Math.max(0, modalConfirmCount - 1);
+                        localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
+                        setModalConfirmed(false);
+                        setModalConfirmCount(newCount);
+                      } else {
+                        // Confirm
+                        localStorage.setItem(getConfirmKey(modalIncident.id, modalAccount.address), '1');
+                        const newCount = modalConfirmCount + 1;
+                        localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
+                        setModalConfirmed(true);
+                        setModalConfirmCount(newCount);
+                      }
                     }}
-                    disabled={modalConfirmed}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: modalConfirmed ? 'rgba(59,130,246,0.15)' : '#1a1a1a', border: modalConfirmed ? '1px solid rgba(59,130,246,0.4)' : '1px solid #2a2a2a', borderRadius: '8px', color: modalConfirmed ? '#60a5fa' : '#ccc', cursor: modalConfirmed ? 'default' : 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: modalConfirmed ? 'rgba(59,130,246,0.15)' : '#1a1a1a', border: modalConfirmed ? '1px solid rgba(59,130,246,0.4)' : '1px solid #2a2a2a', borderRadius: '8px', color: modalConfirmed ? '#60a5fa' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
                   >
                     <ThumbsUp size={14} />
-                    {modalConfirmed ? `Confirmed (${modalConfirmCount})` : `Confirm (${modalConfirmCount})`}
+                    {modalConfirmed ? `✓ Confirmed (${modalConfirmCount})` : `Confirm (${modalConfirmCount})`}
                   </button>
                 )}
                 {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
@@ -699,7 +718,6 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       {account && account.address !== incident.reporter && !resolvedLocal && (
         <button
           onClick={(e) => { e.stopPropagation(); confirm(); }}
-          disabled={confirmed}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -716,12 +734,12 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
             color: confirmed ? '#60a5fa' : '#666',
             fontSize: '11px',
             fontWeight: 600,
-            cursor: confirmed ? 'default' : 'pointer',
+            cursor: 'pointer',
             transition: 'all 0.2s',
           }}
         >
           <ThumbsUp size={11} />
-          {confirmed ? `Confirmed (${confirmCount})` : `Confirm (${confirmCount})`}
+          {confirmed ? `✓ Confirmed (${confirmCount})` : `Confirm (${confirmCount})`}
         </button>
       )}
 

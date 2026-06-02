@@ -1,8 +1,8 @@
 // src/components/SosButton.tsx
-// Floating SOS panic button — gets GPS, stores on Walrus, executes Sui tx
+// SOS panic button — anchored below the weather card in the map area
 
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Siren } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { v4 as uuidv4 } from 'uuid';
@@ -76,7 +76,6 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
       // Step 4: Store on Walrus
       let blobId: string | null = null;
       let txDigest: string | null = null;
-      let suiObjectId: string | undefined = undefined;
 
       try {
         const storeRes = await fetch(`${PROXY_URL}/api/store`, {
@@ -110,12 +109,9 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         walrusBlobId: blobId || undefined,
         walrusStatus: blobId ? 'synced' : 'pending',
         suiTxDigest: txDigest || undefined,
-        suiObjectId: suiObjectId || undefined,
       };
 
-      // Step 6: Add to live feed
       onSosSubmitted(storedIncident);
-
       showToast('🆘 SOS Alert Sent — Help is on the way. Your incident is recorded on-chain.', 'success');
     } catch (err: any) {
       console.error('SOS error:', err);
@@ -126,32 +122,32 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
   };
 
   const toastColors = {
-    success: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.4)', text: '#4ade80' },
-    error: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)', text: '#f87171' },
-    warning: { bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.4)', text: '#facc15' },
+    success: { bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.4)',  text: '#4ade80' },
+    error:   { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.4)',   text: '#f87171' },
+    warning: { bg: 'rgba(234,179,8,0.12)',   border: 'rgba(234,179,8,0.4)',   text: '#facc15' },
   };
 
   return (
     <>
-      {/* Toast */}
+      {/* Toast — sits just below the SOS card */}
       {toast && (
         <div
           className="fade-in-up"
           style={{
-            position: 'fixed',
-            bottom: '110px',
-            right: '24px',
-            zIndex: 9998,
+            position: 'absolute',
+            top: '296px',
+            right: '16px',
+            zIndex: 850,
             background: toastColors[toast.type].bg,
             border: `1px solid ${toastColors[toast.type].border}`,
             backdropFilter: 'blur(12px)',
             color: toastColors[toast.type].text,
-            padding: '12px 18px',
+            padding: '10px 14px',
             borderRadius: '10px',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 600,
-            maxWidth: '300px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            maxWidth: '220px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             lineHeight: '1.4',
           }}
         >
@@ -159,50 +155,59 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         </div>
       )}
 
-      {/* SOS Button */}
-      <button
-        onClick={handleSos}
-        disabled={state === 'submitting'}
-        title="SOS Emergency Alert"
+      {/* SOS Card — sits directly below the weather card (weather is ~155px at collapsed height) */}
+      <div
         style={{
-          position: 'fixed',
-          bottom: '28px',
-          right: '24px',
-          zIndex: 9999,
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          background: state === 'submitting' ? '#7f1d1d' : '#dc2626',
-          border: '2px solid rgba(255,100,100,0.4)',
-          color: '#fff',
-          fontWeight: 900,
-          fontSize: '15px',
-          letterSpacing: '0.05em',
-          cursor: state === 'submitting' ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 0 0 0 rgba(220,38,38,0.7)',
-          animation: state === 'submitting' ? 'none' : 'sos-pulse 2s ease-out infinite',
-          transition: 'transform 0.2s, background 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          if (state !== 'submitting') {
-            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 28px rgba(220,38,38,0.7)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = '';
+          position: 'absolute',
+          top: '175px',
+          right: '16px',
+          zIndex: 800,
+          paddingTop: '10px',
+          paddingBottom: '10px',
         }}
       >
-        {state === 'submitting' ? (
-          <Loader2 size={22} style={{ animation: 'spin 1s linear infinite' }} />
-        ) : (
-          'SOS'
-        )}
-      </button>
+        <button
+          onClick={handleSos}
+          disabled={state === 'submitting'}
+          title="SOS Emergency Alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            background: state === 'submitting'
+              ? 'rgba(127,29,29,0.92)'
+              : 'rgba(220,38,38,0.9)',
+            border: '1px solid rgba(255,100,100,0.35)',
+            borderRadius: '10px',
+            backdropFilter: 'blur(12px)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: '13px',
+            letterSpacing: '0.06em',
+            cursor: state === 'submitting' ? 'not-allowed' : 'pointer',
+            animation: state === 'submitting' ? 'none' : 'sos-pulse 2s ease-out infinite',
+            transition: 'transform 0.2s, background 0.2s',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+          }}
+          onMouseEnter={(e) => {
+            if (state !== 'submitting') {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+          }}
+        >
+          {state === 'submitting' ? (
+            <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+          ) : (
+            <Siren size={15} />
+          )}
+          {state === 'submitting' ? 'Sending SOS…' : 'SOS Alert'}
+        </button>
+      </div>
     </>
   );
 };
