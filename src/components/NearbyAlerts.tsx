@@ -61,7 +61,7 @@ export function NearbyAlerts() {
                 </div>
               </div>
               
-              <p className="text-sm text-white/70 line-clamp-2 mb-3 pr-8 text-right">
+              <p className="text-sm text-white/70 line-clamp-2 mb-3 pr-8 text-left">
                 {alert.description}
               </p>
               
