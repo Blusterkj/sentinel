@@ -12,7 +12,7 @@ const EMOJI_MAP: Record<string, string> = {
 };
 
 export function NearbyAlerts() {
-  const { alerts, connected, clearAlerts, dismissAlert } = useNearbyAlerts();
+  const { alerts, dismissAlert } = useNearbyAlerts();
 
   if (alerts.length === 0) return null;
 
