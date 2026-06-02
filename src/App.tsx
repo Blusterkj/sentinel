@@ -726,6 +726,7 @@ export default function App() {
             setActiveFilter={setActiveFilter}
             onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
             onDeleteIncident={deleteIncident}
+            onSosSubmitted={handleNewIncident}
             sidebarCollapsed={sidebarCollapsed}
           />
         )}

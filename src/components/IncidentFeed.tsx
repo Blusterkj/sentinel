@@ -1,7 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
-import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download, ThumbsUp } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -49,6 +49,34 @@ function formatRelativeTime(timestamp: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+// ── Community Confirm helpers ────────────────────────────────
+function getConfirmKey(incidentId: string, walletAddress: string) {
+  return `confirm_${incidentId}_${walletAddress}`;
+}
+function getConfirmCountKey(incidentId: string) {
+  return `confirmcount_${incidentId}`;
+}
+function useConfirmation(incidentId: string, walletAddress: string | undefined) {
+  const [confirmed, setConfirmed] = React.useState(() => {
+    if (!walletAddress) return false;
+    return localStorage.getItem(getConfirmKey(incidentId, walletAddress)) === '1';
+  });
+  const [count, setCount] = React.useState(() => {
+    return parseInt(localStorage.getItem(getConfirmCountKey(incidentId)) || '0', 10);
+  });
+
+  const confirm = React.useCallback(() => {
+    if (!walletAddress || confirmed) return;
+    localStorage.setItem(getConfirmKey(incidentId, walletAddress), '1');
+    const newCount = count + 1;
+    localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
+    setConfirmed(true);
+    setCount(newCount);
+  }, [walletAddress, confirmed, incidentId, count]);
+
+  return { confirmed, count, confirm };
+}
+
 export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   incidents,
   onSelectIncident,
@@ -60,12 +88,15 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   onDeleteIncident,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const modalAccount = useCurrentAccount();
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
   const [isCopied, setIsCopied] = React.useState(false);
   const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [walrusData, setWalrusData] = React.useState<string | null>(null);
   const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
+  const [modalConfirmCount, setModalConfirmCount] = React.useState(0);
+  const [modalConfirmed, setModalConfirmed] = React.useState(false);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -173,6 +204,14 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     setWalrusFetchState('idle');
                     setWalrusData(null);
                     setWalrusFetchError(null);
+                    // Load confirm state for this incident
+                    const addr = modalAccount?.address;
+                    if (addr) {
+                      setModalConfirmed(localStorage.getItem(getConfirmKey(incident.id, addr)) === '1');
+                    } else {
+                      setModalConfirmed(false);
+                    }
+                    setModalConfirmCount(parseInt(localStorage.getItem(getConfirmCountKey(incident.id)) || '0', 10));
                   }}
                   animDelay={idx * 50}
                 />
@@ -278,7 +317,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 {modalIncident.description}
               </p>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button 
                   onClick={() => {
                     const mapLink = `https://www.google.com/maps?q=${modalIncident.location.lat},${modalIncident.location.lng}`;
@@ -299,6 +338,25 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     <><Share size={14} /> Share Incident</>
                   )}
                 </button>
+
+                {/* Modal Confirm button — hide on own incidents and resolved */}
+                {modalAccount && modalAccount.address !== modalIncident.reporter && modalIncident.status !== 'resolved' && (
+                  <button
+                    onClick={() => {
+                      if (!modalAccount?.address || modalConfirmed) return;
+                      localStorage.setItem(getConfirmKey(modalIncident.id, modalAccount.address), '1');
+                      const newCount = modalConfirmCount + 1;
+                      localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
+                      setModalConfirmed(true);
+                      setModalConfirmCount(newCount);
+                    }}
+                    disabled={modalConfirmed}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: modalConfirmed ? 'rgba(59,130,246,0.15)' : '#1a1a1a', border: modalConfirmed ? '1px solid rgba(59,130,246,0.4)' : '1px solid #2a2a2a', borderRadius: '8px', color: modalConfirmed ? '#60a5fa' : '#ccc', cursor: modalConfirmed ? 'default' : 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+                  >
+                    <ThumbsUp size={14} />
+                    {modalConfirmed ? `Confirmed (${modalConfirmCount})` : `Confirm (${modalConfirmCount})`}
+                  </button>
+                )}
                 {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
                   <button 
                     onClick={() => {
@@ -476,6 +534,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [resolving, setResolving] = React.useState(false);
   const [resolvedLocal, setResolvedLocal] = React.useState(incident.status === 'resolved');
+  const { confirmed, count: confirmCount, confirm } = useConfirmation(incident.id, account?.address);
 
   React.useEffect(() => {
     setResolvedLocal(incident.status === 'resolved');
@@ -567,8 +626,8 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       </div>
 
       {/* Row 2: Verification Badges */}
-      {(incident.suiTxDigest || incident.walrusBlobId) && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+      {(incident.suiTxDigest || incident.walrusBlobId || confirmCount >= 3) && (
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
           {incident.suiTxDigest && (
             <span style={{
               fontSize: '10px',
@@ -601,6 +660,22 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               ⬡ Verified on Walrus
             </span>
           )}
+          {confirmCount >= 3 && (
+            <span style={{
+              fontSize: '10px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: '#60a5fa',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              padding: '2px 6px',
+              borderRadius: '12px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px'
+            }}>
+              <ThumbsUp size={10} /> Community Verified
+            </span>
+          )}
         </div>
       )}
 
@@ -610,7 +685,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           fontSize: '12px',
           color: '#888',
           lineHeight: '1.5',
-          marginBottom: '10px',
+          marginBottom: '8px',
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -619,6 +694,36 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       >
         {incident.description}
       </p>
+
+      {/* Community Confirm button — hide on own incidents and resolved */}
+      {account && account.address !== incident.reporter && !resolvedLocal && (
+        <button
+          onClick={(e) => { e.stopPropagation(); confirm(); }}
+          disabled={confirmed}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 10px',
+            marginBottom: '8px',
+            border: confirmed
+              ? '1px solid rgba(59,130,246,0.5)'
+              : '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '6px',
+            background: confirmed
+              ? 'rgba(59,130,246,0.12)'
+              : 'rgba(255,255,255,0.04)',
+            color: confirmed ? '#60a5fa' : '#666',
+            fontSize: '11px',
+            fontWeight: 600,
+            cursor: confirmed ? 'default' : 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <ThumbsUp size={11} />
+          {confirmed ? `Confirmed (${confirmCount})` : `Confirm (${confirmCount})`}
+        </button>
+      )}
 
       {/* Row 3: location + time + status */}
       <div

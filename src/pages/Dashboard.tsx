@@ -8,6 +8,7 @@ import type { Incident } from '../types/incident';
 import { AlertTriangle, Activity, Link as LinkIcon, Plus } from 'lucide-react';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { NearbyAlerts } from '../components/NearbyAlerts';
+import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 
 interface DashboardProps {
@@ -26,6 +27,7 @@ interface DashboardProps {
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
+  onSosSubmitted?: (incident: Incident) => void;
   sidebarCollapsed?: boolean;
 }
 
@@ -39,6 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   setActiveFilter,
   onResolveIncident,
   onDeleteIncident,
+  onSosSubmitted,
   sidebarCollapsed
 }) => {
   const [myReportsFilter, setMyReportsFilter] = useState(false);
@@ -388,6 +391,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <Plus size={24} />
         </button>
       </div>
+      )}
+
+      {/* SOS Panic Button — always visible on Dashboard */}
+      {onSosSubmitted && (
+        <SosButton onSosSubmitted={onSosSubmitted} />
       )}
     </div>
   );
