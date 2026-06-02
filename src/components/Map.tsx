@@ -2,7 +2,7 @@
 // Dark-themed interactive map with severity-colored incident pins + marker clustering
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Popup, useMap, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, useMap, Marker, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,7 +15,6 @@ interface MapProps {
   userLocation?: [number, number];
   onIncidentClick?: (incident: Incident) => void;
   onClusterClick?: (incidents: Incident[]) => void;
-  selectedIncident?: Incident | null;
 }
 
 
@@ -154,7 +153,7 @@ function createClusterIcon(cluster: any) {
   });
 }
 
-export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onIncidentClick, onClusterClick, selectedIncident }) => {
+export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onIncidentClick, onClusterClick }) => {
   return (
     <MapContainer
       center={center}
@@ -256,17 +255,7 @@ export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onInc
               severity={incident.severity}
               // @ts-ignore
               incident={incident}
-              ref={(r) => {
-                if (r && selectedIncident?.id === incident.id) {
-                  r.openPopup();
-                }
-              }}
-            >
-              {/* @ts-ignore - popup closeButton prop type mismatch */}
-              <Popup closeButton={false} className="sentinel-popup">
-                <IncidentPopup incident={incident} />
-              </Popup>
-            </Marker>
+            />
           );
         })}
       </MarkerClusterGroup>
@@ -274,77 +263,4 @@ export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onInc
   );
 };
 
-// Inline popup — no external CSS classes needed
-const IncidentPopup: React.FC<{ incident: Incident }> = ({ incident }) => {
-  const color = getSeverityColor(incident.severity);
-  const typeLabels: Record<string, string> = {
-    medical: '🏥 Medical',
-    fire: '🔥 Fire',
-    crime: '🚨 Crime',
-    accident: '💥 Accident',
-    natural_disaster: '🌪️ Natural Disaster',
-    other: '⚠️ Other',
-  };
 
-  return (
-    <div
-      style={{
-        background: '#111',
-        border: `1px solid ${color}40`,
-        borderRadius: '8px',
-        padding: '12px',
-        minWidth: '200px',
-        fontFamily: 'Inter, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '8px',
-        }}
-      >
-        <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-          {typeLabels[incident.type] || incident.type}
-        </span>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          {incident.status === 'resolved' && (
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: '#22c55e',
-                background: 'rgba(34, 197, 94, 0.2)',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                fontFamily: 'monospace',
-              }}
-            >
-              RESOLVED
-            </span>
-          )}
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              color: color,
-              background: `${color}20`,
-              padding: '2px 6px',
-              borderRadius: '3px',
-              fontFamily: 'monospace',
-            }}
-          >
-            {incident.severity.toUpperCase()}
-          </span>
-        </div>
-      </div>
-      <p style={{ fontSize: '12px', color: '#888', lineHeight: '1.4', marginBottom: '8px' }}>
-        {incident.description}
-      </p>
-      <div style={{ fontSize: '11px', color: '#555' }}>
-        {incident.location.address}
-      </div>
-    </div>
-  );
-};

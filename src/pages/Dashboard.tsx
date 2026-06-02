@@ -1,12 +1,9 @@
-// src/pages/Dashboard.tsx
-// Main dashboard: map + live incident feed
-
 import React, { useState, useEffect } from 'react';
 import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon, Plus } from 'lucide-react';
-import { SeverityBadge } from '../components/SeverityBadge';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
+import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { NearbyAlerts } from '../components/NearbyAlerts';
 import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
@@ -214,7 +211,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             incidents={incidents}
             center={center}
             userLocation={userLocation}
-            selectedIncident={selectedIncident}
             onIncidentClick={(i) => {
               setSelectedCluster(null);
               setSelectedIncident(i);
@@ -224,6 +220,73 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setSelectedCluster(clusterIncidents);
             }}
           />
+
+          {/* Selected incident card — anchored below the weather widget, top-right */}
+          {selectedIncident && (
+            <div
+              className="fade-in-up"
+              style={{
+                position: 'absolute',
+                top: '175px',
+                right: '16px',
+                zIndex: 800,
+                width: '240px',
+                background: 'rgba(13,13,13,0.92)',
+                backdropFilter: 'blur(14px)',
+                border: `1px solid ${getSeverityColor(selectedIncident.severity)}40`,
+                borderRadius: '12px',
+                padding: '14px',
+                boxShadow: `0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px ${getSeverityColor(selectedIncident.severity)}20`,
+              }}
+            >
+              {/* Header row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '15px' }}>
+                    {{'medical':'🏥','fire':'🔥','crime':'🚨','accident':'💥','natural_disaster':'🌪️','other':'⚠️'}[selectedIncident.type] || '⚠️'}
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#e5e5e5' }}>
+                    {{'medical':'Medical','fire':'Fire','crime':'Crime','accident':'Accident','natural_disaster':'Disaster','other':'Other'}[selectedIncident.type]}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <SeverityBadge severity={selectedIncident.severity} size="sm" />
+                  <button
+                    onClick={() => setSelectedIncident(null)}
+                    style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', lineHeight: 1 }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Resolved badge */}
+              {selectedIncident.status === 'resolved' && (
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', padding: '2px 8px', borderRadius: '4px', marginBottom: '8px', fontFamily: 'monospace' }}>
+                  ✓ RESOLVED
+                </span>
+              )}
+
+              {/* Description */}
+              <p style={{ fontSize: '12px', color: '#999', lineHeight: '1.5', marginBottom: '10px' }}>
+                {selectedIncident.description}
+              </p>
+
+              {/* Footer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#555', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <MapPin size={10} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedIncident.location.address}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#555', flexShrink: 0 }}>
+                  <Clock size={10} />
+                  <span>{new Date(selectedIncident.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Selected cluster overlay */}
           {selectedCluster && (
