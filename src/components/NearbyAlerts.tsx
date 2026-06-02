@@ -35,7 +35,8 @@ export function NearbyAlerts() {
                 window.history.pushState({}, '', '/dashboard');
                 window.dispatchEvent(new Event('popstate'));
               }}
-              className="bg-white/10 backdrop-blur-xl border border-white/20 py-10 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
+              className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
+              style={{ paddingTop: '40px', paddingBottom: '40px' }}
             >
               <div className={`absolute right-0 top-0 bottom-0 w-1 ${
                 alert.severity === 'critical' ? 'bg-red-500' :
@@ -53,7 +54,8 @@ export function NearbyAlerts() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); dismissAlert(idx); }}
-                    className="text-white/40 hover:text-white/90 transition-colors mr-6"
+                    className="text-white/40 hover:text-white/90 transition-colors"
+                    style={{ marginRight: '24px' }}
                   >
                     <X size={14} />
                   </button>
