@@ -373,7 +373,21 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: modalConfirmed ? 'rgba(59,130,246,0.15)' : '#1a1a1a', border: modalConfirmed ? '1px solid rgba(59,130,246,0.4)' : '1px solid #2a2a2a', borderRadius: '8px', color: modalConfirmed ? '#60a5fa' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
                   >
                     <ThumbsUp size={14} />
-                    {modalConfirmed ? `✓ Confirmed (${modalConfirmCount})` : `Confirm (${modalConfirmCount})`}
+                    <span>{modalConfirmed ? '✓ Confirmed' : 'Confirm'}</span>
+                    <span style={{
+                      background: modalConfirmed ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.08)',
+                      color: modalConfirmed ? '#93c5fd' : '#888',
+                      borderRadius: '10px',
+                      padding: '0px 7px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                      minWidth: '20px',
+                      textAlign: 'center',
+                      lineHeight: '18px',
+                    }}>
+                      {modalConfirmCount}
+                    </span>
                   </button>
                 )}
                 {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
@@ -721,8 +735,8 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
-            padding: '3px 10px',
+            gap: '6px',
+            padding: '3px 8px 3px 10px',
             marginBottom: '8px',
             border: confirmed
               ? '1px solid rgba(59,130,246,0.5)'
@@ -739,7 +753,22 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           }}
         >
           <ThumbsUp size={11} />
-          {confirmed ? `✓ Confirmed (${confirmCount})` : `Confirm (${confirmCount})`}
+          <span>{confirmed ? '✓ Confirmed' : 'Confirm'}</span>
+          {/* Count badge */}
+          <span style={{
+            background: confirmed ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.08)',
+            color: confirmed ? '#93c5fd' : '#555',
+            borderRadius: '10px',
+            padding: '0px 6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            fontFamily: 'monospace',
+            minWidth: '18px',
+            textAlign: 'center',
+            lineHeight: '16px',
+          }}>
+            {confirmCount}
+          </span>
         </button>
       )}
 
