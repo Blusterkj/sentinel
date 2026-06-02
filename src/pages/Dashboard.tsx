@@ -227,8 +227,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className="fade-in-up"
               style={{
                 position: 'absolute',
-                top: '175px',
-                right: '16px',
+                bottom: '24px',
+                left: '24px',
                 zIndex: 800,
                 width: '240px',
                 background: 'rgba(13,13,13,0.92)',
