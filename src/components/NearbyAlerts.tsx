@@ -36,7 +36,7 @@ export function NearbyAlerts() {
                 window.dispatchEvent(new Event('popstate'));
               }}
               className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
-              style={{ paddingTop: '40px', paddingBottom: '40px' }}
+              style={{ paddingTop: '24px', paddingBottom: '24px' }}
             >
               <div className={`absolute right-0 top-0 bottom-0 w-1 ${
                 alert.severity === 'critical' ? 'bg-red-500' :
