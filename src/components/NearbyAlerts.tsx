@@ -20,7 +20,7 @@ export function NearbyAlerts() {
   const extraCount = alerts.length - 5;
 
   return (
-    <div className="absolute top-24 right-4 z-[800] w-80 space-y-4">
+    <div className="absolute bottom-8 left-8 z-[800] w-80 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
@@ -42,11 +42,15 @@ export function NearbyAlerts() {
           return (
             <motion.div
               key={`${alert.location.lat}-${alert.location.lng}-${idx}`}
-              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              initial={{ opacity: 0, x: -50, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              exit={{ opacity: 0, x: -50, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-xl shadow-2xl relative overflow-hidden group"
+              onClick={() => {
+                window.history.pushState({}, '', '/dashboard');
+                window.dispatchEvent(new Event('popstate'));
+              }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 py-5 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
             >
               <div className={`absolute left-0 top-0 bottom-0 w-1 ${
                 alert.severity === 'critical' ? 'bg-red-500' :

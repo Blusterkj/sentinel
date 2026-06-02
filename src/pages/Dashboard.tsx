@@ -4,7 +4,6 @@ import { IncidentFeed } from '../components/IncidentFeed';
 import type { Incident } from '../types/incident';
 import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
-import { NearbyAlerts } from '../components/NearbyAlerts';
 import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 
@@ -205,7 +204,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Map */}
         <div style={{ flex: 1, position: 'relative' }}>
-          <NearbyAlerts />
           <WeatherStatus />
           <Map
             incidents={incidents}

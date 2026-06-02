@@ -13,6 +13,7 @@ import { Analytics } from './pages/Analytics';
 import { Report } from './pages/Report';
 import { Memory } from './pages/Memory';
 import { Agent } from './pages/Agent';
+import { NearbyAlerts } from './components/NearbyAlerts';
 import { Logo } from './components/Logo';
 import type { Incident } from './types/incident';
 import {
@@ -710,7 +711,8 @@ export default function App() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <NearbyAlerts />
         {/* Walrus seeding progress banner */}
         {seeding.isSeeding && (
           <SeedingBanner progress={seeding.progress} total={seeding.total} />
