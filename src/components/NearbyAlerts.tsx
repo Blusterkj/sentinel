@@ -35,7 +35,7 @@ export function NearbyAlerts() {
                 window.history.pushState({}, '', '/dashboard');
                 window.dispatchEvent(new Event('popstate'));
               }}
-              className="bg-white/10 backdrop-blur-xl border border-white/20 py-5 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
+              className="bg-white/10 backdrop-blur-xl border border-white/20 py-6 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
             >
               <div className={`absolute right-0 top-0 bottom-0 w-1 ${
                 alert.severity === 'critical' ? 'bg-red-500' :
@@ -45,19 +45,18 @@ export function NearbyAlerts() {
               
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
+                  <span className="text-lg">{emoji}</span>
+                  <span className="text-xs font-medium px-2 py-1 bg-white/10 rounded-full text-white/80">
+                    {alert.distance} km
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); dismissAlert(idx); }}
                     className="text-white/40 hover:text-white/90 transition-colors"
                   >
                     <X size={14} />
                   </button>
-                  <span className="text-xs font-medium px-2 py-1 bg-white/10 rounded-full text-white/80">
-                    {alert.distance} km
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white capitalize">{alert.type.replace('_', ' ')}</span>
-                  <span className="text-lg">{emoji}</span>
                 </div>
               </div>
               
@@ -65,9 +64,9 @@ export function NearbyAlerts() {
                 {alert.description}
               </p>
               
-              <div className="flex items-center justify-end gap-1.5 text-xs text-white/50 pr-8">
-                <span className="truncate text-right">{alert.location.address}</span>
+              <div className="flex items-center justify-start gap-1.5 text-xs text-white/50 pr-8">
                 <MapPin size={12} />
+                <span className="truncate text-left">{alert.location.address}</span>
               </div>
             </motion.div>
           );
