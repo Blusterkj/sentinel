@@ -37,22 +37,6 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// After any location change or disconnect, update each located session with
-// how many OTHER active sessions are within 5 km of them.
-function broadcastNearbyCounts() {
-  for (const [sid, session] of sessions.entries()) {
-    if (!session.lat || !session.lng || session.ws.readyState !== 1) continue;
-    let count = 0;
-    for (const [otherId, other] of sessions.entries()) {
-      if (otherId === sid) continue;
-      if (!other.lat || !other.lng || other.ws.readyState !== 1) continue;
-      const dist = haversineDistance(session.lat, session.lng, other.lat, other.lng);
-      if (dist <= 5) count++;
-    }
-    session.ws.send(JSON.stringify({ type: 'nearby_count', count }));
-  }
-}
-
 // ─── Config ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 3333;
 const MEMWAL_KEY = process.env.VITE_MEMWAL_KEY;
@@ -386,8 +370,6 @@ wss.on('connection', (ws) => {
         if (session) {
           session.lat = msg.lat;
           session.lng = msg.lng;
-          // Location now known — update nearby counts for all sessions
-          broadcastNearbyCounts();
         }
       }
     } catch (e) {
@@ -395,11 +377,7 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('close', () => {
-    sessions.delete(sessionId);
-    // Session gone — rebroadcast updated counts to remaining sessions
-    broadcastNearbyCounts();
-  });
+  ws.on('close', () => sessions.delete(sessionId));
 });
 
 server.listen(PORT, () => {

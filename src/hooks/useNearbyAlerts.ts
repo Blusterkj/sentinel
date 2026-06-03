@@ -14,7 +14,6 @@ export function useNearbyAlerts() {
   const ws = useRef<WebSocket | null>(null);
   const [alerts, setAlerts] = useState<NearbyAlert[]>([]);
   const [connected, setConnected] = useState(false);
-  const [nearbyCount, setNearbyCount] = useState<number | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
@@ -62,16 +61,6 @@ export function useNearbyAlerts() {
             });
           }
         }
-
-        // Track how many sessions are monitoring within 5km
-        if (msg.type === 'nearby_count') {
-          setNearbyCount(msg.count as number);
-        }
-
-        // Some servers emit session_count for all connected sessions
-        if (msg.type === 'session_count') {
-          setNearbyCount(msg.count as number);
-        }
       } catch (err) {
         console.error("WebSocket parse error:", err);
       }
@@ -79,7 +68,6 @@ export function useNearbyAlerts() {
 
     ws.current.onclose = () => {
       setConnected(false);
-      setNearbyCount(null);
       // Try to reconnect in 3 seconds
       reconnectTimeout.current = setTimeout(connect, 3000);
     };
@@ -106,5 +94,5 @@ export function useNearbyAlerts() {
   const clearAlerts = () => setAlerts([]);
   const dismissAlert = (index: number) => setAlerts(prev => prev.filter((_, i) => i !== index));
 
-  return { alerts, connected, nearbyCount, clearAlerts, dismissAlert };
+  return { alerts, connected, clearAlerts, dismissAlert };
 }
