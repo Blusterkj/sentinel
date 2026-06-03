@@ -166,7 +166,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       </div>
 
       {/* Incident list */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 24px 24px' }}>
         {myIncidents.length === 0 ? (
           <div
             style={{
@@ -271,7 +271,7 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
       style={{
         background: hovered ? 'rgba(255,255,255,0.025)' : 'transparent',
         borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
-        padding: '16px 0',
+        padding: '16px 4px',
         display: 'flex',
         alignItems: 'flex-start',
         gap: '14px',

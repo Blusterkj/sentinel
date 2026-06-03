@@ -20,7 +20,7 @@ export function NearbyAlerts() {
   const extraCount = alerts.length - 5;
 
   return (
-    <div className="absolute bottom-8 left-16 z-[800] w-80 space-y-4">
+    <div className="absolute bottom-8 z-[800] w-80 space-y-4" style={{ left: '24px' }}>
       <AnimatePresence>
         {displayAlerts.map((alert, idx) => {
           const emoji = EMOJI_MAP[alert.type] || EMOJI_MAP.other;
