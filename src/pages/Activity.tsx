@@ -277,9 +277,17 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
         gap: '14px',
         animationDelay: `${index * 30}ms`,
         transition: 'background 0.15s ease',
+        cursor: 'pointer',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => {
+        window.history.pushState({}, '', '/dashboard');
+        window.dispatchEvent(new Event('popstate'));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('selectIncident', { detail: incident }));
+        }, 100);
+      }}
     >
       {/* Type icon */}
       <div
