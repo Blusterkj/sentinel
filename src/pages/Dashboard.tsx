@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock, Users } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useNearbyAlerts } from '../hooks/useNearbyAlerts';
 
 interface DashboardProps {
   incidents: Incident[];
@@ -55,6 +56,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [locationObtained, setLocationObtained] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const account = useCurrentAccount();
+  const { nearbyCount, connected: wsConnected } = useNearbyAlerts();
+  const [monitorHighlight, setMonitorHighlight] = useState(false);
+  const prevNearbyCount = useRef<number | null>(null);
+
+  // Flash highlight whenever nearbyCount changes
+  useEffect(() => {
+    if (nearbyCount !== null && nearbyCount !== prevNearbyCount.current) {
+      prevNearbyCount.current = nearbyCount;
+      setMonitorHighlight(true);
+      const t = setTimeout(() => setMonitorHighlight(false), 700);
+      return () => clearTimeout(t);
+    }
+  }, [nearbyCount]);
 
   // Listen for external requests to select an incident (e.g. from NearbyAlerts)
   useEffect(() => {
@@ -207,6 +221,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             color="#22c55e"
           />
         )}
+        {/* Nearby Monitors — live WebSocket count */}
+        <StatPill
+          icon={<Users size={12} color="#06b6d4" />}
+          label="Monitoring Nearby"
+          value={wsConnected && nearbyCount !== null ? String(nearbyCount) : '--'}
+          color="#06b6d4"
+          highlight={monitorHighlight}
+        />
         {!locationObtained && (
           <span style={{ fontSize: '11px', color: '#444', marginLeft: 'auto' }}>
             Allow location for accurate centering
@@ -486,8 +508,9 @@ const StatPill: React.FC<{
   value: string;
   color: string;
   pulse?: boolean;
+  highlight?: boolean;
   onClick?: () => void;
-}> = ({ icon, label, value, color, pulse, onClick }) => (
+}> = ({ icon, label, value, color, pulse, highlight, onClick }) => (
   <div
     onClick={onClick}
     style={{
@@ -495,11 +518,12 @@ const StatPill: React.FC<{
       alignItems: 'center',
       gap: '8px',
       padding: '5px 12px',
-      background: `${color}10`,
-      border: `1px solid ${color}25`,
+      background: highlight ? `${color}28` : `${color}10`,
+      border: `1px solid ${highlight ? color : `${color}25`}`,
       borderRadius: '20px',
       cursor: onClick ? 'pointer' : 'default',
-      transition: 'all 0.2s',
+      transition: 'all 0.35s ease',
+      boxShadow: highlight ? `0 0 12px ${color}40` : 'none',
     }}
   >
     {icon}
@@ -510,8 +534,12 @@ const StatPill: React.FC<{
         fontWeight: 700,
         color: color,
         fontFamily: 'monospace',
+        transition: 'text-shadow 0.35s ease',
         ...(pulse && Number(value) > 0
           ? { textShadow: `0 0 10px ${color}` }
+          : {}),
+        ...(highlight
+          ? { textShadow: `0 0 14px ${color}` }
           : {}),
       }}
     >

@@ -13,6 +13,7 @@ import { Analytics } from './pages/Analytics';
 import { Report } from './pages/Report';
 import { Memory } from './pages/Memory';
 import { Agent } from './pages/Agent';
+import { Activity } from './pages/Activity';
 import { NearbyAlerts } from './components/NearbyAlerts';
 import { Logo } from './components/Logo';
 import type { Incident } from './types/incident';
@@ -26,11 +27,12 @@ import {
   BarChart3,
   Lock,
   LogOut,
+  User,
 } from 'lucide-react';
 import { ConnectButton, useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
 
-type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent';
+type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
 
 const NAV_ITEMS: {
   id: Page;
@@ -44,6 +46,7 @@ const NAV_ITEMS: {
   { id: 'report', label: 'Report Incident', icon: <AlertTriangle size={18} />, path: '/report' },
   { id: 'memory', label: 'Memory', icon: <Database size={18} />, badge: 'Walrus', path: '/memory' },
   { id: 'agent', label: 'AI Agent', icon: <Brain size={18} />, badge: 'MemWal', path: '/agent' },
+  { id: 'activity', label: 'My Activity', icon: <User size={18} />, path: '/activity' },
 ];
 
 // Helper: generate timestamps spread across the past 14 days
@@ -279,7 +282,7 @@ export default function App() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent'>(
+  const [currentPage, setCurrentPage] = useState<Page>(
     'landing'
   );
 
@@ -338,6 +341,7 @@ export default function App() {
       else if (path === '/report') setCurrentPage('report');
       else if (path === '/memory') setCurrentPage('memory');
       else if (path === '/agent') setCurrentPage('agent');
+      else if (path === '/activity') setCurrentPage('activity');
     };
     window.addEventListener('popstate', handlePopState);
     handlePopState();
@@ -623,7 +627,7 @@ export default function App() {
                 }}>
                   <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {item.label}
-                    {!account && (item.id === 'report' || item.id === 'agent') && (
+                    {!account && (item.id === 'report' || item.id === 'agent' || item.id === 'activity') && (
                       <Lock size={12} color="#666" />
                     )}
                   </span>
@@ -742,6 +746,17 @@ export default function App() {
         {currentPage === 'agent' && (
           <WalletGuard>
             <Agent incidents={incidents} />
+          </WalletGuard>
+        )}
+        {currentPage === 'activity' && (
+          <WalletGuard>
+            <Activity
+              incidents={incidents}
+              onNavigateReport={() => {
+                setCurrentPage('report');
+                window.history.pushState({}, '', '/report');
+              }}
+            />
           </WalletGuard>
         )}
       </main>
