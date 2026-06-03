@@ -251,6 +251,8 @@ export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onInc
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+        subdomains="abcd"
+        maxZoom={19}
         attribution=""
       />
       <MapController center={center} />
