@@ -56,6 +56,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [showToast, setShowToast] = useState(false);
   const account = useCurrentAccount();
 
+  // Listen for external requests to select an incident (e.g. from NearbyAlerts)
+  useEffect(() => {
+    const handleSelectIncident = (e: Event) => {
+      const customEvent = e as CustomEvent<Incident>;
+      if (customEvent.detail) {
+        setSelectedCluster(null);
+        setSelectedIncident(customEvent.detail);
+        setCenter([customEvent.detail.location.lat, customEvent.detail.location.lng]);
+      }
+    };
+    window.addEventListener('selectIncident', handleSelectIncident);
+    return () => window.removeEventListener('selectIncident', handleSelectIncident);
+  }, []);
+
   // Try to get user location on mount and center the map on them
   useEffect(() => {
     if (navigator.geolocation) {

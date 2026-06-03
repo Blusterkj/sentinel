@@ -34,6 +34,9 @@ export function NearbyAlerts() {
               onClick={() => {
                 window.history.pushState({}, '', '/dashboard');
                 window.dispatchEvent(new Event('popstate'));
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('selectIncident', { detail: alert }));
+                }, 100);
               }}
               className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
               style={{ paddingTop: '12px', paddingBottom: '24px' }}
