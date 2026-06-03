@@ -303,7 +303,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
   if (formState === 'done' && submittedIncident) {
     return (
-      <div className="fade-in-up" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+      <div className="fade-in-up" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
         {/* Success banner */}
         <div
           style={{
@@ -519,7 +519,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}
+      style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}
     >
       <div style={{ marginBottom: '24px' }}>
         <h2
@@ -544,7 +544,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           INCIDENT TYPE
         </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
           {INCIDENT_TYPES.map((t) => (
             <button
               key={t.value}
@@ -580,7 +580,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           SEVERITY LEVEL
         </label>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           {SEVERITIES.map((s) => (
             <button
               key={s.value}
