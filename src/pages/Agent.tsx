@@ -19,7 +19,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
       {/* Page header strip */}
       <div
         style={{
-          padding: '14px 20px',
+          padding: '14px 180px 14px 20px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
