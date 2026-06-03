@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock, Users } from 'lucide-react';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import { useNearbyAlerts } from '../hooks/useNearbyAlerts';
+
 
 interface DashboardProps {
   incidents: Incident[];
