@@ -102,11 +102,36 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
   const [isCopied, setIsCopied] = React.useState(false);
-  const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [walrusData, setWalrusData] = React.useState<string | null>(null);
+  const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [walrusData, setWalrusData] = React.useState<any>(null);
   const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
   const [modalConfirmCount, setModalConfirmCount] = React.useState(0);
   const [modalConfirmed, setModalConfirmed] = React.useState(false);
+
+  // Listen for external requests to open the incident modal (e.g. from Dashboard selectedIncident)
+  React.useEffect(() => {
+    const handleOpenModal = (e: Event) => {
+      const customEvent = e as CustomEvent<Incident>;
+      if (customEvent.detail) {
+        setModalIncident(customEvent.detail);
+        setShowProof(false);
+        setIsCopied(false);
+        setWalrusFetchState('idle');
+        setWalrusData(null);
+        setWalrusFetchError(null);
+        // Load confirm state for this incident
+        const addr = modalAccount?.address;
+        if (addr) {
+          setModalConfirmed(localStorage.getItem(getConfirmKey(customEvent.detail.id, addr)) === '1');
+        } else {
+          setModalConfirmed(false);
+        }
+        setModalConfirmCount(parseInt(localStorage.getItem(getConfirmCountKey(customEvent.detail.id)) || '0', 10));
+      }
+    };
+    window.addEventListener('openIncidentModal', handleOpenModal);
+    return () => window.removeEventListener('openIncidentModal', handleOpenModal);
+  }, [modalAccount]);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {

@@ -237,7 +237,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {selectedIncident && (
             <div
               className="fade-in-up"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('openIncidentModal', { detail: selectedIncident }));
+              }}
               style={{
+                cursor: 'pointer',
                 position: 'absolute',
                 bottom: '24px',
                 left: '24px',
@@ -264,7 +268,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <SeverityBadge severity={selectedIncident.severity} size="sm" />
                   <button
-                    onClick={() => setSelectedIncident(null)}
+                    onClick={(e) => { e.stopPropagation(); setSelectedIncident(null); }}
                     style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: '2px', display: 'flex', lineHeight: 1 }}
                   >
                     <X size={14} />
