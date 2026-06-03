@@ -303,7 +303,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
   if (formState === 'done' && submittedIncident) {
     return (
-      <div className="fade-in-up" style={{ padding: '24px', maxWidth: '640px', margin: '0 auto' }}>
+      <div className="fade-in-up" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
         {/* Success banner */}
         <div
           style={{
@@ -519,7 +519,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ padding: '24px', maxWidth: '640px', margin: '0 auto' }}
+      style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}
     >
       <div style={{ marginBottom: '24px' }}>
         <h2

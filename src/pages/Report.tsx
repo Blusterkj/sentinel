@@ -23,7 +23,7 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
       <div
         style={{
           padding: '32px 24px 0',
-          maxWidth: '640px',
+          maxWidth: '800px',
           margin: '0 auto',
         }}
       >
