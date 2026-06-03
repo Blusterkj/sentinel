@@ -421,7 +421,7 @@ export default function App() {
       }}
     >
       {/* Top Right Wallet Button */}
-      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1000 }}>
+      <div style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
         {account ? (
           <div style={{ position: 'relative' }}>
             <button
