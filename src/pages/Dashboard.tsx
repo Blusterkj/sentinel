@@ -125,7 +125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         className="hidden md:flex items-center shrink-0 border-b border-[#1a1a1a]"
         style={{
           background: '#0d0d0d',
-          padding: '14px 24px',
+          padding: '10px 24px',
           gap: '24px'
         }}
       >
