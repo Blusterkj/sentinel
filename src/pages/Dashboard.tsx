@@ -210,46 +210,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
       </div>
 
-      {/* Mobile Stats Pills Overlay */}
-      <div 
-        className="flex md:hidden absolute top-[8px] left-[8px] right-[8px] z-[800] overflow-x-auto" 
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-      >
-        <div className="flex gap-2 pb-2 px-1">
-          <StatPill
-            icon={<Activity size={12} color="#3b82f6" />}
-            label="Active"
-            value={String(activeCount)}
-            color="#3b82f6"
-          />
-          {criticalCount > 0 && (
-            <StatPill
-              icon={<AlertTriangle size={12} color="#ef4444" />}
-              label="Critical"
-              value={String(criticalCount)}
-              color="#ef4444"
-              pulse={true}
-            />
-          )}
-          <StatPill
-            icon={<span style={{ fontSize: '12px' }}>📍</span>}
-            label="Total"
-            value={String(incidents.length)}
-            color="#eab308"
-          />
-          <StatPill
-            icon={<LinkIcon size={12} color="#8b5cf6" />}
-            label="Walrus"
-            value={String(walrusVerifiedCount)}
-            color="#8b5cf6"
-          />
-        </div>
-      </div>
-
       {/* Main area: map + feed */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
         {/* Map */}
         <div style={{ flex: 1, position: 'relative' }}>
+          {/* Mobile Stats Pills Overlay */}
+          <div 
+            className="flex md:hidden absolute top-[8px] left-[8px] right-[8px] z-[800] overflow-x-auto" 
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="flex gap-2 pb-2 px-1">
+              <StatPill
+                icon={<Activity size={12} color="#3b82f6" />}
+                label="Active"
+                value={String(activeCount)}
+                color="#3b82f6"
+              />
+              {criticalCount > 0 && (
+                <StatPill
+                  icon={<AlertTriangle size={12} color="#ef4444" />}
+                  label="Critical"
+                  value={String(criticalCount)}
+                  color="#ef4444"
+                  pulse={true}
+                />
+              )}
+              <StatPill
+                icon={<span style={{ fontSize: '12px' }}>📍</span>}
+                label="Total"
+                value={String(incidents.length)}
+                color="#eab308"
+              />
+              <StatPill
+                icon={<LinkIcon size={12} color="#8b5cf6" />}
+                label="Walrus"
+                value={String(walrusVerifiedCount)}
+                color="#8b5cf6"
+              />
+            </div>
+          </div>
           <WeatherStatus />
           <Map
             incidents={incidents}
