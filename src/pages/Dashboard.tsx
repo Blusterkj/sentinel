@@ -125,8 +125,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Stats bar */}
       <div
-        className="hidden md:flex items-center gap-6 px-6 py-3.5 shrink-0 bg-[#0d0d0d] border-b border-[#1a1a1a]"
-        style={{}}
+        className="hidden md:flex items-center shrink-0 border-b border-[#1a1a1a]"
+        style={{
+          background: '#0d0d0d',
+          padding: '14px 24px',
+          gap: '24px'
+        }}
       >
         {activeFilter ? (
           <StatPill
@@ -183,7 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setMyReportsFilter(true)}
           />
         ) : null}
-        <div className="ml-auto flex items-center gap-6">
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '24px' }}>
           <StatPill
             icon={<span style={{ fontSize: '12px' }}>📍</span>}
             label="Total"
