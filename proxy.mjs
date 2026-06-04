@@ -202,7 +202,7 @@ Status: ${incident.status || 'active'}`;
       for (const [sid, session] of sessions.entries()) {
         if (session.lat && session.lng && session.ws.readyState === 1) { // 1 = OPEN
           const dist = haversineDistance(lat, lng, session.lat, session.lng);
-          if (dist <= 5) { // within 5 km
+          if (dist <= 20) { // within 20 km
             session.ws.send(JSON.stringify({
               type: 'nearby_alert',
               incident: {
