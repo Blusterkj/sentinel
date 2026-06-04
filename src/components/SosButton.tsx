@@ -12,11 +12,12 @@ const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 interface SosButtonProps {
   onSosSubmitted: (incident: Incident) => void;
+  mobileOffset?: boolean;
 }
 
 type SosState = 'idle' | 'submitting';
 
-export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
+export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted, mobileOffset }) => {
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [state, setState] = useState<SosState>('idle');
@@ -160,9 +161,9 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         onClick={handleSos}
         disabled={state === 'submitting'}
         title="SOS Emergency Alert"
+        className={mobileOffset ? "bottom-[92px] md:bottom-[28px]" : "bottom-[28px]"}
         style={{
           position: 'fixed',
-          bottom: '28px',
           right: '24px',
           zIndex: 9999,
           width: '64px',

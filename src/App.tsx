@@ -766,6 +766,16 @@ export default function App() {
           </WalletGuard>
         )}
       </main>
+
+      {/* Mobile-only Tab Bar */}
+      <BottomTabBar
+        currentPage={currentPage}
+        navigate={(page) => {
+          setCurrentPage(page as Page);
+          window.history.pushState({}, '', `/${page}`);
+          window.dispatchEvent(new Event('popstate'));
+        }}
+      />
     </div>
   );
 }

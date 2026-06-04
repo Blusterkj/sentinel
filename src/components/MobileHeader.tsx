@@ -1,10 +1,8 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
-import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
+import { ConnectButton } from '@mysten/dapp-kit';
 
 export const MobileHeader: React.FC = () => {
-  const account = useCurrentAccount();
-
   return (
     <div
       className="flex md:hidden"

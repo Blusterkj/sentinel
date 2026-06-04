@@ -70,20 +70,16 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
 
   if (distance > 20000) {
     return (
-      <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 1000 }}>
+      <div className="absolute z-[1000] left-[16px] md:left-[20px] top-[44px] md:top-[20px]">
         <button
           onClick={() => map.flyTo(userLocation, 12, { animate: true, duration: 1.5 })}
-          className="glass-card"
+          className="glass-card flex items-center justify-center w-9 h-9 rounded-full md:w-auto md:h-auto md:px-4 md:py-2.5 md:rounded-lg"
           style={{
-            padding: '10px 16px',
             color: '#fff',
             border: '1px solid #333',
-            borderRadius: '8px',
             cursor: 'pointer',
             fontSize: '13px',
             fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
             gap: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
             transition: 'background 0.2s',
@@ -91,7 +87,8 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
           onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#222')}
           onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(17,17,17,0.85)')}
         >
-          <span>📍</span> Navigate to your location
+          <span className="md:hidden flex items-center justify-center">📍</span>
+          <span className="hidden md:inline">📍 Navigate to your location</span>
         </button>
       </div>
     );
@@ -154,6 +151,7 @@ export const Map: React.FC<MapProps> = ({ incidents, center, userLocation, onInc
       style={{ height: '100%', width: '100%', background: '#0d1117' }}
       zoomControl={false}
       attributionControl={false}
+      keyboard={false}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
