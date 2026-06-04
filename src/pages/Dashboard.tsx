@@ -214,6 +214,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
         {/* Map */}
         <div style={{ flex: 1, position: 'relative' }}>
+          <WeatherStatus />
+          <Map
+            incidents={incidents}
+            center={center}
+            userLocation={userLocation}
+            onIncidentClick={(i) => {
+              setSelectedCluster(null);
+              setSelectedIncident(i);
+            }}
+            onClusterClick={(clusterIncidents) => {
+              setSelectedIncident(null);
+              setSelectedCluster(clusterIncidents);
+            }}
+          />
           {/* Mobile Stats Pills Overlay */}
           <div 
             className="flex md:hidden absolute top-[8px] left-[8px] right-[8px] z-[800] overflow-x-auto" 
@@ -249,14 +263,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             </div>
           </div>
-          <WeatherStatus />
-          <Map
-            incidents={incidents}
-            center={center}
-            userLocation={userLocation}
-            onIncidentClick={(i) => {
-              setSelectedCluster(null);
-              setSelectedIncident(i);
             }}
             onClusterClick={(clusterIncidents) => {
               setSelectedIncident(null);
