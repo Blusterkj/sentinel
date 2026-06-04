@@ -161,7 +161,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted, mobileOffs
         onClick={handleSos}
         disabled={state === 'submitting'}
         title="SOS Emergency Alert"
-        className={mobileOffset ? "bottom-[100px] md:bottom-[48px]" : "bottom-[48px]"}
+        className={mobileOffset ? "bottom-[140px] md:bottom-[128px]" : "bottom-[128px]"}
         style={{
           position: 'fixed',
           right: '24px',
