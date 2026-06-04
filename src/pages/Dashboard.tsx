@@ -183,31 +183,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setMyReportsFilter(true)}
           />
         ) : null}
-        <StatPill
-          icon={<span style={{ fontSize: '12px' }}>📍</span>}
-          label="Total"
-          value={String(incidents.length)}
-          color="#888"
-        />
-        <StatPill
-          icon={<LinkIcon size={12} color="#a78bfa" />}
-          label="Stored on Walrus"
-          value={String(walrusVerifiedCount)}
-          color="#a78bfa"
-        />
-        {verifiedOnSuiCount > 0 && (
+        <div className="ml-auto flex items-center gap-6">
           <StatPill
-            icon={<LinkIcon size={12} color="#22c55e" />}
-            label="Verified on Sui"
-            value={String(verifiedOnSuiCount)}
-            color="#22c55e"
+            icon={<span style={{ fontSize: '12px' }}>📍</span>}
+            label="Total"
+            value={String(incidents.length)}
+            color="#888"
           />
-        )}
-        {!locationObtained && (
-          <span style={{ fontSize: '11px', color: '#444', marginLeft: 'auto' }}>
-            Allow location for accurate centering
-          </span>
-        )}
+          <StatPill
+            icon={<LinkIcon size={12} color="#a78bfa" />}
+            label="Stored on Walrus"
+            value={String(walrusVerifiedCount)}
+            color="#a78bfa"
+          />
+          {verifiedOnSuiCount > 0 && (
+            <StatPill
+              icon={<LinkIcon size={12} color="#22c55e" />}
+              label="Verified on Sui"
+              value={String(verifiedOnSuiCount)}
+              color="#22c55e"
+            />
+          )}
+          {!locationObtained && (
+            <span style={{ fontSize: '11px', color: '#444' }}>
+              Allow location for accurate centering
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Main area: map + feed */}
