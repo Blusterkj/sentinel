@@ -16,6 +16,8 @@ import { Agent } from './pages/Agent';
 import { Activity } from './pages/Activity';
 import { NearbyAlerts } from './components/NearbyAlerts';
 import { Logo } from './components/Logo';
+import { MobileHeader } from './components/MobileHeader';
+import { BottomTabBar } from './components/BottomTabBar';
 import type { Incident } from './types/incident';
 import {
   LayoutDashboard,
@@ -425,7 +427,7 @@ export default function App() {
       }}
     >
       {/* Top Right Wallet Button */}
-      <div style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
+      <div className="hidden md:block" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
         {account ? (
           <div style={{ position: 'relative' }}>
             <button
@@ -459,8 +461,12 @@ export default function App() {
         )}
       </div>
 
+      {/* Mobile-only Header */}
+      <MobileHeader />
+
       {/* Sidebar */}
       <aside
+        className="hidden md:flex"
         style={{
           width: sidebarCollapsed ? '60px' : '220px',
           background: '#0d0d0d',
