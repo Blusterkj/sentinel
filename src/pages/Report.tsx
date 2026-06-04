@@ -18,6 +18,7 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
         overflowY: 'auto',
         background: '#0a0a0a',
       }}
+      className="pb-[120px] md:pb-0"
     >
       {/* Page header */}
       <div

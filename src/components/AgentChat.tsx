@@ -114,10 +114,10 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
 
       {/* Messages */}
       <div
+        className="p-5 pb-[120px] md:pb-5"
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',

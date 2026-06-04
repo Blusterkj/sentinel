@@ -327,13 +327,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       </div>
 
       {/* Memory entries */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '16px 20px',
-        }}
-      >
+      <div className="px-5 pt-6 pb-[120px] md:pb-6" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
         {filtered.length === 0 ? (
           <div
             style={{

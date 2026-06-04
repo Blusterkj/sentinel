@@ -230,7 +230,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
   ];
 
   return (
-    <div style={{ padding: '32px', height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff' }}>
+    <div className="p-8 pb-[120px] md:pb-8" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff' }}>
       <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '8px' }}>System Analytics</h1>
       <p style={{ fontSize: '13px', color: '#555', marginBottom: '28px' }}>Live incident intelligence overview</p>
 

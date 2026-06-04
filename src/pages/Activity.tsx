@@ -166,7 +166,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       </div>
 
       {/* Incident list */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 24px 24px' }}>
+      <div className="px-6 pt-2 pb-[120px] md:pb-6" style={{ flex: 1, overflowY: 'auto' }}>
         {myIncidents.length === 0 ? (
           <div
             style={{
