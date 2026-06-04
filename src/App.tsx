@@ -471,7 +471,6 @@ export default function App() {
           width: sidebarCollapsed ? '60px' : '220px',
           background: '#0d0d0d',
           borderRight: '1px solid #1a1a1a',
-          display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
           transition: 'width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',

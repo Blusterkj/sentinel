@@ -125,15 +125,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Stats bar */}
       <div
-        className="hidden md:flex"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px',
-          padding: '10px 20px',
-          background: '#0d0d0d',
-          flexShrink: 0,
-        }}
+        className="hidden md:flex items-center gap-5 px-5 py-2.5 shrink-0 bg-[#0d0d0d]"
+        style={{}}
       >
         {activeFilter ? (
           <StatPill
