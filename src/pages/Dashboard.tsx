@@ -125,7 +125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Stats bar */}
       <div
-        className="hidden md:flex items-center gap-5 px-5 py-2.5 shrink-0 bg-[#0d0d0d]"
+        className="hidden md:flex items-center gap-6 px-6 py-3.5 shrink-0 bg-[#0d0d0d] border-b border-[#1a1a1a]"
         style={{}}
       >
         {activeFilter ? (
@@ -550,10 +550,10 @@ const StatPill: React.FC<{
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      padding: '5px 12px',
+      padding: '6px 16px',
       background: highlight ? `${color}28` : `${color}10`,
       border: `1px solid ${highlight ? color : `${color}25`}`,
-      borderRadius: '20px',
+      borderRadius: '24px',
       cursor: onClick ? 'pointer' : 'default',
       transition: 'all 0.35s ease',
       boxShadow: highlight ? `0 0 12px ${color}40` : 'none',
