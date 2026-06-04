@@ -18,6 +18,7 @@ import { NearbyAlerts } from './components/NearbyAlerts';
 import { Logo } from './components/Logo';
 import { MobileHeader } from './components/MobileHeader';
 import { BottomTabBar } from './components/BottomTabBar';
+import { SosButton } from './components/SosButton';
 import type { Incident } from './types/incident';
 import {
   LayoutDashboard,
@@ -737,7 +738,6 @@ export default function App() {
             setActiveFilter={setActiveFilter}
             onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
             onDeleteIncident={deleteIncident}
-            onSosSubmitted={handleNewIncident}
             sidebarCollapsed={sidebarCollapsed}
           />
         )}
@@ -763,6 +763,13 @@ export default function App() {
               }}
             />
           </WalletGuard>
+        )}
+
+        {/* Global SOS Button - hidden on landing page */}
+        {currentPage !== 'landing' && (
+          <div className="md:contents">
+            <SosButton onSosSubmitted={handleNewIncident} mobileOffset />
+          </div>
         )}
       </main>
 

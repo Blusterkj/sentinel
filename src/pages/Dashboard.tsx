@@ -5,7 +5,6 @@ import { BottomSheet } from '../components/BottomSheet';
 import type { Incident } from '../types/incident';
 import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
-import { SosButton } from '../components/SosButton';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 
 
@@ -25,7 +24,6 @@ interface DashboardProps {
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
-  onSosSubmitted?: (incident: Incident) => void;
   sidebarCollapsed?: boolean;
 }
 
@@ -39,7 +37,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   setActiveFilter,
   onResolveIncident,
   onDeleteIncident,
-  onSosSubmitted,
   sidebarCollapsed
 }) => {
   const [myReportsFilter, setMyReportsFilter] = useState(false);
@@ -522,13 +519,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onResolveIncident={onResolveIncident}
         onDeleteIncident={onDeleteIncident}
       />
-
-      {/* SOS Panic Button — always visible on Dashboard */}
-      {onSosSubmitted && (
-        <div className="md:contents">
-          <SosButton onSosSubmitted={onSosSubmitted} mobileOffset />
-        </div>
-      )}
     </div>
   );
 };
