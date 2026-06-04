@@ -7,14 +7,10 @@ export const MobileHeader: React.FC = () => {
     <div
       className="flex md:hidden"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
         height: '48px',
         background: '#0a0a0a',
         borderBottom: '1px solid #1a1a1a',
-        zIndex: 1000,
+        zIndex: 100,
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',

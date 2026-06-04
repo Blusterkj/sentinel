@@ -12,12 +12,12 @@ const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 interface SosButtonProps {
   onSosSubmitted: (incident: Incident) => void;
-  mobileOffset?: boolean;
+  // mobileOffset no longer needed - tab bar is in normal flow
 }
 
 type SosState = 'idle' | 'submitting';
 
-export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted, mobileOffset }) => {
+export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [state, setState] = useState<SosState>('idle');
@@ -161,7 +161,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted, mobileOffs
         onClick={handleSos}
         disabled={state === 'submitting'}
         title="SOS Emergency Alert"
-        className={mobileOffset ? "bottom-[140px] md:bottom-[128px]" : "bottom-[128px]"}
+        className="bottom-[80px]"
         style={{
           position: 'fixed',
           right: '24px',

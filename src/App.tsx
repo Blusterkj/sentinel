@@ -419,15 +419,18 @@ export default function App() {
 
   return (
     <div
+      className="flex flex-col md:flex-row"
       style={{
         height: '100vh',
         width: '100vw',
-        display: 'flex',
         background: '#0a0a0a',
         overflow: 'hidden',
       }}
     >
-      {/* Top Right Wallet Button */}
+      {/* Mobile-only Header — in normal flow, not fixed */}
+      <MobileHeader />
+
+      {/* Desktop wallet button — absolute positioned, only shown on desktop */}
       <div className="hidden md:block" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
         {account ? (
           <div style={{ position: 'relative' }}>
@@ -462,9 +465,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Mobile-only Header */}
-      <MobileHeader />
-
+      {/* Content row: sidebar (desktop only) + main */}
+      <div className="flex flex-row flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside
         className="hidden md:flex"
@@ -721,7 +723,7 @@ export default function App() {
       </aside>
 
       {/* Main content */}
-      <main className="pt-[48px] md:pt-0" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <NearbyAlerts />
         {/* Walrus seeding progress banner */}
         {seeding.isSeeding && (
@@ -768,12 +770,13 @@ export default function App() {
         {/* Global SOS Button - hidden on landing page */}
         {currentPage !== 'landing' && (
           <div className="md:contents">
-            <SosButton onSosSubmitted={handleNewIncident} mobileOffset />
+            <SosButton onSosSubmitted={handleNewIncident} />
           </div>
         )}
       </main>
+      </div>{/* end content row */}
 
-      {/* Mobile-only Tab Bar */}
+      {/* Mobile-only Tab Bar — in normal flow at bottom */}
       <BottomTabBar
         currentPage={currentPage}
         navigate={(page) => {
