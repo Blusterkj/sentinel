@@ -188,7 +188,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           icon={<span style={{ fontSize: '12px' }}>📍</span>}
           label="Total"
           value={String(incidents.length)}
-          color="#888"
+          color="#888888"
         />
         <StatPill
           icon={<LinkIcon size={12} color="#a78bfa" />}
