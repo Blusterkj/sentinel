@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, ChevronRight, Activity, Zap, Database } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
 export const Landing: React.FC = () => {
   const navigate = () => {
@@ -8,7 +8,7 @@ export const Landing: React.FC = () => {
     window.dispatchEvent(new Event('popstate'));
   };
 
-  const containerVariants: any = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -19,7 +19,7 @@ export const Landing: React.FC = () => {
     }
   };
 
-  const itemVariants: any = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
       opacity: 1, 

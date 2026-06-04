@@ -263,12 +263,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             </div>
           </div>
-            }}
-            onClusterClick={(clusterIncidents) => {
-              setSelectedIncident(null);
-              setSelectedCluster(clusterIncidents);
-            }}
-          />
 
           {/* Selected incident card — anchored below the weather widget, top-right */}
           {selectedIncident && (

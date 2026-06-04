@@ -366,6 +366,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
   const [resolvedLocal, setResolvedLocal] = useState(incident.status === 'resolved');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedLocal(incident.status === 'resolved');
   }, [incident.status]);
 

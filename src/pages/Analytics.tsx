@@ -147,13 +147,17 @@ function SVGDonutChart({ data }: { data: { name: string; value: number }[] }) {
   }
 
   const CX = 110, CY = 110, R = 85, r = 52;
-  let angle = -Math.PI / 2;
+  
+  const sliceAngles = data.reduce<{startAngle: number, endAngle: number}[]>((acc, d) => {
+    const startAngle = acc.length === 0 ? -Math.PI / 2 : acc[acc.length - 1].endAngle;
+    const endAngle = startAngle + (d.value / total) * 2 * Math.PI;
+    acc.push({ startAngle, endAngle });
+    return acc;
+  }, []);
 
   const slices = data.map((d, i) => {
     const frac = d.value / total;
-    const startAngle = angle;
-    angle += frac * 2 * Math.PI;
-    const endAngle = angle;
+    const { startAngle, endAngle } = sliceAngles[i];
     const x1 = CX + R * Math.cos(startAngle);
     const y1 = CY + R * Math.sin(startAngle);
     const x2 = CX + R * Math.cos(endAngle);
