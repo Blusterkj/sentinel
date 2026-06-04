@@ -130,14 +130,8 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
 
       {/* Stats row */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '12px',
-          padding: '16px 20px',
-          background: '#0a0a0a',
-          flexShrink: 0,
-        }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 py-4 md:px-5"
+        style={{ background: '#0a0a0a', flexShrink: 0 }}
       >
         <StatCard
           icon={<FileText size={14} color="#8b5cf6" />}

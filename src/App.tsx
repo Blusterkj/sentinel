@@ -721,7 +721,7 @@ export default function App() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <main className="pt-[48px] md:pt-0" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <NearbyAlerts />
         {/* Walrus seeding progress banner */}
         {seeding.isSeeding && (

@@ -230,25 +230,25 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
   ];
 
   return (
-    <div className="p-8 pb-[120px] md:pb-8" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff' }}>
+    <div className="px-4 py-6 md:p-8 pb-[120px] md:pb-8" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff' }}>
       <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '8px' }}>System Analytics</h1>
       <p style={{ fontSize: '13px', color: '#555', marginBottom: '28px' }}>Live incident intelligence overview</p>
 
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+      {/* Stat cards — 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-7">
         {statCards.map(s => (
-          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '14px' }}>
-            <div style={{ background: s.bg, padding: '10px', borderRadius: '10px', flexShrink: 0 }}>{s.icon}</div>
+          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '16px' }}>
+            <div style={{ background: s.bg, padding: '8px', borderRadius: '8px', flexShrink: 0 }}>{s.icon}</div>
             <div>
-              <div style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.05em' }}>{s.label}</div>
-              <div style={{ fontSize: '26px', fontWeight: 700, lineHeight: 1.2 }}>{s.value}</div>
+              <div style={{ fontSize: '10px', color: '#666', fontWeight: 600, letterSpacing: '0.05em' }}>{s.label}</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.2 }}>{s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Trends + Donut */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+      {/* Trends + Donut — stack on mobile, side by side on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4 md:gap-5 mb-4 md:mb-5">
         <div style={cardStyle}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>Incident Trends</h2>
           <SVGLineChart data={trendsData} />
@@ -259,8 +259,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
         </div>
       </div>
 
-      {/* Bar chart + Hotspots */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      {/* Bar chart + Hotspots — stack on mobile, side by side on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
         <div style={cardStyle}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>Severity Breakdown</h2>
           <SVGBarChart data={severityData} />
