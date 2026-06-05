@@ -19,7 +19,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
       {/* Page header strip */}
       <div
         style={{
-          padding: '14px 180px 14px 20px',
+          padding: '24px 180px 24px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
@@ -41,7 +41,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
       </div>
 
       {/* Chat — fills rest of space */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', paddingTop: '24px' }}>
         <AgentChat incidents={incidents} />
       </div>
     </div>

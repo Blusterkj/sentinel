@@ -186,7 +186,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
       {/* Stats bar */}
       <div
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 px-5 py-5 md:px-6 md:py-5"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 px-5 py-5 md:px-6 md:pt-10 md:pb-6"
         style={{
           background: '#0a0a0a',
           flexShrink: 0,
