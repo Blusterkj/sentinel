@@ -155,7 +155,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
       {/* Header */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '40px 20px 20px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
