@@ -130,7 +130,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
 
       {/* Stats row */}
       <div
-        className="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 py-4 md:px-5"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 px-5 py-5 md:px-6"
         style={{ background: '#0a0a0a', flexShrink: 0 }}
       >
         <StatCard
@@ -437,11 +437,11 @@ const StatCard: React.FC<{
   <div
     style={{
       background: '#111',
-      borderRadius: '10px',
-      padding: '14px 16px',
+      borderRadius: '12px',
+      padding: '20px 20px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px',
+      gap: '10px',
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -237,11 +237,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       {/* Stat cards — 2 cols on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-7">
         {statCards.map(s => (
-          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '16px' }}>
-            <div style={{ background: s.bg, padding: '8px', borderRadius: '8px', flexShrink: 0 }}>{s.icon}</div>
+          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px', padding: '24px 20px' }}>
+            <div style={{ background: s.bg, padding: '12px', borderRadius: '10px', flexShrink: 0 }}>{s.icon}</div>
             <div>
-              <div style={{ fontSize: '10px', color: '#666', fontWeight: 600, letterSpacing: '0.05em' }}>{s.label}</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.2 }}>{s.value}</div>
+              <div style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</div>
+              <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.2 }}>{s.value}</div>
             </div>
           </div>
         ))}
