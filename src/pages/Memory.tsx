@@ -136,7 +136,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       {/* Page header */}
       <div
         style={{
-          padding: '14px 180px 14px 20px',
+          padding: '24px 180px 24px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
@@ -748,19 +748,21 @@ const StatCard: React.FC<{
       background: '#111',
       border: 'none',
       borderRadius: '12px',
-      padding: '20px 20px',
+      padding: '24px 24px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '10px',
+      gap: '12px',
+      minHeight: '110px',
+      justifyContent: 'center'
     }}
   >
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       {icon}
-      <span style={{ fontSize: '11px', color: '#555', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>{label}</span>
     </div>
     <span
       style={{
-        fontSize: '20px',
+        fontSize: '28px',
         fontWeight: 700,
         color,
         fontFamily: 'monospace',

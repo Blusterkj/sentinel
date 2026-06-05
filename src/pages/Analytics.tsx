@@ -230,52 +230,52 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
   ];
 
   return (
-    <div className="px-4 py-6 md:p-8 pb-[120px] md:pb-8" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff' }}>
-      <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '8px' }}>System Analytics</h1>
-      <p style={{ fontSize: '13px', color: '#555', marginBottom: '28px' }}>Live incident intelligence overview</p>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff', padding: '40px 36px 120px' }}>
+      <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '6px' }}>System Analytics</h1>
+      <p style={{ fontSize: '13px', color: '#555', marginBottom: '36px' }}>Live incident intelligence overview</p>
 
-      {/* Stat cards — 2 cols on mobile, 4 on desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-7">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         {statCards.map(s => (
-          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px', padding: '24px 20px' }}>
-            <div style={{ background: s.bg, padding: '12px', borderRadius: '10px', flexShrink: 0 }}>{s.icon}</div>
+          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '18px', padding: '28px 24px', minHeight: '110px' }}>
+            <div style={{ background: s.bg, padding: '14px', borderRadius: '12px', flexShrink: 0 }}>{s.icon}</div>
             <div>
-              <div style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</div>
-              <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.2 }}>{s.value}</div>
+              <div style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.06em', marginBottom: '6px' }}>{s.label}</div>
+              <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.1 }}>{s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Trends + Donut — stack on mobile, side by side on desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4 md:gap-5 mb-4 md:mb-5">
-        <div style={cardStyle}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>Incident Trends</h2>
+      {/* Trends + Donut */}
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-5 md:gap-6 mb-5 md:mb-6">
+        <div style={{ ...cardStyle, padding: '28px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Incident Trends</h2>
           <SVGLineChart data={trendsData} />
         </div>
-        <div style={cardStyle}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>Incident Types</h2>
+        <div style={{ ...cardStyle, padding: '28px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Incident Types</h2>
           <SVGDonutChart data={typeData} />
         </div>
       </div>
 
-      {/* Bar chart + Hotspots — stack on mobile, side by side on desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-        <div style={cardStyle}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>Severity Breakdown</h2>
+      {/* Bar chart + Hotspots */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+        <div style={{ ...cardStyle, padding: '28px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Severity Breakdown</h2>
           <SVGBarChart data={severityData} />
         </div>
-        <div style={cardStyle}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '20px' }}>
+        <div style={{ ...cardStyle, padding: '28px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>
             <MapPin size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
             Top Hotspots
           </h2>
           {hotspots.length === 0 ? (
             <p style={{ color: '#555', fontSize: 13 }}>No hotspot data yet.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {hotspots.map(([address, count], idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a' }}>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#555', width: 18 }}>#{idx + 1}</span>
                   <span style={{ fontSize: '13px', color: '#ddd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</span>
                   <span style={{ fontSize: '12px', fontWeight: 600, background: 'rgba(59,130,246,0.1)', color: '#3b82f6', padding: '3px 10px', borderRadius: '999px', flexShrink: 0 }}>{count}</span>
