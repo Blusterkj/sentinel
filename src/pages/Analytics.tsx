@@ -235,7 +235,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       <p style={{ fontSize: '13px', color: '#555', marginBottom: '36px' }}>Live incident intelligence overview</p>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
         {statCards.map(s => (
           <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '18px', padding: '28px 24px', minHeight: '110px' }}>
             <div style={{ background: s.bg, padding: '14px', borderRadius: '12px', flexShrink: 0 }}>{s.icon}</div>
@@ -248,7 +248,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       </div>
 
       {/* Trends + Donut */}
-      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-5 md:gap-6 mb-5 md:mb-6">
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
         <div style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Incident Trends</h2>
           <SVGLineChart data={trendsData} />
@@ -260,7 +260,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       </div>
 
       {/* Bar chart + Hotspots */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
         <div style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Severity Breakdown</h2>
           <SVGBarChart data={severityData} />
