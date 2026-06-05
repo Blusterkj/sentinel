@@ -436,7 +436,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           className="hidden md:block"
           style={{
             width: '320px',
-            borderLeft: '1px solid #1a1a1a',
             background: '#0d0d0d',
             flexShrink: 0,
             overflow: 'hidden',
