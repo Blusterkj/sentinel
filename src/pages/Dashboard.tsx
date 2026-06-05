@@ -125,8 +125,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         className="hidden md:flex items-center shrink-0 border-b border-[#1a1a1a]"
         style={{
           background: '#0d0d0d',
-          padding: '20px 24px',
-          gap: '24px'
+          padding: '16px 24px',
+          gap: '20px'
         }}
       >
         {activeFilter ? (

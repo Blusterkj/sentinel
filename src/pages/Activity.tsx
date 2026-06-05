@@ -76,7 +76,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       {/* Page header */}
       <div
         style={{
-          padding: '24px 180px 24px 24px',
+          padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
@@ -133,8 +133,8 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         style={{ 
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '24px',
-          padding: '40px 24px 24px 24px',
+          gap: '20px',
+          padding: '24px',
           background: '#0a0a0a', 
           flexShrink: 0 
         }}
