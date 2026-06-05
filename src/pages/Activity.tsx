@@ -76,7 +76,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       {/* Page header */}
       <div
         style={{
-          padding: '16px 24px',
+          padding: '16px 180px 16px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
