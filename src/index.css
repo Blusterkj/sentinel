@@ -364,4 +364,15 @@ body {
   .mobile-submit-area {
     margin-bottom: 120px !important;
   }
+
+  /* ── Report header: tighter padding on mobile ── */
+  .mobile-report-header {
+    padding: 16px 16px 0 !important;
+  }
+
+  /* ── Report header: hide description and feature pills on mobile ── */
+  .mobile-report-desc-hidden,
+  .mobile-report-pills-hidden {
+    display: none !important;
+  }
 }

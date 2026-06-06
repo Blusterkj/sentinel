@@ -23,6 +23,7 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
     >
       {/* Page header */}
       <div
+        className="mobile-report-header"
         style={{
           padding: '32px 24px 0',
           maxWidth: '1200px',
@@ -61,7 +62,10 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
         >
           Report an Incident
         </h1>
+
+        {/* Hidden on mobile — saves space */}
         <p
+          className="mobile-report-desc-hidden"
           style={{
             fontSize: '13px',
             color: '#666',
@@ -73,8 +77,9 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
           The AI agent will immediately analyze the incident against historical patterns.
         </p>
 
-        {/* Feature pills */}
+        {/* Feature pills — hidden on mobile */}
         <div
+          className="mobile-report-pills-hidden"
           style={{
             display: 'flex',
             gap: '10px',
