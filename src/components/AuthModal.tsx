@@ -258,9 +258,7 @@ const ImportWalletView: React.FC<{
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
-        Paste your Sui private key (suiprivkey… format):
-      </p>
+      <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Paste your Sui private key:</p>
 
       <textarea
         id="import-key-input"
@@ -390,11 +388,9 @@ const MobileBottomSheet: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         width: '100%', maxWidth: '500px',
         background: '#111', borderTop: '1px solid #222',
         borderRadius: '20px 20px 0 0',
-        padding: '24px 20px 100px',
+        padding: '24px 20px 36px',
         boxShadow: '0 -16px 64px rgba(0,0,0,0.7)',
         position: 'relative',
-        maxHeight: '90vh',
-        overflowY: 'auto',
       }}
     >
       {/* Drag handle */}
