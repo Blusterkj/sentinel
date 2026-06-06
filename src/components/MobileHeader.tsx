@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Logo } from './Logo';
 import { ConnectButton } from '@mysten/dapp-kit';
 
 export const MobileHeader: React.FC = () => {
@@ -18,7 +18,7 @@ export const MobileHeader: React.FC = () => {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Shield size={20} color="#eab308" />
+        <Logo size={22} />
         <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.1em' }}>SENTINEL</span>
       </div>
       <div>
