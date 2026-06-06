@@ -6,6 +6,8 @@ const USER_INCIDENTS_KEY = 'sentinel_user_incidents';
 const INCIDENT_UPDATES_KEY = 'sentinel_incident_updates';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 import { useWalrusSeeding } from './hooks/useWalrusSeeding';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
@@ -19,6 +21,7 @@ import { Logo } from './components/Logo';
 import { MobileHeader } from './components/MobileHeader';
 import { BottomTabBar } from './components/BottomTabBar';
 import { SosButton } from './components/SosButton';
+import { KeyBackupScreen } from './components/KeyBackupScreen';
 import type { Incident } from './types/incident';
 import {
   LayoutDashboard,
@@ -34,6 +37,8 @@ import {
 } from 'lucide-react';
 import { ConnectButton, useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
+import { useAuthStore } from './lib/authStore';
+import { loadWallet, generateWallet, saveWallet } from './lib/inAppWallet';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
 
@@ -284,10 +289,40 @@ const SEED_INCIDENTS: Incident[] = [
 export default function App() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
+  const { address: inAppAddress, setInAppAuth } = useAuthStore();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>(
     'landing'
   );
+
+  // ── APK KeyBackupScreen state ──
+  const [showKeyBackup, setShowKeyBackup] = useState(false);
+  const [backupWallet, setBackupWallet] = useState<{
+    address: string; privateKey: string; mnemonic: string;
+  } | null>(null);
+
+  // ── Load persisted in-app wallet on mount ──
+  useEffect(() => {
+    (async () => {
+      const existing = await loadWallet();
+      if (existing) {
+        // Wallet found — silently authenticate
+        setInAppAuth(existing.address, existing.privateKey);
+      } else if (Capacitor.isNativePlatform()) {
+        // APK first launch — auto-generate wallet and show backup screen
+        try {
+          const wallet = await generateWallet();
+          await saveWallet(wallet.privateKey);
+          setBackupWallet(wallet);
+          setShowKeyBackup(true);
+        } catch (err) {
+          console.error('Failed to generate wallet on APK first launch', err);
+        }
+      }
+      // Web (no wallet) — WalletGuard handles auth prompting
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Load persisted incidents on mount ──
   const [incidents, setIncidents] = useState<Incident[]>(() => {
@@ -417,6 +452,24 @@ export default function App() {
   // Walrus seeding — stores all seed incidents on-chain on first load
   const seeding = useWalrusSeeding(incidents, updateIncident);
 
+  // ── APK first launch: show full-screen KeyBackupScreen ──
+  if (showKeyBackup && backupWallet && Capacitor.isNativePlatform()) {
+    return (
+      <AnimatePresence>
+        <KeyBackupScreen
+          key="key-backup"
+          address={backupWallet.address}
+          privateKey={backupWallet.privateKey}
+          mnemonic={backupWallet.mnemonic}
+          onContinue={() => {
+            setInAppAuth(backupWallet.address, backupWallet.privateKey);
+            setShowKeyBackup(false);
+          }}
+        />
+      </AnimatePresence>
+    );
+  }
+
   return (
     <div
       className="flex flex-col md:flex-row mobile-app-root"
@@ -432,6 +485,7 @@ export default function App() {
 
       {/* Desktop wallet button — absolute positioned, only shown on desktop */}
       <div className="hidden md:block" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
+        {/* dapp-kit connected */}
         {account ? (
           <div style={{ position: 'relative' }}>
             <button
@@ -459,6 +513,17 @@ export default function App() {
                 </button>
               </div>
             )}
+          </div>
+        ) : inAppAddress ? (
+          /* In-app wallet connected */
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
+            <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
+              {inAppAddress.slice(0, 6)}...{inAppAddress.slice(-4)}
+            </span>
+            <span style={{ fontSize: '10px', color: '#8b5cf6', background: 'rgba(139,92,246,0.12)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700 }}>
+              in-app
+            </span>
           </div>
         ) : (
           <ConnectButton />
@@ -635,7 +700,7 @@ export default function App() {
                 }}>
                   <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400, flex: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {item.label}
-                    {!account && (item.id === 'report' || item.id === 'agent' || item.id === 'activity') && (
+                    {!account && !inAppAddress && (item.id === 'report' || item.id === 'agent' || item.id === 'activity') && (
                       <Lock size={12} color="#666" />
                     )}
                   </span>

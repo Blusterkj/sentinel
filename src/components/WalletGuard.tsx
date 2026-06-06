@@ -1,59 +1,94 @@
-import React from 'react';
-import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
-import { motion } from 'framer-motion';
-import { Logo } from './Logo';
+// src/components/WalletGuard.tsx
+// Guards protected routes — checks BOTH dapp-kit wallet AND in-app wallet.
+// Shows AuthModal on web if neither is connected.
+// On APK: wallet always exists after first launch (KeyBackupScreen handles onboarding).
+
+import React, { useState } from 'react';
+import { useCurrentAccount } from '@mysten/dapp-kit';
+import { Capacitor } from '@capacitor/core';
+import { AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../lib/authStore';
+import { generateWallet, saveWallet } from '../lib/inAppWallet';
+import { AuthModal } from './AuthModal';
 
 export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const account = useCurrentAccount();
+  const account = useCurrentAccount(); // dapp-kit
+  const { address, setInAppAuth } = useAuthStore(); // in-app wallet
+  const [showModal, setShowModal] = useState(false);
 
-  if (account) {
+  // Either auth method is sufficient
+  if (account || address) {
     return <>{children}</>;
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-md"
-      style={{
-        border: '1px solid rgba(255, 255, 255, 0.05)',
-      }}
-    >
-      <div 
-        className="relative flex flex-col items-center gap-6 bg-[#151515] rounded-2xl border border-[#2a2a2a] shadow-2xl max-w-md w-full mx-4 text-center"
-        style={{ padding: '36px 24px 36px 24px' }}
-      >
-        <Logo size={48} />
-        
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Wallet Required</h2>
-          <p className="text-[#888] text-sm">
-            Connect your Sui wallet to access this feature
-          </p>
-        </div>
+  // ── Not authenticated ────────────────────────────────────────────────────
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
-          <ConnectButton />
-          
+  if (Capacitor.isNativePlatform()) {
+    // APK should never reach here after first launch (App.tsx handles init).
+    // Safety fallback: silently generate + save a wallet.
+    (async () => {
+      try {
+        const wallet = await generateWallet();
+        await saveWallet(wallet.privateKey);
+        setInAppAuth(wallet.address, wallet.privateKey);
+      } catch {
+        // Ignore — will retry on next render
+      }
+    })();
+
+    // Render nothing while generating
+    return null;
+  }
+
+  // ── Web (desktop or mobile web) — show AuthModal ─────────────────────────
+
+  return (
+    <>
+      {/* Dimmed placeholder so the user sees they need to auth */}
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(10,10,10,0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={() => setShowModal(true)}
+        role="button"
+        aria-label="Sign in to access this feature"
+      >
+        <div style={{
+          background: '#151515', border: '1px solid #2a2a2a',
+          borderRadius: '12px', padding: '20px 28px',
+          textAlign: 'center',
+        }}>
+          <p style={{ color: '#fff', fontWeight: 600, margin: '0 0 8px', fontSize: '15px' }}>
+            Sign In Required
+          </p>
+          <p style={{ color: '#666', fontSize: '13px', margin: '0 0 14px' }}>
+            Connect a wallet to access this feature
+          </p>
           <button
-            onClick={() => window.history.back()}
+            id="wallet-guard-signin-btn"
+            onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
             style={{
-              background: 'none',
-              border: 'none',
-              color: '#666',
-              fontSize: '13px',
-              fontWeight: 500,
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              transition: 'color 0.2s ease'
+              background: '#3b82f6', border: 'none',
+              borderRadius: '8px', color: '#fff',
+              fontSize: '13px', fontWeight: 600,
+              padding: '9px 20px', cursor: 'pointer',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}
           >
-            Cancel
+            Sign In
           </button>
         </div>
       </div>
-    </motion.div>
+
+      <AnimatePresence>
+        {showModal && (
+          <AuthModal onClose={() => setShowModal(false)} />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
