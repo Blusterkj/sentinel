@@ -205,9 +205,27 @@ body {
     padding-bottom: 160px !important; /* tab bar + SOS + breathing room */
   }
 
-  /* ── Memory result count: sit inline with filters, not pushed to far right ── */
+  /* ── Memory result count: restore right-push on mobile ── */
   .mobile-result-count {
-    margin-left: 0 !important;
+    margin-left: auto !important;
+  }
+
+  /* ── All Types capsule: icon closer to select + border ── */
+  .mobile-filter-type {
+    gap: 3px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    padding: 4px 8px 4px 8px !important;
+  }
+
+  /* ── All Severities: matching compact capsule ── */
+  .mobile-severity-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
   }
 
   /* ── Dashboard cluster overlay: clear tab bar (64px) + collapsed sheet (136px) + gap ── */

@@ -267,7 +267,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         </div>
 
         {/* Type filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="mobile-filter-type" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Filter size={14} color="#888" />
           <select
             value={typeFilter}
@@ -294,6 +294,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
         {/* Severity filter */}
         <select
+          className="mobile-severity-select"
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
           style={{
