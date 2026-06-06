@@ -16,9 +16,10 @@ export const Report: React.FC<ReportProps> = ({ onIncidentSubmitted }) => {
       style={{
         height: '100%',
         overflowY: 'auto',
+        overflowX: 'hidden',
         background: '#0a0a0a',
       }}
-      className="pb-[120px] md:pb-0"
+      className="pb-[140px] md:pb-8"
     >
       {/* Page header */}
       <div

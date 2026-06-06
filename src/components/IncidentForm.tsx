@@ -15,6 +15,7 @@ import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
+import { useAuthStore } from '../lib/authStore';
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 
@@ -44,6 +45,9 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
+  const { address: inAppAddress } = useAuthStore();
+  // Use whichever wallet is active — dapp-kit takes precedence
+  const walletAddress = account?.address ?? inAppAddress ?? undefined;
   const [type, setType] = useState<IncidentType>('other');
   const [severity, setSeverity] = useState<Severity>('medium');
   const [description, setDescription] = useState('');
@@ -258,7 +262,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         walrusStatus: blobId ? 'synced' : 'pending',
         suiTxDigest: txDigest || undefined,
         suiObjectId: suiObjectId || undefined,
-        reporter: account?.address,
+        reporter: walletAddress,
       };
 
       setSubmittedIncident(storedIncident);
@@ -519,7 +523,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}
+      style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', boxSizing: 'border-box', overflowX: 'hidden' }}
     >
       <div style={{ marginBottom: '24px' }}>
         <h2
@@ -544,7 +548,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           INCIDENT TYPE
         </label>
-        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
           {INCIDENT_TYPES.map((t) => (
             <button
               key={t.value}
@@ -580,7 +584,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           SEVERITY LEVEL
         </label>
-        <div className="mobile-severity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
           {SEVERITIES.map((s) => (
             <button
               key={s.value}
@@ -808,8 +812,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         </div>
       )}
 
-      {/* Submit */}
-      {account ? (
+      {/* Submit — allow dapp-kit wallet OR in-app wallet */}
+      {(account || inAppAddress) ? (
         <button
           type="submit"
           id="submit-incident-btn"
