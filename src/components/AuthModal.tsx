@@ -6,7 +6,7 @@
 // Mobile web (<768px): One section — In-App Wallet only (bottom sheet)
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ConnectButton } from '@mysten/dapp-kit';
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Wallet, Key, X } from 'lucide-react';
 import { generateWallet, importWallet, saveWallet } from '../lib/inAppWallet';
