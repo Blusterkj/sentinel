@@ -381,11 +381,9 @@ body {
     display: none !important;
   }
 
-  /* ── Agent: input bar bottom padding clears tab bar + SOS button ── */
-  /* SOS sits at bottom:148px, is ~60px tall → top at 208px from viewport bottom.
-     Tab bar is 64px. Padding of 160px ensures bar content sits above 64+160=224px → above SOS. */
+  /* ── Agent: input bar sits just above the tab bar ── */
   .mobile-agent-input {
-    padding: 12px 16px 160px !important;
+    padding: 12px 16px 76px !important;
   }
 
   /* ── Agent: hide Shift+Enter hint on mobile ── */
