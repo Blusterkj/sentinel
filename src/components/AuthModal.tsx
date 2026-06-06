@@ -242,6 +242,10 @@ const ImportWalletView: React.FC<{
       setError('Please paste your private key.');
       return;
     }
+    if (trimmed.startsWith('0x')) {
+      setError('That\'s your wallet address, not your private key. Open your Sui wallet app → Settings → Export Private Key.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -258,7 +262,10 @@ const ImportWalletView: React.FC<{
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Paste your Sui private key:</p>
+      <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 4px' }}>Paste your private key:</p>
+      <p style={{ color: '#555', fontSize: '11px', margin: '0 0 8px', lineHeight: '1.4' }}>
+        Find it in your Sui wallet app → Settings → Export Private Key. Starts with <span style={{ color: '#8b5cf6', fontFamily: 'monospace' }}>suiprivkey1</span>
+      </p>
 
       <textarea
         id="import-key-input"
