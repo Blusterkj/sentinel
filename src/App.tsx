@@ -35,10 +35,11 @@ import {
   LogOut,
   User,
 } from 'lucide-react';
-import { ConnectButton, useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
+import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
+import { AuthModal } from './components/AuthModal';
 import { useAuthStore } from './lib/authStore';
-import { loadWallet, generateWallet, saveWallet } from './lib/inAppWallet';
+import { loadWallet, generateWallet, saveWallet, clearWallet } from './lib/inAppWallet';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
 
@@ -289,8 +290,9 @@ const SEED_INCIDENTS: Incident[] = [
 export default function App() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
-  const { address: inAppAddress, setInAppAuth } = useAuthStore();
+  const { address: inAppAddress, setInAppAuth, clearAuth } = useAuthStore();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
+  const [showDesktopAuthModal, setShowDesktopAuthModal] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>(
     'landing'
   );
@@ -515,18 +517,50 @@ export default function App() {
             )}
           </div>
         ) : inAppAddress ? (
-          /* In-app wallet connected */
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
-            <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
-              {inAppAddress.slice(0, 6)}...{inAppAddress.slice(-4)}
-            </span>
-            <span style={{ fontSize: '10px', color: '#8b5cf6', background: 'rgba(139,92,246,0.12)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700 }}>
-              in-app
-            </span>
+          /* In-app wallet connected — show chip with disconnect dropdown */
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowWalletMenu((v) => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer' }}
+            >
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
+              <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
+                {inAppAddress.slice(0, 6)}...{inAppAddress.slice(-4)}
+              </span>
+              <span style={{ fontSize: '10px', color: '#8b5cf6', background: 'rgba(139,92,246,0.12)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700 }}>
+                in-app
+              </span>
+            </button>
+            {showWalletMenu && (
+              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '4px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                <button
+                  onClick={async () => { await clearWallet(); clearAuth(); setShowWalletMenu(false); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                >
+                  <LogOut size={14} /> Disconnect
+                </button>
+              </div>
+            )}
           </div>
         ) : (
-          <ConnectButton />
+          /* Not connected — custom Sign In button that opens AuthModal */
+          <button
+            id="desktop-signin-btn"
+            onClick={() => setShowDesktopAuthModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 16px', background: '#1a1a1a',
+              border: '1px solid #333', borderRadius: '8px',
+              color: '#fff', fontSize: '14px', fontWeight: 600,
+              cursor: 'pointer', transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#252525'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a'; }}
+          >
+            Sign In
+          </button>
         )}
       </div>
 
@@ -850,6 +884,11 @@ export default function App() {
           window.dispatchEvent(new Event('popstate'));
         }}
       />
+      <AnimatePresence>
+        {showDesktopAuthModal && (
+          <AuthModal onClose={() => setShowDesktopAuthModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -346,12 +346,49 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, margin: 0 }}>Sign In to Sentinel</h2>
       </div>
 
-      {/* Section 1 — dapp-kit */}
+      {/* Section 1 — Slush / dapp-kit (PRIMARY) */}
       <div style={{ marginBottom: '20px' }}>
-        <p style={sectionLabelStyle}>Have a Sui Wallet extension?</p>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <ConnectButton />
+        <p style={sectionLabelStyle}>Connect Slush Wallet</p>
+        <div style={{ position: 'relative' }}>
+          {/* Styled button the user sees */}
+          <button
+            id="desktop-slush-connect-btn"
+            onClick={() => {
+              const hidden = document.getElementById('hidden-dappkit-connect-btn');
+              if (hidden) {
+                const btn = hidden.querySelector('button');
+                btn?.click();
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              width: '100%', padding: '13px 16px',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              border: 'none', borderRadius: '10px',
+              color: '#fff', fontSize: '15px', fontWeight: 700,
+              cursor: 'pointer', transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+          >
+            <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="10" fill="white" fillOpacity="0.15"/>
+              <path d="M20 8C13.373 8 8 13.373 8 20s5.373 12 12 12 12-5.373 12-12S26.627 8 20 8zm0 4a8 8 0 110 16 8 8 0 010-16z" fill="white"/>
+            </svg>
+            Connect with Slush
+          </button>
+          {/* Hidden real ConnectButton — triggered programmatically */}
+          <div
+            id="hidden-dappkit-connect-btn"
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', top: 0, left: 0 }}
+            aria-hidden="true"
+          >
+            <ConnectButton />
+          </div>
         </div>
+        <p style={{ color: '#444', fontSize: '11px', textAlign: 'center', margin: '8px 0 0' }}>
+          For Sui Wallet browser extension users
+        </p>
       </div>
 
       {/* Divider */}
@@ -361,10 +398,13 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         <div style={dividerLineStyle} />
       </div>
 
-      {/* Section 2 — In-App Wallet */}
+      {/* Section 2 — In-App Wallet (SECONDARY) */}
       <div style={{ marginTop: '20px' }}>
-        <p style={sectionLabelStyle}>Use an in-app wallet</p>
+        <p style={sectionLabelStyle}>Sentinel In-App Wallet</p>
         <InAppWalletPanel onClose={onClose} setInAppAuth={setInAppAuth} />
+        <p style={{ color: '#444', fontSize: '11px', textAlign: 'center', margin: '10px 0 0' }}>
+          No extension needed — works everywhere
+        </p>
       </div>
     </motion.div>
   </motion.div>
