@@ -374,10 +374,15 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
-            {/* Real Slush logo */}
-            <svg width="22" height="22" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="100" fill="white" fillOpacity="0.18"/>
-              <path d="M60 72c0-10 8-18 18-18h44c10 0 18 8 18 18 0 7-4 13-10 16l-34 20c-8 5-14 13-14 22 0 10 8 18 18 18h44" stroke="white" strokeWidth="18" strokeLinecap="round"/>
+            {/* Real Slush logo — S curve */}
+            <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M72 28 C72 28 62 18 45 20 C28 22 20 34 22 46 C24 56 34 62 50 66 C66 70 76 76 74 88 C72 98 60 104 44 100 C30 96 24 86 24 86"
+                stroke="white"
+                strokeWidth="12"
+                strokeLinecap="round"
+                fill="none"
+              />
             </svg>
             Connect with Slush
           </button>
