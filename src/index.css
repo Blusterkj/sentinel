@@ -383,7 +383,7 @@ body {
 
   /* ── Agent: input bar sits just above the tab bar ── */
   .mobile-agent-input {
-    padding: 12px 16px 76px !important;
+    padding: 12px 16px 96px !important;
   }
 
   /* ── Agent: hide Shift+Enter hint on mobile ── */
