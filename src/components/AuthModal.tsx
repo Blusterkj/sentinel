@@ -374,18 +374,12 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
-            {/* Slush logo — blue S, padded viewBox so bottom blob isn't clipped */}
-            <svg width="24" height="24" viewBox="-8 -8 116 116" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="slushG" x1="1" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#5ac8fa" />
-                  <stop offset="100%" stopColor="#1a6fd4" />
-                </linearGradient>
-              </defs>
+            {/* Slush S logo — traced from reference */}
+            <svg width="26" height="26" viewBox="-12 -12 124 124" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
-                d="M 73 18 C 90 12, 93 38, 74 50 C 60 58, 36 52, 22 60 C 8 68, 7 86, 22 92 C 34 98, 60 97, 73 88"
-                stroke="url(#slushG)"
-                strokeWidth="17"
+                d="M 70 20 C 88 12, 94 38, 76 50 C 62 60, 30 54, 18 60 C 6 68, 8 86, 22 90 C 34 94, 62 94, 74 84"
+                stroke="white"
+                strokeWidth="18"
                 strokeLinecap="round"
                 fill="none"
               />
