@@ -18,6 +18,7 @@ interface IncidentFeedProps {
   myReportsFilter?: boolean;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
+  hideHeader?: boolean;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -96,6 +97,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   myReportsFilter,
   onResolveIncident,
   onDeleteIncident,
+  hideHeader = false,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const modalAccount = useCurrentAccount();
@@ -152,7 +154,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
 
   return (
     <div className="h-full flex flex-col" style={{ overflow: 'hidden' }}>
-      {/* Header */}
+      {/* Header — hidden when used inside BottomSheet (which has its own header) */}
+      {!hideHeader && (
       <div
         style={{
           padding: '16px 20px',
@@ -198,6 +201,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
           </span>
         </div>
       </div>
+      )}
 
       {/* Feed list */}
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>

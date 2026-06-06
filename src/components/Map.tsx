@@ -70,7 +70,7 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
 
   if (distance > 20000) {
     return (
-      <div className="absolute z-[1000] left-[16px] md:left-[20px] top-[44px] md:top-[20px]">
+      <div className="absolute z-[1000] left-[16px] md:left-[20px] top-[60px] md:top-[20px]">
         <button
           onClick={() => map.flyTo(userLocation, 12, { animate: true, duration: 1.5 })}
           className="glass-card flex items-center justify-center w-9 h-9 rounded-full md:w-auto md:h-auto md:px-4 md:py-2.5 md:rounded-lg"

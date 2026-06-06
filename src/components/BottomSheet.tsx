@@ -127,6 +127,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             myReportsFilter={myReportsFilter}
             onResolveIncident={onResolveIncident}
             onDeleteIncident={onDeleteIncident}
+            hideHeader
           />
         </div>
       </div>
