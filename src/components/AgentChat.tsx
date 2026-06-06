@@ -192,6 +192,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
 
           {/* Suggested queries */}
           <div
+            className="mobile-query-grid"
             style={{
               padding: '0 16px 16px',
               display: 'grid',

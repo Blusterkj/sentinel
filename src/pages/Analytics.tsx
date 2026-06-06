@@ -230,12 +230,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
   ];
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff', padding: '32px 36px 80px' }}>
+    <div className="mobile-page-padding" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff', padding: '32px 36px 80px' }}>
       <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '6px' }}>System Analytics</h1>
       <p style={{ fontSize: '13px', color: '#555', marginBottom: '36px' }}>Live incident intelligence overview</p>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
+      <div className="mobile-stat-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
         {statCards.map(s => (
           <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '18px', padding: '28px 24px', minHeight: '110px' }}>
             <div style={{ background: s.bg, padding: '14px', borderRadius: '12px', flexShrink: 0 }}>{s.icon}</div>
@@ -248,24 +248,24 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
       </div>
 
       {/* Trends + Donut */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
-        <div style={{ ...cardStyle, padding: '28px' }}>
+      <div className="mobile-chart-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
+        <div className="mobile-chart-card" style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Incident Trends</h2>
           <SVGLineChart data={trendsData} />
         </div>
-        <div style={{ ...cardStyle, padding: '28px' }}>
+        <div className="mobile-chart-card" style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Incident Types</h2>
           <SVGDonutChart data={typeData} />
         </div>
       </div>
 
       {/* Bar chart + Hotspots */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
-        <div style={{ ...cardStyle, padding: '28px' }}>
+      <div className="mobile-two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+        <div className="mobile-chart-card" style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>Severity Breakdown</h2>
           <SVGBarChart data={severityData} />
         </div>
-        <div style={{ ...cardStyle, padding: '28px' }}>
+        <div className="mobile-chart-card" style={{ ...cardStyle, padding: '28px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ccc', marginBottom: '24px' }}>
             <MapPin size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
             Top Hotspots

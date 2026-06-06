@@ -118,6 +118,7 @@ export const Landing: React.FC = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
+        className="mobile-hero"
         style={{ maxWidth: '1200px', margin: '0 auto', padding: '100px 24px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', zIndex: 1, position: 'relative' }}
       >
         <motion.div variants={itemVariants} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 20px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '999px', marginBottom: '32px', boxShadow: '0 0 20px rgba(59,130,246,0.2)' }}>
@@ -165,7 +166,7 @@ export const Landing: React.FC = () => {
           </button>
         </motion.div>
 
-        <motion.div variants={containerVariants} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '100px', width: '100%' }}>
+        <motion.div variants={containerVariants} className="mobile-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '100px', width: '100%' }}>
           {[
             { icon: <Database size={26} color="#c084fc" />, color: '#c084fc', title: 'Immutable Memory', desc: 'Incidents permanently archived on the Walrus network, bypassing censorship and data loss.' },
             { icon: <Activity size={26} color="#4ade80" />, color: '#4ade80', title: 'Real-Time Telemetry', desc: 'Instantly broadcasts verified incidents to nearby citizens and first responder nodes.' },

@@ -75,6 +75,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Page header */}
       <div
+        className="mobile-header-strip"
         style={{
           padding: '16px 180px 16px 24px',
           borderBottom: '1px solid #1a1a1a',
@@ -130,6 +131,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
 
       {/* Stats row */}
       <div
+        className="mobile-stat-grid-4"
         style={{ 
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',

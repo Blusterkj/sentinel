@@ -18,6 +18,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
     >
       {/* Page header strip */}
       <div
+        className="mobile-header-strip"
         style={{
           padding: '16px 180px 16px 24px',
           borderBottom: '1px solid #1a1a1a',

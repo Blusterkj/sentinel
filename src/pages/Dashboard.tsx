@@ -339,7 +339,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Selected cluster overlay */}
           {selectedCluster && (
             <div
-              className="fade-in-up"
+              className="fade-in-up mobile-cluster-overlay"
               style={{
                 position: 'absolute',
                 bottom: '20px',
@@ -684,7 +684,7 @@ const WeatherStatus: React.FC = () => {
   return (
     <div
       onClick={() => setExpanded(!expanded)}
-      className="absolute z-[800] right-[16px] md:right-[16px] top-[44px] md:top-[16px]"
+      className={`absolute z-[800] right-[16px] md:right-[16px] top-[44px] md:top-[16px] mobile-weather`}
       style={{
         background: 'rgba(13, 13, 13, 0.85)',
         backdropFilter: 'blur(12px)',

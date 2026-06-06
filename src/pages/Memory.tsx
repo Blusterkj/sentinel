@@ -135,6 +135,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       )}
       {/* Page header */}
       <div
+        className="mobile-header-strip"
         style={{
           padding: '16px 180px 16px 24px',
           borderBottom: '1px solid #1a1a1a',
@@ -186,6 +187,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
       {/* Stats bar */}
       <div
+        className="mobile-stat-grid-4"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -223,6 +225,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
       {/* Filter bar */}
       <div
+        className="mobile-filter-bar"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -327,7 +330,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       </div>
 
       {/* Memory entries */}
-      <div className="px-5 pt-6 pb-[120px] md:pb-6" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
+      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
         {filtered.length === 0 ? (
           <div
             style={{
