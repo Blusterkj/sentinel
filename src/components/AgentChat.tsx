@@ -188,11 +188,9 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
       {/* Status cards + Suggested queries — only in empty state */}
       {messages.length <= 1 && (
         <>
-
-
-          {/* Suggested queries */}
+          {/* Suggested queries — hidden on mobile */}
           <div
-            className="mobile-query-grid"
+            className="mobile-query-grid mobile-suggestions-hidden"
             style={{
               padding: '0 16px 16px',
               display: 'grid',
@@ -245,6 +243,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
 
       {/* Input */}
       <div
+        className="mobile-agent-input"
         style={{
           padding: '16px 20px',
           background: 'transparent',

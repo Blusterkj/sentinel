@@ -375,4 +375,14 @@ body {
   .mobile-report-pills-hidden {
     display: none !important;
   }
+
+  /* ── Agent: hide suggestion cards on mobile ── */
+  .mobile-suggestions-hidden {
+    display: none !important;
+  }
+
+  /* ── Agent: input bar bottom padding clears tab bar + Android nav ── */
+  .mobile-agent-input {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
 }
