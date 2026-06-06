@@ -524,6 +524,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     <form
       onSubmit={handleSubmit}
       style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', boxSizing: 'border-box', overflowX: 'hidden' }}
+      className="mobile-report-form"
     >
       <div style={{ marginBottom: '24px' }}>
         <h2
@@ -548,7 +549,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           INCIDENT TYPE
         </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
           {INCIDENT_TYPES.map((t) => (
             <button
               key={t.value}
@@ -584,7 +585,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           SEVERITY LEVEL
         </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+        <div className="mobile-severity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
           {SEVERITIES.map((s) => (
             <button
               key={s.value}
@@ -663,7 +664,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           LOCATION
         </label>
         <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="mobile-location-row" style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={address}

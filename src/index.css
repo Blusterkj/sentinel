@@ -335,4 +335,28 @@ body {
     align-items: center !important;
     gap: 12px !important;
   }
+  /* ── IncidentForm: report page outer container ── */
+  .mobile-report-page {
+    overflow-x: hidden !important;
+  }
+
+  /* ── IncidentForm: form itself ── */
+  .mobile-report-form {
+    padding: 16px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ── IncidentForm: location button row — stack Search+GPS below input ── */
+  .mobile-location-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .mobile-location-row input {
+    width: 100% !important;
+    flex: none !important;
+    min-width: 0 !important;
+  }
+  .mobile-location-row button {
+    flex: 1 !important;
+  }
 }
