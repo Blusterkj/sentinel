@@ -298,7 +298,7 @@ const ImportWalletView: React.FC<{
 
       <button
         id="import-wallet-submit-btn"
-        onClick={handleImport}
+        onClick={() => handleImport()}
         disabled={loading || !key.trim()}
         style={{
           ...btnStyle('#2563eb'),
