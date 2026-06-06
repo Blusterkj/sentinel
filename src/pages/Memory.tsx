@@ -314,7 +314,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         </select>
 
         {/* Result count */}
-        <span style={{
+        <span className="mobile-result-count" style={{
           fontSize: '12px',
           color: '#888',
           fontFamily: 'monospace',

@@ -205,6 +205,11 @@ body {
     padding-bottom: 160px !important; /* tab bar + SOS + breathing room */
   }
 
+  /* ── Memory result count: sit inline with filters, not pushed to far right ── */
+  .mobile-result-count {
+    margin-left: 0 !important;
+  }
+
   /* ── Dashboard cluster overlay: clear tab bar (64px) + collapsed sheet (136px) + gap ── */
   .mobile-cluster-overlay {
     max-width: calc(100vw - 32px) !important;
