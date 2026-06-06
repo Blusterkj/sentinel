@@ -50,10 +50,10 @@ const InAppWalletPanel: React.FC<InAppPanelProps> = ({ onClose, setInAppAuth }) 
     <div>
       {view === 'menu' && <InAppMenu onSelect={setView} />}
       {view === 'create' && (
-        <CreateWalletView onBack={() => setView('menu')} onClose={onClose} setInAppAuth={setInAppAuth} />
+        <CreateWalletView onClose={onClose} setInAppAuth={setInAppAuth} />
       )}
       {view === 'import' && (
-        <ImportWalletView onBack={() => setView('menu')} onClose={onClose} setInAppAuth={setInAppAuth} />
+        <ImportWalletView onClose={onClose} setInAppAuth={setInAppAuth} />
       )}
     </div>
   );
@@ -87,10 +87,9 @@ const InAppMenu: React.FC<{ onSelect: (v: InAppView) => void }> = ({ onSelect })
 // ─── Create Wallet View ──────────────────────────────────────────────────────
 
 const CreateWalletView: React.FC<{
-  onBack: () => void;
   onClose: () => void;
   setInAppAuth: (address: string, privateKey: string) => void;
-}> = ({ onBack: _onBack, onClose, setInAppAuth }) => {
+}> = ({ onClose, setInAppAuth }) => {
   const [generated, setGenerated] = useState<{
     address: string;
     privateKey: string;
@@ -230,10 +229,9 @@ const CreateWalletView: React.FC<{
 // ─── Import Wallet View ──────────────────────────────────────────────────────
 
 const ImportWalletView: React.FC<{
-  onBack: () => void;
   onClose: () => void;
   setInAppAuth: (address: string, privateKey: string) => void;
-}> = ({ onBack: _onBack, onClose, setInAppAuth }) => {
+}> = ({ onClose, setInAppAuth }) => {
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -446,11 +444,7 @@ const hoverOut = (e: React.MouseEvent<HTMLButtonElement>, color: string) => {
   (e.currentTarget as HTMLButtonElement).style.background = color;
 };
 
-const backBtnStyle: React.CSSProperties = {
-  background: 'none', border: 'none', color: '#666',
-  fontSize: '13px', cursor: 'pointer', padding: '0',
-  textDecoration: 'underline', alignSelf: 'flex-start',
-};
+
 
 const keyTextareaStyle: React.CSSProperties = {
   width: '100%', padding: '10px 12px',
