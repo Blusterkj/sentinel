@@ -549,7 +549,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           INCIDENT TYPE
         </label>
-        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
           {INCIDENT_TYPES.map((t) => (
             <button
               key={t.value}
@@ -585,7 +585,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           SEVERITY LEVEL
         </label>
-        <div className="mobile-severity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+        <div className="mobile-severity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
           {SEVERITIES.map((s) => (
             <button
               key={s.value}
