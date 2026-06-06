@@ -172,7 +172,7 @@ function SVGDonutChart({ data }: { data: { name: string; value: number }[] }) {
   });
 
   return (
-    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+    <div className="mobile-donut-container" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
       <svg viewBox={`0 0 220 220`} style={{ width: 180, height: 180, flexShrink: 0 }}>
         {slices.map((s, i) => (
           <path key={i} d={s.path} fill={s.color} opacity={0.9} />
@@ -230,18 +230,18 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
   ];
 
   return (
-    <div className="mobile-page-padding" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff', padding: '32px 36px 80px' }}>
+    <div className="mobile-page-padding mobile-analytics-container" style={{ height: '100%', overflowY: 'auto', background: '#0a0a0a', color: '#fff', padding: '32px 36px 80px' }}>
       <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '6px' }}>System Analytics</h1>
       <p style={{ fontSize: '13px', color: '#555', marginBottom: '36px' }}>Live incident intelligence overview</p>
 
       {/* Stat cards */}
       <div className="mobile-stat-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
         {statCards.map(s => (
-          <div key={s.label} style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '18px', padding: '28px 24px', minHeight: '110px' }}>
+          <div key={s.label} className="mobile-stat-card" style={{ ...cardStyle, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '18px', padding: '28px 24px', minHeight: '110px' }}>
             <div style={{ background: s.bg, padding: '14px', borderRadius: '12px', flexShrink: 0 }}>{s.icon}</div>
             <div>
-              <div style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.06em', marginBottom: '6px' }}>{s.label}</div>
-              <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.1 }}>{s.value}</div>
+              <div className="mobile-stat-label" style={{ fontSize: '11px', color: '#666', fontWeight: 600, letterSpacing: '0.06em', marginBottom: '6px' }}>{s.label}</div>
+              <div className="mobile-stat-value" style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.1 }}>{s.value}</div>
             </div>
           </div>
         ))}

@@ -245,4 +245,38 @@ body {
   .mobile-list-scroll {
     padding-bottom: 120px !important;
   }
+
+  /* ── Analytics: clip any overflow at the container level ── */
+  .mobile-analytics-container {
+    overflow-x: hidden !important;
+    padding: 16px 12px 100px !important;
+  }
+
+  /* ── Analytics stat cards: switch to compact column layout ── */
+  .mobile-stat-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 14px !important;
+    gap: 8px !important;
+    min-height: auto !important;
+  }
+
+  /* ── Analytics stat card value: scale down the big number ── */
+  .mobile-stat-value {
+    font-size: 22px !important;
+  }
+
+  /* ── Analytics stat card label: allow wrapping, no overflow ── */
+  .mobile-stat-label {
+    letter-spacing: 0.02em !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+  }
+
+  /* ── Analytics donut chart: stack SVG and legend vertically ── */
+  .mobile-donut-container {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
 }
