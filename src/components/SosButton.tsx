@@ -138,7 +138,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
             position: 'fixed',
             bottom: '110px',
             right: '24px',
-            zIndex: 9998,
+            zIndex: 200,
             background: toastColors[toast.type].bg,
             border: `1px solid ${toastColors[toast.type].border}`,
             backdropFilter: 'blur(12px)',
@@ -165,7 +165,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         style={{
           position: 'fixed',
           right: '24px',
-          zIndex: 9999,
+          zIndex: 100,
           width: '64px',
           height: '64px',
           borderRadius: '50%',
