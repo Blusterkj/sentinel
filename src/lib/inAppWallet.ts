@@ -11,6 +11,9 @@
 // Recovery: user can import via bech32 private key OR (future) via mnemonic.
 
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { Secp256k1Keypair } from '@mysten/sui/keypairs/secp256k1';
+import { Secp256r1Keypair } from '@mysten/sui/keypairs/secp256r1';
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
 import { generateMnemonic, mnemonicToEntropy } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { Capacitor } from '@capacitor/core';
@@ -61,10 +64,22 @@ export function importWallet(privateKey: string): {
   address: string;
   privateKey: string;
 } {
-  // Ed25519Keypair.fromSecretKey accepts Uint8Array or bech32 string
-  const keypair = Ed25519Keypair.fromSecretKey(privateKey);
+  const trimmed = privateKey.trim();
+  const { scheme, secretKey } = decodeSuiPrivateKey(trimmed);
+  
+  let keypair;
+  if (scheme === 'ED25519') {
+    keypair = Ed25519Keypair.fromSecretKey(secretKey);
+  } else if (scheme === 'Secp256k1') {
+    keypair = Secp256k1Keypair.fromSecretKey(secretKey);
+  } else if (scheme === 'Secp256r1') {
+    keypair = Secp256r1Keypair.fromSecretKey(secretKey);
+  } else {
+    throw new Error('Unsupported key scheme');
+  }
+
   const address = keypair.getPublicKey().toSuiAddress();
-  return { address, privateKey };
+  return { address, privateKey: trimmed };
 }
 
 /**
@@ -73,7 +88,7 @@ export function importWallet(privateKey: string): {
  */
 export function isValidPrivateKey(key: string): boolean {
   try {
-    Ed25519Keypair.fromSecretKey(key.trim());
+    decodeSuiPrivateKey(key.trim());
     return true;
   } catch {
     return false;
