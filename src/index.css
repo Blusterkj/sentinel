@@ -201,9 +201,9 @@ body {
     bottom: 148px !important; /* tab bar 64px + collapsed sheet 72px + 12px gap */
   }
 
-  /* ── Weather widget: keep it small and avoid covering stats pills ── */
+  /* ── Weather widget: push down BELOW the stats pills row (~40px tall + 8px top + 8px gap) ── */
   .mobile-weather {
-    top: 8px !important;
+    top: 56px !important;
     right: 8px !important;
     min-width: 0 !important;
     padding: 8px 12px !important;
@@ -212,6 +212,28 @@ body {
   /* ── Landing hero: reduce padding so it fits ── */
   .mobile-hero {
     padding: 80px 20px 40px !important;
+  }
+
+  /* ── Stats pills wrapper: solid dark backdrop so pills are readable on the map ── */
+  .mobile-pills-wrapper {
+    background: rgba(10, 10, 10, 0.72) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-radius: 999px !important;
+    padding: 3px 6px !important;
+  }
+
+  /* ── Root app container: 100dvh avoids Android Chrome address-bar clipping ── */
+  .mobile-app-root {
+    height: 100dvh !important;
+    min-height: -webkit-fill-available;
+  }
+
+  /* ── Bottom tab bar: safe-area padding so it clears Android system nav ── */
+  .mobile-tab-bar {
+    min-height: 64px !important;
+    height: auto !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
 
   /* ── Landing feature cards: force single column ── */

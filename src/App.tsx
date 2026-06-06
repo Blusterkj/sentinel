@@ -419,7 +419,7 @@ export default function App() {
 
   return (
     <div
-      className="flex flex-col md:flex-row"
+      className="flex flex-col md:flex-row mobile-app-root"
       style={{
         height: '100vh',
         width: '100vw',

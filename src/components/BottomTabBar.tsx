@@ -17,7 +17,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
 
   return (
     <div
-      className="flex md:hidden"
+      className="flex md:hidden mobile-tab-bar"
       style={{
         height: '64px',
         background: 'rgba(10, 10, 10, 0.95)',

@@ -234,7 +234,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="flex md:hidden absolute top-[8px] left-[8px] right-[8px] z-[800] overflow-x-auto" 
             style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           >
-            <div className="flex gap-2 pb-2 px-1">
+            <div className="flex gap-2 pb-2 px-1 mobile-pills-wrapper">
               <StatPill
                 icon={<Activity size={12} color="#3b82f6" />}
                 label="Active"
