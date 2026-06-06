@@ -323,7 +323,7 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
             )}
           </button>
         </div>
-        <p style={{ marginTop: '8px', fontSize: '11px', color: '#444', textAlign: 'center' }}>
+        <p className="mobile-agent-hint" style={{ marginTop: '8px', fontSize: '11px', color: '#444', textAlign: 'center' }}>
           Shift+Enter for newline · Enter to send
         </p>
       </div>
