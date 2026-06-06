@@ -113,7 +113,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   const newestTs = sorted.length > 0 ? sorted[0].timestamp : null;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="mobile-memory-outer" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Proxy offline warning */}
       {proxyOnline === false && (
         <div
@@ -251,7 +251,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           <Search size={14} color="#888" />
           <input
             type="text"
-            placeholder="Search memories by location, type, or description…"
+            placeholder="Search by location, type, or description…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -330,7 +330,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       </div>
 
       {/* Memory entries */}
-      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
+      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
         {filtered.length === 0 ? (
           <div
             style={{

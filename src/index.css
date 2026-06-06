@@ -193,6 +193,18 @@ body {
     padding: 12px 16px !important;
   }
 
+  /* ── Memory page: make outer container scroll so stat cards scroll away ── */
+  .mobile-memory-outer {
+    overflow-y: auto !important;
+  }
+
+  /* ── Memory list: remove its own scroll so it defers to the outer container ── */
+  .mobile-memory-list {
+    flex: none !important;
+    overflow-y: visible !important;
+    padding-bottom: 160px !important; /* tab bar + SOS + breathing room */
+  }
+
   /* ── Dashboard cluster overlay: clear tab bar (64px) + collapsed sheet (136px) + gap ── */
   .mobile-cluster-overlay {
     max-width: calc(100vw - 32px) !important;
