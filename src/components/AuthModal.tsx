@@ -266,7 +266,7 @@ const ImportWalletView: React.FC<{
         onChange={(e) => { setKey(e.target.value); setError(''); }}
         placeholder="suiprivkey1..."
         rows={3}
-        style={{ ...keyTextareaStyle, resize: 'vertical' }}
+        style={keyTextareaStyle}
       />
 
       {error && (
