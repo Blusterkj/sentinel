@@ -359,4 +359,9 @@ body {
   .mobile-location-row button {
     flex: 1 !important;
   }
+
+  /* ── IncidentForm: submit button area — extra bottom margin so it clears tab bar + nav bar ── */
+  .mobile-submit-area {
+    margin-bottom: 120px !important;
+  }
 }
