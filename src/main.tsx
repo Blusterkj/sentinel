@@ -23,7 +23,7 @@ document.head.appendChild(link2)
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <SuiClientProvider networks={{ testnet: { url: 'https://fullnode.testnet.sui.io:443', network: 'testnet' as any } }} defaultNetwork="testnet">
-      <WalletProvider autoConnect={true} walletConnectProjectId="db20a335493baff90fec9502802928b5">
+      <WalletProvider autoConnect={true} slushWallet={{ name: 'Sentinel' }}>
         <App />
       </WalletProvider>
     </SuiClientProvider>
