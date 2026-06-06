@@ -19,12 +19,15 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
     <div
       className="flex md:hidden mobile-tab-bar"
       style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
         height: '64px',
         background: 'rgba(10, 10, 10, 0.95)',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        zIndex: 100,
-        flexShrink: 0,
+        zIndex: 950,
         alignItems: 'center',
         justifyContent: 'space-around',
         padding: '0 8px',

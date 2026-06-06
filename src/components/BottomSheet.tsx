@@ -17,9 +17,9 @@ interface BottomSheetProps {
 }
 
 const SNAP_HEIGHTS: Record<SheetState, string> = {
-  collapsed: '72px',
+  collapsed: '136px', // 64px hidden behind tab bar + 72px visible (handle + header)
   half: '50vh',
-  full: '85vh',
+  full: '88vh',
 };
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -61,16 +61,16 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
       style={{
         position: 'fixed',
-        bottom: '64px', // Above tab bar
+        bottom: '0', // starts from very bottom — tab bar (z=950) sits on top
         left: 0,
         right: 0,
         background: '#0a0a0a',
         borderTop: '1px solid #1a1a1a',
         borderTopLeftRadius: '24px',
         borderTopRightRadius: '24px',
-        zIndex: 900,
+        zIndex: 800, // below tab bar (950) — appears to slide from beneath it
         flexDirection: 'column',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.8)',
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.9)',
         touchAction: 'none',
       }}
     >
@@ -117,7 +117,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           e.stopPropagation();
         }}
       >
-        <div style={{ paddingBottom: '20px' }}>
+        <div style={{ paddingBottom: '84px' }}>
           <IncidentFeed
             incidents={incidents}
             onSelectIncident={onSelectIncident}

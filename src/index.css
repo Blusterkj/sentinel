@@ -192,13 +192,13 @@ body {
     padding: 12px 16px !important;
   }
 
-  /* ── Dashboard cluster overlay: prevent overflow ── */
+  /* ── Dashboard cluster overlay: clear tab bar (64px) + collapsed sheet (136px) + gap ── */
   .mobile-cluster-overlay {
     max-width: calc(100vw - 32px) !important;
-    width: calc(100vw - 32px) !important;
     left: 16px !important;
+    right: 16px !important;
     transform: none !important;
-    bottom: 148px !important; /* tab bar 64px + collapsed sheet 72px + 12px gap */
+    bottom: 212px !important; /* 64px tab + 136px sheet + 12px gap */
   }
 
   /* ── Weather widget: push down BELOW the stats pills row (~40px tall + 8px top + 8px gap) ── */
@@ -239,8 +239,12 @@ body {
   /* ── Bottom tab bar: safe-area padding so it clears Android system nav ── */
   .mobile-tab-bar {
     min-height: 64px !important;
-    height: auto !important;
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  /* ── SOS button: float above collapsed sheet handle (136px) + gap ── */
+  .mobile-sos-btn {
+    bottom: 148px !important;
   }
 
   /* ── Landing feature cards: force single column ── */
