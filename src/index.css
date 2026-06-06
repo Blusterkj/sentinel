@@ -177,6 +177,7 @@ body {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
     padding: 16px !important;
+    margin-bottom: 14px !important;
   }
 
   /* ── 2-col chart/section grids → 1 column ── */
@@ -283,6 +284,11 @@ body {
   .mobile-analytics-container {
     overflow-x: hidden !important;
     padding: 16px 12px 100px !important;
+  }
+
+  /* ── Analytics subtitle: close the gap below it ── */
+  .mobile-analytics-desc {
+    margin-bottom: 12px !important;
   }
 
   /* ── Analytics stat cards: switch to compact column layout ── */
