@@ -34,6 +34,7 @@ import {
   Lock,
   LogOut,
   User,
+  Wallet,
 } from 'lucide-react';
 import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
@@ -559,6 +560,7 @@ export default function App() {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#252525'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a'; }}
           >
+            <Wallet size={15} />
             Sign In
           </button>
         )}

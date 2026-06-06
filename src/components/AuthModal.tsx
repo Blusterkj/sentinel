@@ -341,9 +341,12 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
       </button>
 
       {/* Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-        <Logo size={36} />
-        <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, margin: 0 }}>Sign In to Sentinel</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+        <Logo size={48} />
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, margin: '0 0 2px', letterSpacing: '0.05em' }}>SENTINEL</h2>
+          <p style={{ color: '#555', fontSize: '12px', margin: 0, fontWeight: 500 }}>Sign in to your account</p>
+        </div>
       </div>
 
       {/* Section 1 — Slush / dapp-kit (PRIMARY) */}
@@ -371,9 +374,10 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
-            <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" rx="10" fill="white" fillOpacity="0.15"/>
-              <path d="M20 8C13.373 8 8 13.373 8 20s5.373 12 12 12 12-5.373 12-12S26.627 8 20 8zm0 4a8 8 0 110 16 8 8 0 010-16z" fill="white"/>
+            {/* Real Slush logo */}
+            <svg width="22" height="22" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="100" cy="100" r="100" fill="white" fillOpacity="0.18"/>
+              <path d="M60 72c0-10 8-18 18-18h44c10 0 18 8 18 18 0 7-4 13-10 16l-34 20c-8 5-14 13-14 22 0 10 8 18 18 18h44" stroke="white" strokeWidth="18" strokeLinecap="round"/>
             </svg>
             Connect with Slush
           </button>
