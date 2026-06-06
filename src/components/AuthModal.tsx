@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ConnectButton } from '@mysten/dapp-kit';
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Wallet, Key, X, ChevronLeft } from 'lucide-react';
-import { generateWallet, importWallet, saveWallet, isValidPrivateKey } from '../lib/inAppWallet';
+import { generateWallet, importWallet, saveWallet } from '../lib/inAppWallet';
 import { useAuthStore } from '../lib/authStore';
 import { Logo } from './Logo';
 
@@ -247,10 +247,11 @@ const ImportWalletView: React.FC<{
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleImport = async (keyToUse = key) => {
-    const trimmed = keyToUse.trim();
+  const handleImport = async () => {
+    // Strip ALL whitespace + invisible Unicode chars that mobile keyboards add
+    const trimmed = key.replace(/[\s\u200B\u200C\u200D\uFEFF]/g, '');
     if (!trimmed) { setError('Paste your private key first.'); return; }
-    if (trimmed.startsWith('0x')) { setError('That\'s an address, not a private key.'); return; }
+    if (trimmed.startsWith('0x')) { setError("That's an address, not a private key."); return; }
     setLoading(true);
     setError('');
     try {
@@ -258,20 +259,13 @@ const ImportWalletView: React.FC<{
       await saveWallet(wallet.privateKey);
       setInAppAuth(wallet.address, wallet.privateKey);
       onClose();
-    } catch {
-      setError('Invalid private key — check you copied it correctly.');
+    } catch (e: any) {
+      console.error('[ImportWallet] failed:', e?.message, '| key prefix:', trimmed.slice(0, 20));
+      setError('Invalid private key — must start with suiprivkey1');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const trimmed = key.trim();
-    // If it's a valid private key, auto-process it for better UX
-    if (trimmed && isValidPrivateKey(trimmed)) {
-      handleImport(trimmed);
-    }
-  }, [key]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -286,7 +280,7 @@ const ImportWalletView: React.FC<{
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            if (!loading && key.trim()) handleImport(key);
+            if (!loading && key.trim()) handleImport();
           }
         }}
         placeholder="Paste private key (suiprivkey1…)"
@@ -298,7 +292,7 @@ const ImportWalletView: React.FC<{
 
       <button
         id="import-wallet-submit-btn"
-        onClick={() => handleImport()}
+        onClick={handleImport}
         disabled={loading || !key.trim()}
         style={{
           ...btnStyle('#2563eb'),
