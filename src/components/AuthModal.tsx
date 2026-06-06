@@ -374,16 +374,8 @@ const DesktopModal: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
-            {/* Slush S logo — traced from reference */}
-            <svg width="26" height="26" viewBox="-12 -12 124 124" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M 70 20 C 88 12, 94 38, 76 50 C 62 60, 30 54, 18 60 C 6 68, 8 86, 22 90 C 34 94, 62 94, 74 84"
-                stroke="white"
-                strokeWidth="18"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
+            {/* Official Slush logo from @mysten/slush-wallet */}
+            <img src="/slush-logo.svg" width={26} height={26} alt="Slush" style={{ borderRadius: '6px' }} />
             Connect with Slush
           </button>
           {/* Hidden real ConnectButton — triggered programmatically */}
