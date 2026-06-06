@@ -12,7 +12,7 @@
 
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { generateMnemonic, mnemonicToEntropy } from '@scure/bip39';
-import { wordlist } from '@scure/bip39/wordlists/english';
+import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { Capacitor } from '@capacitor/core';
 
 const STORAGE_KEY = 'sentinel_wallet_pk';
