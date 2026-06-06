@@ -436,9 +436,11 @@ const MobileBottomSheet: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         width: '100%', maxWidth: '500px',
         background: '#111', borderTop: '1px solid #222',
         borderRadius: '20px 20px 0 0',
-        padding: '24px 20px 36px',
         boxShadow: '0 -16px 64px rgba(0,0,0,0.7)',
         position: 'relative',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        padding: '24px 20px 32px',
       }}
     >
       {/* Drag handle */}
@@ -462,11 +464,63 @@ const MobileBottomSheet: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         <h2 style={{ color: '#fff', fontSize: '17px', fontWeight: 700, margin: 0 }}>Sign In to Sentinel</h2>
       </div>
 
-      {/* In-App Wallet only — NO ConnectButton on mobile web */}
-      <p style={{ ...sectionLabelStyle, textAlign: 'center', marginBottom: '16px' }}>
-        Set up your wallet
-      </p>
-      <InAppWalletPanel onClose={onClose} setInAppAuth={setInAppAuth} />
+      {/* Section 1 — Slush (NEW) */}
+      <div style={{ marginBottom: '20px' }}>
+        <p style={sectionLabelStyle}>Connect Slush Wallet</p>
+        <div style={{ position: 'relative' }}>
+          {/* Styled button */}
+          <button
+            id="mobile-slush-connect-btn"
+            onClick={() => {
+              const hidden = document.getElementById('hidden-dappkit-connect-btn');
+              if (hidden) {
+                const btn = hidden.querySelector('button');
+                btn?.click();
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              width: '100%', padding: '13px 16px',
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+              border: 'none', borderRadius: '12px',
+              color: '#fff', fontSize: '15px', fontWeight: 700,
+              cursor: 'pointer', transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+          >
+            <img src="/slush-logo.svg" width={26} height={26} alt="Slush" style={{ borderRadius: '6px' }} />
+            Connect with Slush
+          </button>
+          {/* Hidden real ConnectButton — same as desktop, triggered programmatically */}
+          <div
+            id="hidden-dappkit-connect-btn"
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', top: 0, left: 0 }}
+            aria-hidden="true"
+          >
+            <ConnectButton />
+          </div>
+        </div>
+        <p style={{ color: '#444', fontSize: '11px', textAlign: 'center', margin: '8px 0 0' }}>
+          Opens Slush app on your phone
+        </p>
+      </div>
+
+      {/* Divider */}
+      <div style={dividerStyle}>
+        <div style={dividerLineStyle} />
+        <span style={dividerTextStyle}>or</span>
+        <div style={dividerLineStyle} />
+      </div>
+
+      {/* Section 2 — In-App Wallet */}
+      <div style={{ marginTop: '20px' }}>
+        <p style={sectionLabelStyle}>Sentinel In-App Wallet</p>
+        <InAppWalletPanel onClose={onClose} setInAppAuth={setInAppAuth} />
+        <p style={{ color: '#444', fontSize: '11px', textAlign: 'center', margin: '10px 0 0' }}>
+          No extension needed — works everywhere
+        </p>
+      </div>
     </motion.div>
   </motion.div>
 );
