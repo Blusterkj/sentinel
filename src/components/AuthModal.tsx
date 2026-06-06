@@ -90,7 +90,7 @@ const CreateWalletView: React.FC<{
   onBack: () => void;
   onClose: () => void;
   setInAppAuth: (address: string, privateKey: string) => void;
-}> = ({ onBack, onClose, setInAppAuth }) => {
+}> = ({ onBack: _onBack, onClose, setInAppAuth }) => {
   const [generated, setGenerated] = useState<{
     address: string;
     privateKey: string;
@@ -132,8 +132,6 @@ const CreateWalletView: React.FC<{
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <button onClick={onBack} style={backBtnStyle}>← Back</button>
-
       <div>
         <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '8px' }}>
           Your new wallet has been generated:
@@ -155,30 +153,31 @@ const CreateWalletView: React.FC<{
               style={{ ...keyTextareaStyle, color: '#e2e8f0', background: '#0d1117', borderColor: '#2d3748' }}
             />
 
-            {/* Private Key — toggleable */}
-            <p style={{ color: '#555', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '10px 0 6px' }}>
-              Private Key (bech32)
-            </p>
-            <div style={{ position: 'relative' }}>
-              <textarea
-                readOnly
-                id="wallet-key-display"
-                value={
-                  showKey
-                    ? generated.privateKey
-                    : '•'.repeat(60)
-                }
-                rows={2}
-                style={keyTextareaStyle}
-              />
+            {/* Private Key — label row with eye toggle inline */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 0 6px' }}>
+              <p style={{ color: '#555', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                Private Key (bech32)
+              </p>
               <button
                 onClick={() => setShowKey((v) => !v)}
                 title={showKey ? 'Hide key' : 'Show key'}
-                style={iconBtnStyle}
+                style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '5px', color: '#666', cursor: 'pointer', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
               >
-                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                {showKey ? <EyeOff size={12} /> : <Eye size={12} />}
+                {showKey ? 'Hide' : 'Show'}
               </button>
             </div>
+            <textarea
+              readOnly
+              id="wallet-key-display"
+              value={
+                showKey
+                  ? generated.privateKey
+                  : '\u2022'.repeat(60)
+              }
+              rows={2}
+              style={keyTextareaStyle}
+            />
 
             <button
               id="copy-wallet-key-btn"
@@ -234,7 +233,7 @@ const ImportWalletView: React.FC<{
   onBack: () => void;
   onClose: () => void;
   setInAppAuth: (address: string, privateKey: string) => void;
-}> = ({ onBack, onClose, setInAppAuth }) => {
+}> = ({ onBack: _onBack, onClose, setInAppAuth }) => {
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -261,8 +260,6 @@ const ImportWalletView: React.FC<{
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <button onClick={onBack} style={backBtnStyle}>← Back</button>
-
       <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
         Paste your Sui private key (suiprivkey… format):
       </p>
@@ -395,9 +392,11 @@ const MobileBottomSheet: React.FC<ModalProps> = ({ onClose, setInAppAuth }) => (
         width: '100%', maxWidth: '500px',
         background: '#111', borderTop: '1px solid #222',
         borderRadius: '20px 20px 0 0',
-        padding: '24px 20px 36px',
+        padding: '24px 20px 100px',
         boxShadow: '0 -16px 64px rgba(0,0,0,0.7)',
         position: 'relative',
+        maxHeight: '90vh',
+        overflowY: 'auto',
       }}
     >
       {/* Drag handle */}
