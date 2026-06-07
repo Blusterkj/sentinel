@@ -77,29 +77,27 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       <div
         className="mobile-header-strip"
         style={{
-          padding: '16px 280px 16px 24px',
+          padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <User size={16} color="#8b5cf6" />
-          <div>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-              My Incidents
-            </span>
-            {shortAddr && (
-              <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '2px' }}>
-                {shortAddr}
-              </div>
-            )}
-          </div>
+        <User size={16} color="#8b5cf6" />
+        <div>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+            My Incidents
+          </span>
+          {shortAddr && (
+            <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '2px' }}>
+              {shortAddr}
+            </div>
+          )}
         </div>
-        {/* Wallet badge */}
+        {/* Wallet badge — inline next to title */}
         <div
           style={{
             display: 'flex',

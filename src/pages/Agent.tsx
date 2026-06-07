@@ -20,25 +20,21 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
       <div
         className="mobile-header-strip"
         style={{
-          padding: '16px 280px 16px 24px',
+          padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Brain size={16} color="#8b5cf6" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-            AI Memory Agent
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <TechBadge icon={<Database size={10} />} label="MemWal" color="#8b5cf6" />
-          <TechBadge icon={<Network size={10} />} label="Walrus" color="#3b82f6" />
-        </div>
+        <Brain size={16} color="#8b5cf6" />
+        <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+          AI Memory Agent
+        </span>
+        <TechBadge icon={<Database size={10} />} label="MemWal" color="#8b5cf6" />
+        <TechBadge icon={<Network size={10} />} label="Walrus" color="#3b82f6" />
       </div>
 
       {/* Chat — fills rest of space */}

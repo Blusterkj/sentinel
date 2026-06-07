@@ -137,52 +137,48 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       <div
         className="mobile-header-strip"
         style={{
-          padding: '16px 280px 16px 24px',
+          padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: '#0d0d0d',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database size={16} color="#8b5cf6" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-            On-Chain Memory Explorer
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Live indicator */}
-          <div
+        <Database size={16} color="#8b5cf6" />
+        <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+          On-Chain Memory Explorer
+        </span>
+        {/* Live indicator — inline next to title */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '10px',
+            color: '#22c55e',
+            background: 'rgba(34, 197, 94, 0.08)',
+            padding: '3px 10px',
+            borderRadius: '20px',
+            border: '1px solid rgba(34, 197, 94, 0.2)',
+            fontFamily: 'monospace',
+            fontWeight: 600,
+          }}
+        >
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '10px',
-              color: '#22c55e',
-              background: 'rgba(34, 197, 94, 0.08)',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              border: '1px solid rgba(34, 197, 94, 0.2)',
-              fontFamily: 'monospace',
-              fontWeight: 600,
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#22c55e',
+              boxShadow: '0 0 8px #22c55e',
+              animation: 'glow-pulse 2s ease-in-out infinite',
             }}
-          >
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#22c55e',
-                boxShadow: '0 0 8px #22c55e',
-                animation: 'glow-pulse 2s ease-in-out infinite',
-              }}
-            />
-            LIVE — synced to Walrus
-          </div>
-          <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
+          />
+          LIVE — synced to Walrus
         </div>
+        <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
       </div>
 
       {/* Stats bar */}
