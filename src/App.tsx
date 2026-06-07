@@ -226,7 +226,7 @@ export default function App() {
   // Merge updated flag data from POST /api/unflag response
   const handleFlagIncident = useCallback((updated: Incident) => {
     setIncidents((prev) =>
-      prev.map((i) => (i.id === updated.id ? { ...i, flagCount: updated.flagCount } : i))
+      prev.map((i) => (i.id === updated.id ? { ...i, flagCount: updated.flagCount, flaggedByMe: updated.flaggedByMe } : i))
     );
   }, []);
 

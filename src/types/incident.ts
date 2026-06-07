@@ -41,6 +41,8 @@ export interface Incident {
   createdByMe?: boolean;
   /** Number of spam flags on this incident (social signal only, never auto-hides) */
   flagCount?: number;
+  /** Whether the current user (wallet) has flagged this incident this session */
+  flaggedByMe?: boolean;
   /** Wallet addresses that flagged this incident — only present on detailed response, not in list */
   flaggedBy?: string[];
 }

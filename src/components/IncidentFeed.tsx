@@ -67,12 +67,14 @@ const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => 
   const { address: inAppAddress } = useAuthStore();
   const walletAddress = account?.address || inAppAddress;
 
-  // Optimistic local flag state
-  const [localFlagged, setLocalFlagged] = React.useState<boolean | null>(null);
+  // Initialize from incident.flaggedByMe so modal and feed share the same flag state
+  const [localFlagged, setLocalFlagged] = React.useState<boolean | null>(
+    incident.flaggedByMe !== undefined ? incident.flaggedByMe : null
+  );
   const [localCount, setLocalCount] = React.useState(incident.flagCount ?? 0);
   const [busy, setBusy] = React.useState(false);
 
-  // Sync when incident prop updates (e.g. after poll)
+  // Sync count when incident prop updates (e.g. after WS push), but don't override localFlagged
   React.useEffect(() => {
     if (localFlagged === null) {
       setLocalCount(incident.flagCount ?? 0);
@@ -101,7 +103,11 @@ const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => 
         const data = await res.json();
         if (data.incident) {
           setLocalCount(data.incident.flagCount ?? localCount);
-          onFlagIncident?.(data.incident as Incident);
+          // Propagate flaggedByMe so any new FlagButton instance initializes correctly
+          onFlagIncident?.({
+            ...data.incident as Incident,
+            flaggedByMe: nextFlagged,
+          });
         }
       }
     } catch {
@@ -450,11 +456,11 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   {isCopied ? <><CheckCircle size={14} /> Copied</> : <><Share size={14} /> Share</>}
                 </button>
 
-                {/* Flag as Spam — stable column, text changes but column width is fixed */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                {/* Flag as Spam — no wrapper border (FlagButton has its own button styling) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <FlagButton incident={modalIncident} onFlagIncident={(updated) => {
                     onFlagIncident?.(updated);
-                    setModalIncident((prev) => prev ? { ...prev, flagCount: updated.flagCount } : prev);
+                    setModalIncident((prev) => prev ? { ...prev, flagCount: updated.flagCount, flaggedByMe: updated.flaggedByMe } : prev);
                   }} />
                 </div>
               </div>
