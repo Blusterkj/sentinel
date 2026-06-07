@@ -60,9 +60,10 @@ function formatRelativeTime(timestamp: string, now: number): string {
 interface FlagButtonProps {
   incident: Incident;
   onFlagIncident?: (updated: Incident) => void;
+  variant?: 'feed' | 'modal'; // 'modal' = full-size matching Share button
 }
 
-const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => {
+const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident, variant = 'feed' }) => {
   const account = useCurrentAccount();
   const { address: inAppAddress } = useAuthStore();
   const walletAddress = account?.address || inAppAddress;
@@ -120,58 +121,49 @@ const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => 
   };
 
   if (hasFlagged) {
+    const modalStyle: React.CSSProperties = variant === 'modal' ? {
+      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a',
+      borderRadius: '8px', color: '#4ade80', fontSize: '13px', fontWeight: 600,
+      cursor: busy ? 'not-allowed' : 'pointer', transition: 'color 0.2s',
+    } : {
+      display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px',
+      marginBottom: '6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '5px',
+      background: 'transparent', color: '#444', fontSize: '10px', fontWeight: 500,
+      cursor: busy ? 'not-allowed' : 'pointer', transition: 'color 0.15s', letterSpacing: '0.01em',
+    };
     return (
-      <button
-        onClick={handleFlag}
-        disabled={busy}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
-          padding: '2px 7px',
-          marginBottom: '6px',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '5px',
-          background: 'transparent',
-          color: '#444',
-          fontSize: '10px',
-          fontWeight: 500,
-          cursor: busy ? 'not-allowed' : 'pointer',
-          transition: 'color 0.15s',
-          letterSpacing: '0.01em',
-        }}
-      >
-        <span style={{ fontSize: '10px' }}>✓</span>
-        <span>Flagged ({localCount})</span>
+      <button onClick={handleFlag} disabled={busy} style={modalStyle}>
+        {variant === 'modal'
+          ? <><CheckCircle size={14} /> Flagged ({localCount})</>
+          : <><span style={{ fontSize: '10px' }}>✓</span><span>Flagged ({localCount})</span></>}
       </button>
     );
   }
+
+  const modalUnflaggedStyle: React.CSSProperties = variant === 'modal' ? {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a',
+    borderRadius: '8px', color: '#ccc', fontSize: '13px', fontWeight: 600,
+    cursor: busy ? 'not-allowed' : 'pointer', transition: 'color 0.2s',
+  } : {
+    display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px',
+    marginBottom: '6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '5px',
+    background: 'transparent', color: '#555', fontSize: '10px', fontWeight: 500,
+    cursor: busy ? 'not-allowed' : 'pointer', transition: 'color 0.15s', letterSpacing: '0.01em',
+  };
 
   return (
     <button
       onClick={handleFlag}
       disabled={busy}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        padding: '2px 7px',
-        marginBottom: '6px',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: '5px',
-        background: 'transparent',
-        color: '#555',
-        fontSize: '10px',
-        fontWeight: 500,
-        cursor: busy ? 'not-allowed' : 'pointer',
-        transition: 'color 0.15s',
-        letterSpacing: '0.01em',
-      }}
-      onMouseEnter={(e) => { if (!busy) (e.currentTarget as HTMLButtonElement).style.color = '#888'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#555'; }}
+      style={modalUnflaggedStyle}
+      onMouseEnter={(e) => { if (!busy) (e.currentTarget as HTMLButtonElement).style.color = variant === 'modal' ? '#fff' : '#888'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = variant === 'modal' ? '#ccc' : '#555'; }}
     >
-      <span style={{ fontSize: '10px' }}>🚩</span>
-      <span>Flag as Spam ({localCount})</span>
+      {variant === 'modal'
+        ? <><span>🚩</span> Flag as Spam ({localCount})</>
+        : <><span style={{ fontSize: '10px' }}>🚩</span><span>Flag as Spam ({localCount})</span></>}
     </button>
   );
 };
@@ -456,13 +448,15 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   {isCopied ? <><CheckCircle size={14} /> Copied</> : <><Share size={14} /> Share</>}
                 </button>
 
-                {/* Flag as Spam — no wrapper border (FlagButton has its own button styling) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FlagButton incident={modalIncident} onFlagIncident={(updated) => {
+                {/* Flag as Spam — full-size modal variant, no wrapper div */}
+                <FlagButton
+                  incident={modalIncident}
+                  variant="modal"
+                  onFlagIncident={(updated) => {
                     onFlagIncident?.(updated);
                     setModalIncident((prev) => prev ? { ...prev, flagCount: updated.flagCount, flaggedByMe: updated.flaggedByMe } : prev);
-                  }} />
-                </div>
+                  }}
+                />
               </div>
 
               {/* Row 2: Resolve + Delete (only when applicable) */}
