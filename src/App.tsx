@@ -22,6 +22,9 @@ import { MobileHeader } from './components/MobileHeader';
 import { BottomTabBar } from './components/BottomTabBar';
 import { SosButton } from './components/SosButton';
 import { KeyBackupScreen } from './components/KeyBackupScreen';
+import { DemoTrigger } from './components/DemoTrigger';
+import { DemoButton } from './components/DemoButton';
+import { useSecretDemo } from './hooks/useSecretDemo';
 import type { Incident } from './types/incident';
 import {
   LayoutDashboard,
@@ -372,6 +375,15 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
+  const [actionVisible, setActionVisible] = useState(false);
+
+  // Desktop keyboard sequence activation
+  useSecretDemo(() => setActionVisible(true));
+
+  // Post simulated incident to proxy and add to local state
+  const handleSimulate = async (incident: Incident) => {
+    handleNewIncident(incident);
+  };
 
   useEffect(() => {
     const handlePopState = () => {
@@ -595,45 +607,48 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: sidebarCollapsed ? '0px' : '10px' }}>
-            <div style={{ flexShrink: 0 }}>
-              <Logo size={28} />
-            </div>
-            <div style={{ 
-              opacity: sidebarCollapsed ? 0 : 1, 
-              width: sidebarCollapsed ? 0 : '110px',
-              transition: 'all 0.15s ease', 
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #e5e5e5, #999)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                SENTINEL
+          {/* Logo + title — tap 5x on mobile to activate ⚡ */}
+          <DemoTrigger onActivate={() => setActionVisible(true)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: sidebarCollapsed ? '0px' : '10px' }}>
+              <div style={{ flexShrink: 0 }}>
+                <Logo size={28} />
               </div>
-              <div
-                style={{
-                  fontSize: '9px',
-                  color: '#444',
-                  fontFamily: 'monospace',
-                  letterSpacing: '0.08em',
-                  marginTop: '1px',
-                }}
-              >
-                SUI OVERFLOW 2026
+              <div style={{ 
+                opacity: sidebarCollapsed ? 0 : 1, 
+                width: sidebarCollapsed ? 0 : '110px',
+                transition: 'all 0.15s ease', 
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}>
+                <div
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #e5e5e5, #999)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  SENTINEL
+                </div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    color: '#444',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.08em',
+                    marginTop: '1px',
+                  }}
+                >
+                  SUI OVERFLOW 2026
+                </div>
               </div>
             </div>
-          </div>
+          </DemoTrigger>
 
           {/* Collapse toggle */}
           <button
@@ -891,6 +906,13 @@ export default function App() {
           <AuthModal onClose={() => setShowDesktopAuthModal(false)} />
         )}
       </AnimatePresence>
+
+      {/* Floating simulate button — activation is in-memory only */}
+      <DemoButton
+        visible={actionVisible}
+        onSimulate={handleSimulate}
+        onHide={() => setActionVisible(false)}
+      />
     </div>
   );
 }

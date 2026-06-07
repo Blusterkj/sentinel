@@ -16,6 +16,8 @@
 
 :root {
   color-scheme: dark;
+  --fab-bottom: 80px;
+  --fab-right: 24px;
 }
 
 * {
@@ -161,6 +163,12 @@ body {
    !important is intentional — it overrides inline style={} specificity.
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
+
+  /* ── Floating action button: mobile position ── */
+  :root {
+    --fab-bottom: 100px;
+    --fab-right: 16px;
+  }
 
   /* ── Generic page padding: removes large desktop padding ── */
   .mobile-page-padding {
