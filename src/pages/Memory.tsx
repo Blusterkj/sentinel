@@ -438,15 +438,15 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
   };
 
   const handleGoToIncident = () => {
-    // 1. Navigate to Dashboard via History API (App.tsx listens to popstate)
-    window.history.pushState({}, '', '/');
+    // 1. Navigate to Dashboard via History API (App.tsx popstate listener sets page to 'dashboard')
+    window.history.pushState({}, '', '/dashboard');
     window.dispatchEvent(new Event('popstate'));
-    // 2. After a tick so Dashboard mounts, fire selectIncident event
+    // 2. After Dashboard mounts, fire selectIncident to open the modal
     setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent('selectIncident', { detail: incident })
       );
-    }, 120);
+    }, 200);
   };
 
   return (
