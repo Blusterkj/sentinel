@@ -123,6 +123,26 @@ app.use(cors({
 app.use(express.json());
 
 /**
+ * GET / — version manifest (helps verify Railway is running current proxy.mjs)
+ */
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'sentinel-proxy',
+    version: '2.0.0',
+    routes: [
+      'GET  /health',
+      'GET  /api/health',
+      'GET  /api/recall',
+      'GET  /api/recall/blob/:blobId',
+      'GET  /api/incidents',
+      'POST /api/store',
+      'POST /api/unflag',
+      'POST /api/chat',
+    ],
+  });
+});
+
+/**
  * GET /api/recall?query=...&limit=5
  *
  * Recalls memories from MemWal by semantic query.
