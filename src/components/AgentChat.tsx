@@ -2,20 +2,13 @@
 // Chat interface with the MemWal-powered AI agent
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Brain, User, Loader2, AlertCircle, Cpu, Zap } from 'lucide-react';
+import { Send, Brain, User, Loader2 } from 'lucide-react';
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PROXY_URL } from '../lib/api';
 
 
-const SUGGESTED_QUERIES = [
-  "Any crime patterns near Indiranagar this week?",
-  "Which areas have the most critical incidents?",
-  "What happened on MG Road recently?",
-  "Are Friday nights more dangerous? Show me the data.",
-  "What should I watch for near Silk Board Junction?",
-];
 
 export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   const [messages, setMessages] = useState<AgentMessage[]>([
@@ -184,62 +177,6 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
 
         <div ref={bottomRef} />
       </div>
-
-      {/* Status cards + Suggested queries — only in empty state */}
-      {messages.length <= 1 && (
-        <>
-          {/* Suggested queries — hidden on mobile */}
-          <div
-            className="mobile-query-grid mobile-suggestions-hidden"
-            style={{
-              padding: '0 16px 16px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '10px',
-              flexShrink: 0,
-            }}
-          >
-            {SUGGESTED_QUERIES.slice(0, 4).map((q, idx) => {
-              const icons = [<AlertCircle size={14} color="#ef4444" />, <Brain size={14} color="#8b5cf6" />, <Zap size={14} color="#3b82f6" />, <Cpu size={14} color="#22c55e" />];
-              return (
-                <button
-                  key={q}
-                  onClick={() => handleSend(q)}
-                  disabled={isLoading}
-                  style={{
-                    padding: '12px',
-                    background: '#111',
-                    border: '1px solid #1f1f1f',
-                    borderRadius: '10px',
-                    color: '#aaa',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    alignItems: 'flex-start',
-                    textAlign: 'left',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#181818';
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#ccc';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#111';
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#1f1f1f';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
-                  }}
-                >
-                  {icons[idx]}
-                  {q}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {/* Input */}
       <div
