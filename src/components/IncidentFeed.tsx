@@ -430,8 +430,10 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 {modalIncident.description}
               </p>
 
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <button 
+              {/* Action buttons — stable fixed layout, no reflow on state change */}
+              {/* Row 1: Share + Flag */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <button
                   onClick={() => {
                     const mapLink = `https://www.google.com/maps?q=${modalIncident.location.lat},${modalIncident.location.lng}`;
                     const text = `${TYPE_LABELS[modalIncident.type]} at ${modalIncident.location.address}\n\nLocation: ${mapLink}`;
@@ -442,47 +444,42 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                       setIsCopied(true);
                       setTimeout(() => setIsCopied(false), 2000);
                     }
-                  }} 
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: isCopied ? '#4ade80' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }}
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: isCopied ? '#4ade80' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s', whiteSpace: 'nowrap' }}
                 >
-                  {isCopied ? (
-                    <><CheckCircle size={14} /> Copied</>
-                  ) : (
-                    <><Share size={14} /> Share Incident</>
-                  )}
+                  {isCopied ? <><CheckCircle size={14} /> Copied</> : <><Share size={14} /> Share</>}
                 </button>
 
-                {/* Modal Flag as Spam button */}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                {/* Flag as Spam — stable column, text changes but column width is fixed */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
                   <FlagButton incident={modalIncident} onFlagIncident={(updated) => {
                     onFlagIncident?.(updated);
                     setModalIncident((prev) => prev ? { ...prev, flagCount: updated.flagCount } : prev);
                   }} />
                 </div>
-
-                {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
-                  <button 
-                    onClick={() => {
-                      onResolveIncident(modalIncident.id);
-                      setModalIncident({ ...modalIncident, status: 'resolved' });
-                    }} 
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'background 0.2s' }}
-                  >
-                    <CheckCircle size={14} /> Mark as Resolved
-                  </button>
-                )}
-                {modalIncident.createdByMe && onDeleteIncident && (
-                  <button 
-                    onClick={() => {
-                      onDeleteIncident(modalIncident.id);
-                      setModalIncident(null);
-                    }} 
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'background 0.2s' }}
-                  >
-                    <X size={14} /> Delete
-                  </button>
-                )}
               </div>
+
+              {/* Row 2: Resolve + Delete (only when applicable) */}
+              {(modalIncident.createdByMe && (modalIncident.status === 'active' || onDeleteIncident)) && (
+                <div style={{ display: 'grid', gridTemplateColumns: modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && onDeleteIncident ? '1fr 1fr' : '1fr', gap: '10px' }}>
+                  {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
+                    <button
+                      onClick={() => { onResolveIncident(modalIncident.id); setModalIncident({ ...modalIncident, status: 'resolved' }); }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                    >
+                      <CheckCircle size={14} /> Resolve
+                    </button>
+                  )}
+                  {modalIncident.createdByMe && onDeleteIncident && (
+                    <button
+                      onClick={() => { onDeleteIncident(modalIncident.id); setModalIncident(null); }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                    >
+                      <X size={14} /> Delete
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Blockchain Proof (Collapsible) */}
               {(modalIncident.walrusBlobId || modalIncident.suiTxDigest) ? (
