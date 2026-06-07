@@ -498,62 +498,19 @@ wss.on('connection', (ws) => {
 
 /**
  * Parse a MemWal blob text back into an incident object.
- * Handles two formats:
- *   NEW: text contains "JSONDATA: {...}" footer → parse JSON directly
- *   OLD: text is structured "SENTINEL INCIDENT REPORT\nID: ...\n..." → parse line by line
+ * ONLY loads NEW-format blobs with "JSONDATA: {...}" footer.
+ * Old plain-text blobs (spam) are intentionally skipped.
  */
 function parseIncidentBlob(text, blobId) {
   if (!text || !text.includes('SENTINEL INCIDENT REPORT')) return null;
 
-  // NEW format — JSONDATA footer
+  // NEW format only — JSONDATA footer
   const jsonMarker = 'JSONDATA: ';
   const jsonIdx = text.indexOf(jsonMarker);
-  if (jsonIdx !== -1) {
-    try {
-      return JSON.parse(text.slice(jsonIdx + jsonMarker.length));
-    } catch { /* fall through to text parser */ }
-  }
+  if (jsonIdx === -1) return null; // skip old plain-text blobs
 
-  // OLD format — parse structured text lines
   try {
-    const get = (prefix) => {
-      const line = text.split('\n').find(l => l.startsWith(prefix));
-      return line ? line.slice(prefix.length).trim() : '';
-    };
-
-    const id = get('ID: ') || blobId;
-    if (!id) return null;
-
-    const createdAt = get('Created: ') || new Date().toISOString();
-    const rawType   = get('Type: ').toLowerCase().replace(/\s+/g, '_') || 'other';
-    const severity  = get('Severity: ').toLowerCase() || 'medium';
-    const desc      = get('Description: ') || '';
-    const reporter  = get('Reported By: ') || 'Anonymous';
-    const status    = get('Status: ').toLowerCase() || 'active';
-
-    // "Location: {address} (lat: X, lng: Y)"
-    const locLine = get('Location: ');
-    const latM = locLine.match(/lat:\s*([\d.-]+)/);
-    const lngM = locLine.match(/lng:\s*([\d.-]+)/);
-    const addrM = locLine.match(/^(.+?)\s*\(lat:/);
-
-    return {
-      id,
-      type: rawType,
-      severity,
-      description: desc,
-      location: {
-        lat:     latM  ? parseFloat(latM[1])  : 0,
-        lng:     lngM  ? parseFloat(lngM[1])  : 0,
-        address: addrM ? addrM[1].trim() : locLine,
-      },
-      timestamp:  createdAt,
-      createdAt,
-      reportedBy: reporter,
-      status,
-      walrusBlobId: blobId,
-      walrusStatus: 'synced',
-    };
+    return JSON.parse(text.slice(jsonIdx + jsonMarker.length));
   } catch {
     return null;
   }
@@ -601,4 +558,8 @@ server.listen(PORT, () => {
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);
+
+  // Restore incidents from Walrus after any Railway restart.
+  // Only loads NEW-format blobs (JSONDATA: footer) — skips old plain-text spam.
+  rehydrateRegistry();
 });
