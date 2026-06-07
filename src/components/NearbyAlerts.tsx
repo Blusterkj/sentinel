@@ -1,6 +1,7 @@
 import { useNearbyAlerts } from '../hooks/useNearbyAlerts';
 import { MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Incident } from '../types/incident';
 
 const EMOJI_MAP: Record<string, string> = {
   fire: '🔥',
@@ -11,8 +12,13 @@ const EMOJI_MAP: Record<string, string> = {
   other: '⚠️'
 };
 
-export function NearbyAlerts() {
-  const { alerts, dismissAlert } = useNearbyAlerts();
+interface NearbyAlertsProps {
+  onNewIncident?: (incident: Incident) => void;
+  onIncidentUpdated?: (incident: Incident) => void;
+}
+
+export function NearbyAlerts({ onNewIncident, onIncidentUpdated }: NearbyAlertsProps = {}) {
+  const { alerts, dismissAlert } = useNearbyAlerts({ onNewIncident, onIncidentUpdated });
 
   if (alerts.length === 0) return null;
 

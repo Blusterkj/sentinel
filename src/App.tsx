@@ -586,7 +586,19 @@ export default function App() {
 
       {/* Main content */}
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <NearbyAlerts />
+        <NearbyAlerts
+          onNewIncident={(incident) => {
+            setIncidents((prev) => {
+              if (prev.some((i) => i.id === incident.id)) return prev;
+              return [incident, ...prev];
+            });
+          }}
+          onIncidentUpdated={(incident) => {
+            setIncidents((prev) =>
+              prev.map((i) => (i.id === incident.id ? { ...i, ...incident } : i))
+            );
+          }}
+        />
         {currentPage === 'landing' && <Landing />}
         {currentPage === 'dashboard' && (
           <Dashboard 

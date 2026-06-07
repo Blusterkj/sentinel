@@ -293,7 +293,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '15px' }}>
-                    {{'medical':'🏥','fire':'🔥','crime':'🚨','accident':'💥','natural_disaster':'🌪️','other':'⚠️'}[selectedIncident.type] || '⚠️'}
+                    {{'medical':'🏥','fire':'🔥','crime':'🚨','accident':'💥','natural_disaster':'🌩️','other':'⚠️'}[selectedIncident.type] || '⚠️'}
                   </span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#e5e5e5' }}>
                     {{'medical':'Medical','fire':'Fire','crime':'Crime','accident':'Accident','natural_disaster':'Disaster','other':'Other'}[selectedIncident.type]}

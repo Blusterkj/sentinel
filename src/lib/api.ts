@@ -7,10 +7,16 @@
 //      even if the env var is missing from the Vercel build)
 //   3. localhost:3333 only used when running locally AND the env var is absent
 
-const RAILWAY_URL = 'https://sentinel-proxy.up.railway.app';
+const RAILWAY_HTTP = 'https://sentinel-proxy.up.railway.app';
+const RAILWAY_WSS  = 'wss://sentinel-proxy.up.railway.app';
+
+const isLocalhost =
+  typeof window !== 'undefined' && window.location.hostname.includes('localhost');
 
 export const PROXY_URL: string =
   import.meta.env.VITE_PROXY_URL ||
-  (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')
-    ? RAILWAY_URL
-    : 'http://localhost:3333');
+  (isLocalhost ? 'http://localhost:3333' : RAILWAY_HTTP);
+
+export const WS_URL: string =
+  import.meta.env.VITE_WS_URL ||
+  (isLocalhost ? 'ws://localhost:3333' : RAILWAY_WSS);

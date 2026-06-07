@@ -31,7 +31,7 @@ const TYPE_ICONS: Record<IncidentType, string> = {
   fire: '🔥',
   crime: '🚨',
   accident: '💥',
-  natural_disaster: '🌪️',
+  natural_disaster: '🌩️',
   other: '⚠️',
 };
 

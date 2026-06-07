@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3333';
+import { WS_URL } from '../lib/api';
+import type { Incident } from '../types/incident';
 
 export interface NearbyAlert {
   type: string;
@@ -10,11 +10,18 @@ export interface NearbyAlert {
   distance: string;
 }
 
-export function useNearbyAlerts() {
+interface UseNearbyAlertsOptions {
+  onNewIncident?: (incident: Incident) => void;
+  onIncidentUpdated?: (incident: Incident) => void;
+}
+
+export function useNearbyAlerts(options: UseNearbyAlertsOptions = {}) {
   const ws = useRef<WebSocket | null>(null);
   const [alerts, setAlerts] = useState<NearbyAlert[]>([]);
   const [connected, setConnected] = useState(false);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) return;
@@ -60,6 +67,16 @@ export function useNearbyAlerts() {
               tag: 'sentinel-alert',
             });
           }
+        }
+
+        // Real-time cross-device sync: new incident stored by any client
+        if (msg.type === 'NEW_INCIDENT' && msg.incident) {
+          optionsRef.current.onNewIncident?.(msg.incident as Incident);
+        }
+
+        // Real-time cross-device sync: flag count changed
+        if (msg.type === 'INCIDENT_UPDATED' && msg.incident) {
+          optionsRef.current.onIncidentUpdated?.(msg.incident as Incident);
         }
       } catch (err) {
         console.error("WebSocket parse error:", err);

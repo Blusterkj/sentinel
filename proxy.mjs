@@ -32,6 +32,22 @@ const sessions = new Map();
 // That is acceptable for the hackathon demo. Do NOT add file/DB persistence here.
 const incidentRegistry = new Map();
 
+// WebSocket server — assigned in the Start section below.
+// Declared here so route handlers can broadcast without circular references.
+/** @type {import('ws').WebSocketServer} */
+let wss = null;
+
+/** Broadcast a message to all connected WebSocket clients */
+function broadcast(payload) {
+  if (!wss) return;
+  const msg = JSON.stringify(payload);
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1 /* OPEN */) {
+      client.send(msg);
+    }
+  });
+}
+
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -206,18 +222,28 @@ Status: ${incident.status || 'active'}`;
     const txDigest = await anchorOnSui(result.blob_id);
 
     // Persist in in-memory registry for cross-device sync
-    incidentRegistry.set(incident.id, {
+    const storedIncident = {
       ...incident,
       walrusBlobId: result.blob_id,
       suiTxDigest: txDigest || undefined,
       flagCount: 0,
       flaggedBy: [],
+    };
+    incidentRegistry.set(incident.id, storedIncident);
+
+    // Broadcast to all WebSocket clients for instant cross-device sync
+    broadcast({
+      type: 'NEW_INCIDENT',
+      incident: {
+        ...storedIncident,
+        flaggedBy: undefined, // strip internal field
+      },
     });
 
-    // Notify nearby users
+    // Notify nearby users via proximity alert
     const { lat, lng } = req.body.location || {};
     if (lat && lng) {
-      for (const [sid, session] of sessions.entries()) {
+      for (const [, session] of sessions.entries()) {
         if (session.lat && session.lng && session.ws.readyState === 1) { // 1 = OPEN
           const dist = haversineDistance(lat, lng, session.lat, session.lng);
           if (dist <= 20) { // within 20 km
@@ -285,6 +311,10 @@ app.post('/api/unflag', (req, res) => {
   }
   console.log(`   🚩 Flag toggle: ${incidentId} by ${walletAddress.slice(0, 8)}… → ${inc.flagCount} flags`);
   const { flaggedBy: _fb, ...sanitized } = inc;
+
+  // Broadcast flag update to all clients
+  broadcast({ type: 'INCIDENT_UPDATED', incident: { ...sanitized } });
+
   res.json({ incident: { ...sanitized, hasFlagged: !already } });
 });
 
@@ -418,7 +448,7 @@ app.get('/api/health', async (_req, res) => {
 
 // ─── Start ───────────────────────────────────────────────────
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
   const sessionId = uuidv4();

@@ -29,7 +29,7 @@ const INCIDENT_TYPES: { value: IncidentType; label: string; icon: string }[] = [
   { value: 'fire', label: 'Fire', icon: '🔥' },
   { value: 'crime', label: 'Crime', icon: '🚨' },
   { value: 'accident', label: 'Accident', icon: '💥' },
-  { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌪️' },
+  { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌩️' },
   { value: 'other', label: 'Other', icon: '⚠️' },
 ];
 
