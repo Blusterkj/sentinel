@@ -1,6 +1,5 @@
 // src/components/DemoButton.tsx
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import type { Incident } from '../types/incident';
 
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';

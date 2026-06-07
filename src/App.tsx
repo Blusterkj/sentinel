@@ -23,7 +23,7 @@ import { BottomTabBar } from './components/BottomTabBar';
 import { SosButton } from './components/SosButton';
 import { KeyBackupScreen } from './components/KeyBackupScreen';
 import { DemoTrigger } from './components/DemoTrigger';
-import { DemoButton, buildSimulatedIncident } from './components/DemoButton';
+import { buildSimulatedIncident } from './components/DemoButton';
 import { useSecretDemo } from './hooks/useSecretDemo';
 import type { Incident } from './types/incident';
 import {
@@ -379,11 +379,6 @@ export default function App() {
 
   // Desktop keyboard sequence activation
   useSecretDemo(() => setActionVisible(true));
-
-  // Post simulated incident to proxy and add to local state (called by DemoButton)
-  const handleSimulate = async (incident: Incident) => {
-    handleNewIncident(incident);
-  };
 
   // No-arg version for MobileHeader inline button
   const runSimulate = () => {
