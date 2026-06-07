@@ -6,6 +6,7 @@ import type { Incident } from '../types/incident';
 import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useAuthStore } from '../lib/authStore';
 
 
 interface DashboardProps {
@@ -56,6 +57,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [locationObtained, setLocationObtained] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const account = useCurrentAccount();
+  const { address: inAppAddress } = useAuthStore();
+  const isAuthenticated = !!(account || inAppAddress);
   
   // Listen for external requests to select an incident (e.g. from NearbyAlerts)
   useEffect(() => {
@@ -470,7 +473,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
         <button
           onClick={() => {
-            if (!account) {
+            if (!isAuthenticated) {
               setShowToast(true);
               setTimeout(() => setShowToast(false), 3000);
             } else {
@@ -478,7 +481,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               window.dispatchEvent(new Event('popstate'));
             }
           }}
-          title={!account ? "Connect wallet to report" : "Report Incident"}
+          title={!isAuthenticated ? "Connect wallet to report" : "Report Incident"}
           style={{
             background: '#3b82f6',
             color: '#fff',
