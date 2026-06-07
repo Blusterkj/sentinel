@@ -333,12 +333,20 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', backdropFilter: 'blur(4px)'
-        }} onClick={() => { setModalIncident(null); setShowProof(false); }}>
+        }}
+          onClick={() => { setModalIncident(null); setShowProof(false); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <div style={{
             background: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '16px',
             width: '100%', maxWidth: '480px', maxHeight: '90vh', position: 'relative', overflow: 'hidden',
             boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column'
-          }} onClick={e => e.stopPropagation()}>
+          }}
+            onClick={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
             {/* Map Header */}
             <div style={{ width: '100%', height: '140px', background: '#1a1a1a', position: 'relative' }}>
               <a 
