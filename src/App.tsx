@@ -2,7 +2,7 @@
 // Main app shell — sidebar nav, page routing, global incident state
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { PROXY_URL } from './lib/api';
+import { PROXY_URL, WS_URL } from './lib/api';
 import { AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { Landing } from './pages/Landing';
@@ -132,6 +132,57 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── WebSocket — real-time cross-device sync ──────────────────
+  const wsRef = useRef<WebSocket | null>(null);
+  useEffect(() => {
+    let ws: WebSocket;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      try {
+        ws = new WebSocket(WS_URL);
+        console.log('[SENTINEL] WebSocket connecting to:', WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => console.log('[SENTINEL] WS connected');
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SENTINEL] WS message received:', data.type);
+            if (data.type === 'NEW_INCIDENT' && data.incident) {
+              setIncidents((prev) =>
+                prev.some((i) => i.id === data.incident.id)
+                  ? prev
+                  : [data.incident, ...prev]
+              );
+            } else if (data.type === 'INCIDENT_UPDATED' && data.incident) {
+              setIncidents((prev) =>
+                prev.map((i) => i.id === data.incident.id ? { ...i, ...data.incident } : i)
+              );
+            } else if (data.type === 'INCIDENT_DELETED' && data.incidentId) {
+              setIncidents((prev) => prev.filter((i) => i.id !== data.incidentId));
+            }
+          } catch { /* ignore malformed messages */ }
+        };
+
+        ws.onclose = () => {
+          console.log('[SENTINEL] WS closed — reconnecting in 3s');
+          reconnectTimer = setTimeout(connect, 3000);
+        };
+
+        ws.onerror = () => ws.close();
+      } catch { /* WebSocket not available (SSR/test) */ }
+    };
+
+    connect();
+    return () => {
+      clearTimeout(reconnectTimer);
+      wsRef.current?.close();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
@@ -171,13 +222,6 @@ export default function App() {
     setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
   };
 
-  // Callback to update a single incident's fields (e.g. resolved status)
-  const updateIncident = useCallback((id: string, updates: Partial<Incident>) => {
-    setIncidents((prev) =>
-      prev.map((inc) => (inc.id === id ? { ...inc, ...updates } : inc))
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Merge updated flag data from POST /api/unflag response
   const handleFlagIncident = useCallback((updated: Incident) => {
@@ -187,7 +231,20 @@ export default function App() {
   }, []);
 
   const deleteIncident = useCallback((id: string) => {
+    // Optimistic local remove
     setIncidents((prev) => prev.filter((inc) => inc.id !== id));
+    // Tell proxy → it broadcasts INCIDENT_DELETED to all other clients
+    fetch(`${PROXY_URL}/api/incidents/${id}/delete`, { method: 'POST' }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const resolveIncident = useCallback((id: string) => {
+    // Optimistic local update
+    setIncidents((prev) =>
+      prev.map((inc) => (inc.id === id ? { ...inc, status: 'resolved' as const } : inc))
+    );
+    // Tell proxy → it broadcasts INCIDENT_UPDATED to all other clients
+    fetch(`${PROXY_URL}/api/incidents/${id}/resolve`, { method: 'POST' }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -609,7 +666,7 @@ export default function App() {
             setCriticalFilter={setCriticalFilter}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
-            onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
+            onResolveIncident={resolveIncident}
             onDeleteIncident={deleteIncident}
             onFlagIncident={handleFlagIncident}
             sidebarCollapsed={sidebarCollapsed}

@@ -342,6 +342,39 @@ app.post('/api/unflag', (req, res) => {
 });
 
 /**
+ * POST /api/incidents/:id/delete
+ * Removes an incident from the registry and broadcasts to all clients.
+ */
+app.post('/api/incidents/:id/delete', (req, res) => {
+  const { id } = req.params;
+  if (!incidentRegistry.has(id)) {
+    return res.status(404).json({ error: 'Incident not found' });
+  }
+  incidentRegistry.delete(id);
+  console.log(`   🗑️  Deleted incident: ${id}`);
+  broadcast({ type: 'INCIDENT_DELETED', incidentId: id });
+  res.json({ success: true });
+});
+
+/**
+ * POST /api/incidents/:id/resolve
+ * Marks an incident as resolved in the registry and broadcasts to all clients.
+ */
+app.post('/api/incidents/:id/resolve', (req, res) => {
+  const { id } = req.params;
+  const inc = incidentRegistry.get(id);
+  if (!inc) {
+    return res.status(404).json({ error: 'Incident not found' });
+  }
+  inc.status = 'resolved';
+  const { flaggedBy: _fb, ...sanitized } = inc;
+  console.log(`   ✅ Resolved incident: ${id}`);
+  broadcast({ type: 'INCIDENT_UPDATED', incident: { ...sanitized } });
+  res.json({ success: true, incident: sanitized });
+});
+
+
+/**
  * POST /api/chat
  *
  * AI agent chat with live Walrus memory recall.
