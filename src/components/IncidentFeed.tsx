@@ -135,7 +135,7 @@ const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => 
         }}
       >
         <span style={{ fontSize: '10px' }}>✓</span>
-        <span>Flagged</span>
+        <span>Flagged ({localCount})</span>
       </button>
     );
   }

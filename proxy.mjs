@@ -601,7 +601,4 @@ server.listen(PORT, () => {
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);
-
-  // Re-populate registry from Walrus after any Railway restart
-  rehydrateRegistry();
 });
