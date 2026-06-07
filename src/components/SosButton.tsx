@@ -61,7 +61,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
       }
 
       // Step 3: Build the incident object
-      const incident: Incident = {
+      let incident: Incident = {
         id: uuidv4(),
         type: 'other',
         severity: 'critical',
@@ -87,6 +87,9 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         const storeData = await storeRes.json();
         if (storeData.success && storeData.blobId) {
           blobId = storeData.blobId;
+          if (storeData.createdAt) {
+            incident = { ...incident, createdAt: storeData.createdAt };
+          }
 
           // Step 5: Sui transaction
           const tx = new Transaction();

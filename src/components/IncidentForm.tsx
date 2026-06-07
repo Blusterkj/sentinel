@@ -181,7 +181,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
     const incidentCoords = coords || { lat: 0, lng: 0 };
 
-    const incident: Incident = {
+    let incident: Incident = {
       id: uuidv4(),
       type,
       severity,
@@ -215,6 +215,9 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         const storeData = await storeRes.json();
         if (storeData.success && storeData.blobId) {
           blobId = storeData.blobId;
+          if (storeData.createdAt) {
+            incident = { ...incident, createdAt: storeData.createdAt };
+          }
 
           // Step B & C — Build and Execute Sui transaction
           const tx = new Transaction();

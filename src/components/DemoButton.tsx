@@ -38,6 +38,9 @@ export async function buildSimulatedIncident(): Promise<Incident> {
     if (data.success && data.blobId) {
       incident.walrusBlobId = data.blobId;
       incident.walrusStatus = 'synced';
+      if (data.createdAt) {
+        incident.createdAt = data.createdAt;
+      }
       try {
         const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
         blobMap[incident.id] = data.blobId;

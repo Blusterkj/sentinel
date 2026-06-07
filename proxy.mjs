@@ -170,14 +170,18 @@ app.get('/api/recall/blob/:blobId', async (req, res) => {
  * Body: { id, type, severity, description, location: { lat, lng, address }, timestamp, reportedBy, status }
  */
 app.post('/api/store', async (req, res) => {
-  const incident = req.body;
-  if (!incident || !incident.id || !incident.description) {
+  // Stamp createdAt server-side so all devices share the same source of truth
+  const incident = {
+    ...req.body,
+    createdAt: new Date().toISOString(),
+  };
+  if (!incident.id || !incident.description) {
     return res.status(400).json({ success: false, error: 'Invalid incident data' });
   }
 
   const text = `SENTINEL INCIDENT REPORT
 ID: ${incident.id}
-Timestamp: ${incident.timestamp}
+Created: ${incident.createdAt}
 Type: ${(incident.type || 'other').replace('_', ' ').toUpperCase()}
 Severity: ${(incident.severity || 'medium').toUpperCase()}
 Location: ${incident.location?.address || 'Unknown'} (lat: ${incident.location?.lat || 0}, lng: ${incident.location?.lng || 0})
@@ -218,7 +222,7 @@ Status: ${incident.status || 'active'}`;
       }
     }
 
-    res.json({ success: true, blobId: result.blob_id, tx_digest: txDigest });
+    res.json({ success: true, blobId: result.blob_id, tx_digest: txDigest, createdAt: incident.createdAt });
   } catch (err) {
     console.error(`   ❌ Store failed:`, err.message || err);
     res.status(502).json({ success: false, error: err.message || String(err) });

@@ -1,6 +1,7 @@
 // src/components/IncidentFeed.tsx
 
 import React from 'react';
+import { useNow } from '../hooks/useNow';
 import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download, ThumbsUp } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
@@ -39,8 +40,8 @@ const TYPE_LABELS: Record<IncidentType, string> = {
   other: 'Other',
 };
 
-function formatRelativeTime(timestamp: string): string {
-  const now = Date.now();
+// Accept a pre-computed `now` so all cards share one interval tick
+function formatRelativeTime(timestamp: string, now: number): string {
   const then = new Date(timestamp).getTime();
   const diff = Math.floor((now - then) / 1000);
 
@@ -142,6 +143,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   }, [criticalFilter]);
 
   let displayedIncidents = incidents;
+  const now = useNow(); // one interval for all cards
   if (criticalFilter) {
     displayedIncidents = displayedIncidents.filter((i) => i.severity === 'critical');
   }
@@ -228,12 +230,14 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
             {[...displayedIncidents]
               .sort(
                 (a, b) =>
-                  new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                  new Date(b.createdAt ?? b.timestamp).getTime() -
+                  new Date(a.createdAt ?? a.timestamp).getTime()
               )
               .map((incident, idx) => (
                 <IncidentCard
                   key={incident.id}
                   incident={incident}
+                  now={now}
                   isSelected={selectedId === incident.id}
                   onClick={() => {
                     onSelectIncident?.(incident);
@@ -335,7 +339,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   <SeverityBadge severity={modalIncident.severity} />
                 </div>
                 <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {formatRelativeTime(modalIncident.timestamp)}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {formatRelativeTime(modalIncident.createdAt ?? modalIncident.timestamp, now)}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {modalIncident.location.address}</span>
                 </div>
               </div>
@@ -580,6 +584,7 @@ interface IncidentCardProps {
   isSelected: boolean;
   onClick: () => void;
   animDelay: number;
+  now: number;
 }
 
 const IncidentCard: React.FC<IncidentCardProps> = ({
@@ -587,6 +592,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   isSelected: _isSelected,
   onClick,
   animDelay,
+  now,
 }) => {
   const isHigh = incident.severity === 'high';
   const isCritical = incident.severity === 'critical';
@@ -852,7 +858,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Clock size={11} color="#555" />
             <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>
-              {formatRelativeTime(incident.timestamp)}
+              {formatRelativeTime(incident.createdAt ?? incident.timestamp, now)}
             </span>
           </div>
         </div>

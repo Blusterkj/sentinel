@@ -23,6 +23,8 @@ export interface Incident {
     address: string;
   };
   timestamp: string;
+  /** Server-generated ISO timestamp — source of truth for "X ago" display */
+  createdAt?: string;
   reportedBy: string;
   status: 'active' | 'resolved';
   /** Real Walrus blob ID — set after successful MemWal storage */
