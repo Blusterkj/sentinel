@@ -1,0 +1,15 @@
+{
+  "name": "sentinel-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.6",
+    "ws": "^8.20.1",
+    "uuid": "^14.0.0",
+    "@mysten-incubation/memwal": "^0.0.3",
+    "@ai-sdk/groq": "^3.0.39",
+    "ai": "^6.0.182",
+    "@mysten/sui": "^2.17.0"
+  }
+}
