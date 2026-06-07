@@ -509,7 +509,26 @@ export default function App() {
       />
 
       {/* Desktop wallet button — absolute positioned, only shown on desktop */}
-      <div className="hidden md:block" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>
+      <div className="hidden md:flex" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000, alignItems: 'center', gap: '8px' }}>
+        {/* Inline ⚡ button — only when actionVisible */}
+        {actionVisible && (
+          <button
+            onClick={() => { runSimulate(); setActionVisible(false); }}
+            style={{
+              padding: '6px 10px',
+              background: '#1a1a1a',
+              border: '1px solid #333',
+              borderRadius: '7px',
+              color: '#aaa',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              letterSpacing: '0.01em',
+            }}
+          >
+            ⚡ Simulate
+          </button>
+        )}
         {/* dapp-kit connected */}
         {account ? (
           <div style={{ position: 'relative' }}>
@@ -916,13 +935,6 @@ export default function App() {
           <AuthModal onClose={() => setShowDesktopAuthModal(false)} />
         )}
       </AnimatePresence>
-
-      {/* Floating simulate button — activation is in-memory only */}
-      <DemoButton
-        visible={actionVisible}
-        onSimulate={handleSimulate}
-        onHide={() => setActionVisible(false)}
-      />
     </div>
   );
 }
