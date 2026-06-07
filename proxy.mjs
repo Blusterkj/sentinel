@@ -232,6 +232,7 @@ Status: ${incident.status || 'active'}`;
     incidentRegistry.set(incident.id, storedIncident);
 
     // Broadcast to all WebSocket clients for instant cross-device sync
+    console.log('[SENTINEL] Broadcasting NEW_INCIDENT to', wss ? wss.clients.size : 0, 'clients');
     broadcast({
       type: 'NEW_INCIDENT',
       incident: {
@@ -278,6 +279,7 @@ Status: ${incident.status || 'active'}`;
 app.get('/api/incidents', (_req, res) => {
   const list = [...incidentRegistry.values()]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  console.log('[SENTINEL] GET /api/incidents — returning', list.length, 'incidents');
   // Strip flaggedBy array from response (keep flagCount only)
   const sanitized = list.map(({ flaggedBy, ...rest }) => rest);
   res.json({ incidents: sanitized });

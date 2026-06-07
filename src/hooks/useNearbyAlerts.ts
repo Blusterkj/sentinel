@@ -26,6 +26,7 @@ export function useNearbyAlerts(options: UseNearbyAlertsOptions = {}) {
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) return;
 
+    console.log('[SENTINEL] WebSocket connecting to:', WS_URL);
     ws.current = new WebSocket(WS_URL);
 
     ws.current.onopen = () => {
@@ -52,6 +53,7 @@ export function useNearbyAlerts(options: UseNearbyAlertsOptions = {}) {
     ws.current.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
+        console.log('[SENTINEL] WS message received:', msg.type);
 
         if (msg.type === 'nearby_alert') {
           setAlerts(prev => [msg.incident, ...prev].slice(0, 10));

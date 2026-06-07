@@ -105,7 +105,9 @@ export default function App() {
 
   const fetchIncidents = useCallback(async () => {
     try {
-      const res = await fetch(`${PROXY_URL}/api/incidents`);
+      const url = `${PROXY_URL}/api/incidents`;
+      console.log('[SENTINEL] fetchIncidents URL:', url);
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       const fetched: Incident[] = data.incidents ?? [];
