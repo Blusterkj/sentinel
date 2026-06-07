@@ -437,10 +437,23 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
     }
   };
 
+  const handleGoToIncident = () => {
+    // 1. Navigate to Dashboard via History API (App.tsx listens to popstate)
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new Event('popstate'));
+    // 2. After a tick so Dashboard mounts, fire selectIncident event
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent('selectIncident', { detail: incident })
+      );
+    }, 120);
+  };
+
   return (
     <>
     <div
       className="fade-in-up"
+      onClick={handleGoToIncident}
       style={{
         background: hovered ? 'rgba(255,255,255,0.025)' : 'transparent',
         borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
@@ -450,7 +463,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         gap: '14px',
         transition: 'background 0.15s ease',
         animationDelay: `${index * 30}ms`,
-        cursor: 'default',
+        cursor: 'pointer',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -617,7 +630,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
       {/* Verify button — only active if we have a real blob ID */}
       {isSynced && blobId ? (
         <button
-          onClick={handleVerify}
+          onClick={(e) => { e.stopPropagation(); handleVerify(); }}
           style={{
             display: 'flex',
             alignItems: 'center',
