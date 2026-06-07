@@ -2,6 +2,7 @@
 // Main app shell — sidebar nav, page routing, global incident state
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { PROXY_URL } from './lib/api';
 import { AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { Landing } from './pages/Landing';
@@ -104,7 +105,6 @@ export default function App() {
 
   const fetchIncidents = useCallback(async () => {
     try {
-      const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
       const res = await fetch(`${PROXY_URL}/api/incidents`);
       if (!res.ok) return;
       const data = await res.json();

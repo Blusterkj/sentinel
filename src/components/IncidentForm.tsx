@@ -16,7 +16,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useAuthStore } from '../lib/authStore';
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
+import { PROXY_URL } from '../lib/api';
+
 
 
 interface IncidentFormProps {

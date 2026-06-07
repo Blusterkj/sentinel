@@ -1,8 +1,7 @@
 // src/components/DemoButton.tsx
 import React, { useState } from 'react';
 import type { Incident } from '../types/incident';
-
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
+import { PROXY_URL } from '../lib/api';
 
 const INCIDENTS = [
   { type: 'fire' as const,            severity: 'critical' as const, description: 'Fire reported at a commercial building. Smoke visible from street level.',            address: 'MG Road, Bengaluru',          lat: 12.9716, lng: 77.5946 },

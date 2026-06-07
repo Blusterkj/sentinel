@@ -6,7 +6,7 @@ import { Send, Brain, User, Loader2, AlertCircle, Cpu, Zap } from 'lucide-react'
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
+import { PROXY_URL } from '../lib/api';
 
 
 const SUGGESTED_QUERIES = [

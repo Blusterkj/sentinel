@@ -7,8 +7,8 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { Transaction } from '@mysten/sui/transactions';
 import { v4 as uuidv4 } from 'uuid';
 import type { Incident } from '../types/incident';
+import { PROXY_URL } from '../lib/api';
 
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 interface SosButtonProps {
   onSosSubmitted: (incident: Incident) => void;

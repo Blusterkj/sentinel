@@ -24,7 +24,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
+import { PROXY_URL } from '../lib/api';
 
 
 interface MemoryProps {

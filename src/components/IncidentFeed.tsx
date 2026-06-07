@@ -10,6 +10,8 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { Incident, IncidentType } from '../types/incident';
 import { SeverityBadge, getSeverityColor } from './SeverityBadge';
+import { PROXY_URL } from '../lib/api';
+
 
 interface IncidentFeedProps {
   incidents: Incident[];
@@ -52,8 +54,6 @@ function formatRelativeTime(timestamp: string, now: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
 }
-
-const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
 // ── Flag as Spam button ──────────────────────────────
 interface FlagButtonProps {
