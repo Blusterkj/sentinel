@@ -1,13 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo } from './Logo';
+import { DemoTrigger } from './DemoTrigger';
 import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
 import { clearWallet } from '../lib/inAppWallet';
 import { AuthModal } from './AuthModal';
 import { Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-react';
 
-export const MobileHeader: React.FC = () => {
+interface MobileHeaderProps {
+  onActivate?: () => void;
+  actionVisible?: boolean;
+  onSimulate?: () => void;
+  onHide?: () => void;
+}
+
+export const MobileHeader: React.FC<MobileHeaderProps> = ({
+  onActivate,
+  actionVisible,
+  onSimulate,
+  onHide,
+}) => {
   const account = useCurrentAccount();
   const { mutate: disconnectDappKit } = useDisconnectWallet();
   const { address: inAppAddress, clearAuth } = useAuthStore();
@@ -64,10 +77,32 @@ export const MobileHeader: React.FC = () => {
           position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Logo size={22} />
-          <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.1em' }}>SENTINEL</span>
-        </div>
+        <DemoTrigger onActivate={onActivate ?? (() => {})}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Logo size={22} />
+            <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.1em' }}>SENTINEL</span>
+          </div>
+        </DemoTrigger>
+        {actionVisible && (
+          <button
+            onClick={() => { onSimulate?.(); onHide?.(); }}
+            style={{
+              marginLeft: '8px',
+              padding: '3px 8px',
+              background: '#1a1a1a',
+              border: '1px solid #333',
+              borderRadius: '6px',
+              color: '#aaa',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              letterSpacing: '0.01em',
+              flexShrink: 0,
+            }}
+          >
+            ⚡
+          </button>
+        )}
 
         {isConnected ? (
           <div ref={dropdownRef} style={{ position: 'relative' }}>

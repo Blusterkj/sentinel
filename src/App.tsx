@@ -23,7 +23,7 @@ import { BottomTabBar } from './components/BottomTabBar';
 import { SosButton } from './components/SosButton';
 import { KeyBackupScreen } from './components/KeyBackupScreen';
 import { DemoTrigger } from './components/DemoTrigger';
-import { DemoButton } from './components/DemoButton';
+import { DemoButton, buildSimulatedIncident } from './components/DemoButton';
 import { useSecretDemo } from './hooks/useSecretDemo';
 import type { Incident } from './types/incident';
 import {
@@ -380,9 +380,14 @@ export default function App() {
   // Desktop keyboard sequence activation
   useSecretDemo(() => setActionVisible(true));
 
-  // Post simulated incident to proxy and add to local state
+  // Post simulated incident to proxy and add to local state (called by DemoButton)
   const handleSimulate = async (incident: Incident) => {
     handleNewIncident(incident);
+  };
+
+  // No-arg version for MobileHeader inline button
+  const runSimulate = () => {
+    buildSimulatedIncident().then((incident) => handleNewIncident(incident));
   };
 
   useEffect(() => {
@@ -496,7 +501,12 @@ export default function App() {
       }}
     >
       {/* Mobile-only Header — in normal flow, not fixed */}
-      <MobileHeader />
+      <MobileHeader
+        onActivate={() => setActionVisible(true)}
+        actionVisible={actionVisible}
+        onSimulate={runSimulate}
+        onHide={() => setActionVisible(false)}
+      />
 
       {/* Desktop wallet button — absolute positioned, only shown on desktop */}
       <div className="hidden md:block" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000 }}>

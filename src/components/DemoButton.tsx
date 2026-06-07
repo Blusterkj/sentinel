@@ -14,6 +14,41 @@ const INCIDENTS = [
   { type: 'fire' as const,            severity: 'high' as const,     description: 'Gas leak and fire in residential building. Residents evacuating.',                    address: 'Anna Nagar, Chennai',          lat: 13.0827, lng: 80.2707 },
 ];
 
+export async function buildSimulatedIncident(): Promise<Incident> {
+  const { v4: uuidv4 } = await import('uuid');
+  const pick = INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
+  const incident: Incident = {
+    id: uuidv4(),
+    type: pick.type,
+    severity: pick.severity,
+    description: pick.description,
+    location: { lat: pick.lat, lng: pick.lng, address: pick.address },
+    timestamp: new Date().toISOString(),
+    reportedBy: 'System',
+    status: 'active',
+    createdByMe: false,
+    walrusStatus: 'pending',
+  };
+  try {
+    const res = await fetch(`${PROXY_URL}/api/store`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(incident),
+    });
+    const data = await res.json();
+    if (data.success && data.blobId) {
+      incident.walrusBlobId = data.blobId;
+      incident.walrusStatus = 'synced';
+      try {
+        const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
+        blobMap[incident.id] = data.blobId;
+        localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
+      } catch {}
+    }
+  } catch {}
+  return incident;
+}
+
 interface DemoButtonProps {
   visible: boolean;
   onSimulate: (incident: Incident) => void;
@@ -29,41 +64,7 @@ export const DemoButton: React.FC<DemoButtonProps> = ({ visible, onSimulate, onH
   const handleClick = async () => {
     if (busy) return;
     setBusy(true);
-
-    const pick = INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
-    const incident: Incident = {
-      id: uuidv4(),
-      type: pick.type,
-      severity: pick.severity,
-      description: pick.description,
-      location: { lat: pick.lat, lng: pick.lng, address: pick.address },
-      timestamp: new Date().toISOString(),
-      reportedBy: 'System',
-      status: 'active',
-      createdByMe: false,
-      walrusStatus: 'pending',
-    };
-
-    try {
-      const res = await fetch(`${PROXY_URL}/api/store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(incident),
-      });
-      const data = await res.json();
-      if (data.success && data.blobId) {
-        incident.walrusBlobId = data.blobId;
-        incident.walrusStatus = 'synced';
-        try {
-          const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
-          blobMap[incident.id] = data.blobId;
-          localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
-        } catch {}
-      }
-    } catch {
-      // Store failed — still add locally
-    }
-
+    const incident = await buildSimulatedIncident();
     onSimulate(incident);
     onHide();
     setToast('Incident submitted to Walrus');
