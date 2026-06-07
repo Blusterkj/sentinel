@@ -1,11 +1,7 @@
 // src/App.tsx
 // Main app shell — sidebar nav, page routing, global incident state
 
-// localStorage keys for persistence
-const USER_INCIDENTS_KEY = 'sentinel_user_incidents';
-const INCIDENT_UPDATES_KEY = 'sentinel_incident_updates';
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { Landing } from './pages/Landing';
@@ -102,43 +98,37 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Load persisted incidents on mount ──
-  const [incidents, setIncidents] = useState<Incident[]>(() => {
-    // Start with only real user-submitted incidents from localStorage
-    let merged: Incident[] = [];
+  // ── Incident state — loaded from proxy, polled every 15s ──
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Load user-created incidents from localStorage
+  const fetchIncidents = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
-      if (raw) {
-        merged = JSON.parse(raw) as Incident[];
-      }
+      const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
+      const res = await fetch(`${PROXY_URL}/api/incidents`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const fetched: Incident[] = data.incidents ?? [];
+      setIncidents((prev) => {
+        // Merge: keep any optimistic local-only incidents (no walrusBlobId yet)
+        // that haven't been echoed back from the proxy yet
+        const fetchedIds = new Set(fetched.map((i) => i.id));
+        const localOnly = prev.filter((i) => !fetchedIds.has(i.id));
+        return [...localOnly, ...fetched];
+      });
     } catch {
-      // Corrupted data — ignore
+      // Network unavailable — keep current state, retry next tick
     }
+  }, []);
 
-    // Apply persisted updates (resolved / status changes)
-    try {
-      const raw = localStorage.getItem(INCIDENT_UPDATES_KEY);
-      if (raw) {
-        const updates: Record<string, Partial<Incident>> = JSON.parse(raw);
-        merged = merged
-          .filter((inc) => {
-            const u = updates[inc.id];
-            // If marked as __deleted, remove it
-            return !(u && (u as any).__deleted);
-          })
-          .map((inc) => {
-            const u = updates[inc.id];
-            return u ? { ...inc, ...u } : inc;
-          });
-      }
-    } catch {
-      // Corrupted data — ignore
-    }
-
-    return merged;
-  });
+  useEffect(() => {
+    fetchIncidents();
+    pollRef.current = setInterval(fetchIncidents, 15_000);
+    return () => {
+      if (pollRef.current !== null) clearInterval(pollRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);
@@ -174,61 +164,28 @@ export default function App() {
     window.history.pushState({}, '', path);
   };
 
-  // ── Persist user-created incidents to localStorage ──
-  const persistUserIncident = (incident: Incident) => {
-    try {
-      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
-      const existing: Incident[] = raw ? JSON.parse(raw) : [];
-      // Prepend new incident, dedupe by ID
-      const updated = [incident, ...existing.filter((i) => i.id !== incident.id)];
-      localStorage.setItem(USER_INCIDENTS_KEY, JSON.stringify(updated));
-    } catch {
-      // Storage full or unavailable — not fatal
-    }
-  };
-
-  // ── Persist status updates (resolve, etc.) to localStorage ──
-  const persistIncidentUpdate = (id: string, updates: Partial<Incident> & { __deleted?: boolean }) => {
-    try {
-      const raw = localStorage.getItem(INCIDENT_UPDATES_KEY);
-      const existing: Record<string, Partial<Incident>> = raw ? JSON.parse(raw) : {};
-      existing[id] = { ...(existing[id] || {}), ...updates };
-      localStorage.setItem(INCIDENT_UPDATES_KEY, JSON.stringify(existing));
-    } catch {
-      // Storage full or unavailable — not fatal
-    }
-  };
-
   const handleNewIncident = (incident: Incident) => {
-    setIncidents((prev) => [incident, ...prev]);
-    persistUserIncident(incident);
+    // Optimistically prepend — the 15s poll will confirm it from the proxy
+    setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
   };
 
-  // Callback to update a single incident's fields (used by seeding hook)
+  // Callback to update a single incident's fields (e.g. resolved status)
   const updateIncident = useCallback((id: string, updates: Partial<Incident>) => {
     setIncidents((prev) =>
       prev.map((inc) => (inc.id === id ? { ...inc, ...updates } : inc))
     );
-    // Persist status changes (e.g. resolved) so they survive refresh
-    if (updates.status) {
-      persistIncidentUpdate(id, updates);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Merge updated flag data from POST /api/unflag response
+  const handleFlagIncident = useCallback((updated: Incident) => {
+    setIncidents((prev) =>
+      prev.map((i) => (i.id === updated.id ? { ...i, flagCount: updated.flagCount } : i))
+    );
   }, []);
 
   const deleteIncident = useCallback((id: string) => {
     setIncidents((prev) => prev.filter((inc) => inc.id !== id));
-    // Mark as deleted in persisted updates
-    persistIncidentUpdate(id, { __deleted: true } as any);
-    // Also remove from user incidents if it was user-created
-    try {
-      const raw = localStorage.getItem(USER_INCIDENTS_KEY);
-      if (raw) {
-        const existing: Incident[] = JSON.parse(raw);
-        const updated = existing.filter((i) => i.id !== id);
-        localStorage.setItem(USER_INCIDENTS_KEY, JSON.stringify(updated));
-      }
-    } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -640,6 +597,7 @@ export default function App() {
             setActiveFilter={setActiveFilter}
             onResolveIncident={(id) => updateIncident(id, { status: 'resolved' })}
             onDeleteIncident={deleteIncident}
+            onFlagIncident={handleFlagIncident}
             sidebarCollapsed={sidebarCollapsed}
           />
         )}

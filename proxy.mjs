@@ -27,6 +27,11 @@ import os from 'os';
 // Connected sessions: Map<sessionId, { ws, lat, lng }>
 const sessions = new Map();
 
+// In-memory incident registry — keyed by incident ID.
+// NOTE: Deliberately in-memory. Railway restarts / crashes clear this map.
+// That is acceptable for the hackathon demo. Do NOT add file/DB persistence here.
+const incidentRegistry = new Map();
+
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -200,6 +205,15 @@ Status: ${incident.status || 'active'}`;
     console.log(`   ✅ Stored → blob: ${result.blob_id}`);
     const txDigest = await anchorOnSui(result.blob_id);
 
+    // Persist in in-memory registry for cross-device sync
+    incidentRegistry.set(incident.id, {
+      ...incident,
+      walrusBlobId: result.blob_id,
+      suiTxDigest: txDigest || undefined,
+      flagCount: 0,
+      flaggedBy: [],
+    });
+
     // Notify nearby users
     const { lat, lng } = req.body.location || {};
     if (lat && lng) {
@@ -227,6 +241,51 @@ Status: ${incident.status || 'active'}`;
     console.error(`   ❌ Store failed:`, err.message || err);
     res.status(502).json({ success: false, error: err.message || String(err) });
   }
+});
+
+/**
+ * GET /api/incidents
+ *
+ * Returns all incidents stored since the proxy started, sorted by createdAt desc.
+ * NOTE: in-memory only — cleared on every proxy restart (intentional for demo).
+ */
+app.get('/api/incidents', (_req, res) => {
+  const list = [...incidentRegistry.values()]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Strip flaggedBy array from response (keep flagCount only)
+  const sanitized = list.map(({ flaggedBy, ...rest }) => rest);
+  res.json({ incidents: sanitized });
+});
+
+/**
+ * POST /api/unflag
+ *
+ * Toggles a flag (spam report) on an incident for a given wallet address.
+ * Body: { incidentId, walletAddress }
+ * Returns: { incident } — updated incident object (without flaggedBy array).
+ * One wallet can only flag once; calling again unflagging it.
+ */
+app.post('/api/unflag', (req, res) => {
+  const { incidentId, walletAddress } = req.body;
+  if (!incidentId || !walletAddress) {
+    return res.status(400).json({ error: 'incidentId and walletAddress are required' });
+  }
+  const inc = incidentRegistry.get(incidentId);
+  if (!inc) {
+    return res.status(404).json({ error: 'Incident not found in registry' });
+  }
+  if (!inc.flaggedBy) inc.flaggedBy = [];
+  const already = inc.flaggedBy.includes(walletAddress);
+  if (already) {
+    inc.flaggedBy = inc.flaggedBy.filter(a => a !== walletAddress);
+    inc.flagCount = Math.max(0, (inc.flagCount || 0) - 1);
+  } else {
+    inc.flaggedBy.push(walletAddress);
+    inc.flagCount = (inc.flagCount || 0) + 1;
+  }
+  console.log(`   🚩 Flag toggle: ${incidentId} by ${walletAddress.slice(0, 8)}… → ${inc.flagCount} flags`);
+  const { flaggedBy: _fb, ...sanitized } = inc;
+  res.json({ incident: { ...sanitized, hasFlagged: !already } });
 });
 
 /**
@@ -390,7 +449,9 @@ server.listen(PORT, () => {
   console.log(`   Endpoints:`);
   console.log(`     GET  /api/recall?query=...&limit=5`);
   console.log(`     GET  /api/recall/blob/:blobId`);
+  console.log(`     GET  /api/incidents`);
   console.log(`     POST /api/store`);
+  console.log(`     POST /api/unflag`);
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);

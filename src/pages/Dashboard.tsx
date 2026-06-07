@@ -24,6 +24,7 @@ interface DashboardProps {
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
+  onFlagIncident?: (updated: Incident) => void;
   sidebarCollapsed?: boolean;
 }
 
@@ -37,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   setActiveFilter,
   onResolveIncident,
   onDeleteIncident,
+  onFlagIncident,
   sidebarCollapsed
 }) => {
   const [myReportsFilter, setMyReportsFilter] = useState(false);
@@ -453,6 +455,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             myReportsFilter={myReportsFilter}
             onResolveIncident={onResolveIncident}
             onDeleteIncident={onDeleteIncident}
+            onFlagIncident={onFlagIncident}
           />
         </div>
       </div>
@@ -517,6 +520,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         myReportsFilter={myReportsFilter}
         onResolveIncident={onResolveIncident}
         onDeleteIncident={onDeleteIncident}
+        onFlagIncident={onFlagIncident}
       />
     </div>
   );

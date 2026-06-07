@@ -39,6 +39,10 @@ export interface Incident {
   reporter?: string;
   /** Whether the current user created this incident in this session */
   createdByMe?: boolean;
+  /** Number of spam flags on this incident (social signal only, never auto-hides) */
+  flagCount?: number;
+  /** Wallet addresses that flagged this incident — only present on detailed response, not in list */
+  flaggedBy?: string[];
 }
 
 export interface RecalledMemory {

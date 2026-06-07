@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { useNow } from '../hooks/useNow';
-import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download, ThumbsUp } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useAuthStore } from '../lib/authStore';
 import { Transaction } from '@mysten/sui/transactions';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
@@ -19,6 +20,7 @@ interface IncidentFeedProps {
   myReportsFilter?: boolean;
   onResolveIncident?: (id: string) => void;
   onDeleteIncident?: (id: string) => void;
+  onFlagIncident?: (updated: Incident) => void;
   hideHeader?: boolean;
 }
 
@@ -51,43 +53,121 @@ function formatRelativeTime(timestamp: string, now: number): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-// ── Community Confirm helpers ────────────────────────────────
-function getConfirmKey(incidentId: string, walletAddress: string) {
-  return `confirm_${incidentId}_${walletAddress}`;
-}
-function getConfirmCountKey(incidentId: string) {
-  return `confirmcount_${incidentId}`;
-}
-function useConfirmation(incidentId: string, walletAddress: string | undefined) {
-  const [confirmed, setConfirmed] = React.useState(() => {
-    if (!walletAddress) return false;
-    return localStorage.getItem(getConfirmKey(incidentId, walletAddress)) === '1';
-  });
-  const [count, setCount] = React.useState(() => {
-    return parseInt(localStorage.getItem(getConfirmCountKey(incidentId)) || '0', 10);
-  });
+const PROXY_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3333';
 
-  const toggle = React.useCallback(() => {
-    if (!walletAddress) return;
-    if (confirmed) {
-      // Un-confirm
-      localStorage.removeItem(getConfirmKey(incidentId, walletAddress));
-      const newCount = Math.max(0, count - 1);
-      localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
-      setConfirmed(false);
-      setCount(newCount);
-    } else {
-      // Confirm
-      localStorage.setItem(getConfirmKey(incidentId, walletAddress), '1');
-      const newCount = count + 1;
-      localStorage.setItem(getConfirmCountKey(incidentId), String(newCount));
-      setConfirmed(true);
-      setCount(newCount);
+// ── Flag as Spam button ──────────────────────────────
+interface FlagButtonProps {
+  incident: Incident;
+  onFlagIncident?: (updated: Incident) => void;
+}
+
+const FlagButton: React.FC<FlagButtonProps> = ({ incident, onFlagIncident }) => {
+  const account = useCurrentAccount();
+  const { address: inAppAddress } = useAuthStore();
+  const walletAddress = account?.address || inAppAddress;
+
+  // Optimistic local flag state
+  const [localFlagged, setLocalFlagged] = React.useState<boolean | null>(null);
+  const [localCount, setLocalCount] = React.useState(incident.flagCount ?? 0);
+  const [busy, setBusy] = React.useState(false);
+
+  // Sync when incident prop updates (e.g. after poll)
+  React.useEffect(() => {
+    if (localFlagged === null) {
+      setLocalCount(incident.flagCount ?? 0);
     }
-  }, [walletAddress, confirmed, incidentId, count]);
+  }, [incident.flagCount, localFlagged]);
 
-  return { confirmed, count, confirm: toggle };
-}
+  if (!walletAddress) return null;
+
+  const hasFlagged = localFlagged !== null ? localFlagged : false;
+
+  const handleFlag = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    // Optimistic update
+    const nextFlagged = !hasFlagged;
+    setLocalFlagged(nextFlagged);
+    setLocalCount((c) => nextFlagged ? c + 1 : Math.max(0, c - 1));
+    try {
+      const res = await fetch(`${PROXY_URL}/api/unflag`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ incidentId: incident.id, walletAddress }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.incident) {
+          setLocalCount(data.incident.flagCount ?? localCount);
+          onFlagIncident?.(data.incident as Incident);
+        }
+      }
+    } catch {
+      // Revert on error
+      setLocalFlagged(hasFlagged);
+      setLocalCount((c) => nextFlagged ? Math.max(0, c - 1) : c + 1);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (hasFlagged) {
+    return (
+      <button
+        onClick={handleFlag}
+        disabled={busy}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '2px 7px',
+          marginBottom: '6px',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '5px',
+          background: 'transparent',
+          color: '#444',
+          fontSize: '10px',
+          fontWeight: 500,
+          cursor: busy ? 'not-allowed' : 'pointer',
+          transition: 'color 0.15s',
+          letterSpacing: '0.01em',
+        }}
+      >
+        <span style={{ fontSize: '10px' }}>✓</span>
+        <span>Flagged</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleFlag}
+      disabled={busy}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '2px 7px',
+        marginBottom: '6px',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '5px',
+        background: 'transparent',
+        color: '#555',
+        fontSize: '10px',
+        fontWeight: 500,
+        cursor: busy ? 'not-allowed' : 'pointer',
+        transition: 'color 0.15s',
+        letterSpacing: '0.01em',
+      }}
+      onMouseEnter={(e) => { if (!busy) (e.currentTarget as HTMLButtonElement).style.color = '#888'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#555'; }}
+    >
+      <span style={{ fontSize: '10px' }}>🚩</span>
+      <span>Flag as Spam ({localCount})</span>
+    </button>
+  );
+};
 
 export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   incidents,
@@ -98,18 +178,18 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   myReportsFilter,
   onResolveIncident,
   onDeleteIncident,
+  onFlagIncident,
   hideHeader = false,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const modalAccount = useCurrentAccount();
+  const { address: modalInAppAddress } = useAuthStore();
   const [modalIncident, setModalIncident] = React.useState<Incident | null>(null);
   const [showProof, setShowProof] = React.useState(false);
   const [isCopied, setIsCopied] = React.useState(false);
   const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [walrusData, setWalrusData] = React.useState<string | null>(null);
   const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
-  const [modalConfirmCount, setModalConfirmCount] = React.useState(0);
-  const [modalConfirmed, setModalConfirmed] = React.useState(false);
 
   // Listen for external requests to open the incident modal (e.g. from Dashboard selectedIncident)
   React.useEffect(() => {
@@ -122,19 +202,11 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
         setWalrusFetchState('idle');
         setWalrusData(null);
         setWalrusFetchError(null);
-        // Load confirm state for this incident
-        const addr = modalAccount?.address;
-        if (addr) {
-          setModalConfirmed(localStorage.getItem(getConfirmKey(customEvent.detail.id, addr)) === '1');
-        } else {
-          setModalConfirmed(false);
-        }
-        setModalConfirmCount(parseInt(localStorage.getItem(getConfirmCountKey(customEvent.detail.id)) || '0', 10));
       }
     };
     window.addEventListener('openIncidentModal', handleOpenModal);
     return () => window.removeEventListener('openIncidentModal', handleOpenModal);
-  }, [modalAccount]);
+  }, [modalAccount, modalInAppAddress]);
 
   React.useEffect(() => {
     if (criticalFilter && scrollRef.current) {
@@ -247,16 +319,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     setWalrusFetchState('idle');
                     setWalrusData(null);
                     setWalrusFetchError(null);
-                    // Load confirm state for this incident
-                    const addr = modalAccount?.address;
-                    if (addr) {
-                      setModalConfirmed(localStorage.getItem(getConfirmKey(incident.id, addr)) === '1');
-                    } else {
-                      setModalConfirmed(false);
-                    }
-                    setModalConfirmCount(parseInt(localStorage.getItem(getConfirmCountKey(incident.id)) || '0', 10));
                   }}
                   animDelay={idx * 50}
+                  onFlagIncident={onFlagIncident}
                 />
               ))}
           </div>
@@ -382,47 +447,14 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                   )}
                 </button>
 
-                {/* Modal Confirm button — hide on own incidents and resolved */}
-                {modalAccount && modalAccount.address !== modalIncident.reporter && modalIncident.status !== 'resolved' && (
-                  <button
-                    onClick={() => {
-                      if (!modalAccount?.address) return;
-                      if (modalConfirmed) {
-                        // Un-confirm
-                        localStorage.removeItem(getConfirmKey(modalIncident.id, modalAccount.address));
-                        const newCount = Math.max(0, modalConfirmCount - 1);
-                        localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
-                        setModalConfirmed(false);
-                        setModalConfirmCount(newCount);
-                      } else {
-                        // Confirm
-                        localStorage.setItem(getConfirmKey(modalIncident.id, modalAccount.address), '1');
-                        const newCount = modalConfirmCount + 1;
-                        localStorage.setItem(getConfirmCountKey(modalIncident.id), String(newCount));
-                        setModalConfirmed(true);
-                        setModalConfirmCount(newCount);
-                      }
-                    }}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: modalConfirmed ? 'rgba(59,130,246,0.15)' : '#1a1a1a', border: modalConfirmed ? '1px solid rgba(59,130,246,0.4)' : '1px solid #2a2a2a', borderRadius: '8px', color: modalConfirmed ? '#60a5fa' : '#ccc', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
-                  >
-                    <ThumbsUp size={14} />
-                    <span>{modalConfirmed ? '✓ Confirmed' : 'Confirm'}</span>
-                    <span style={{
-                      background: modalConfirmed ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.08)',
-                      color: modalConfirmed ? '#93c5fd' : '#888',
-                      borderRadius: '10px',
-                      padding: '0px 7px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      minWidth: '20px',
-                      textAlign: 'center',
-                      lineHeight: '18px',
-                    }}>
-                      {modalConfirmCount}
-                    </span>
-                  </button>
-                )}
+                {/* Modal Flag as Spam button */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <FlagButton incident={modalIncident} onFlagIncident={(updated) => {
+                    onFlagIncident?.(updated);
+                    setModalIncident((prev) => prev ? { ...prev, flagCount: updated.flagCount } : prev);
+                  }} />
+                </div>
+
                 {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
                   <button 
                     onClick={() => {
@@ -585,6 +617,7 @@ interface IncidentCardProps {
   onClick: () => void;
   animDelay: number;
   now: number;
+  onFlagIncident?: (updated: Incident) => void;
 }
 
 const IncidentCard: React.FC<IncidentCardProps> = ({
@@ -593,6 +626,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   onClick,
   animDelay,
   now,
+  onFlagIncident,
 }) => {
   const isHigh = incident.severity === 'high';
   const isCritical = incident.severity === 'critical';
@@ -602,7 +636,6 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [resolving, setResolving] = React.useState(false);
   const [resolvedLocal, setResolvedLocal] = React.useState(incident.status === 'resolved');
-  const { confirmed, count: confirmCount, confirm } = useConfirmation(incident.id, account?.address);
 
   React.useEffect(() => {
     setResolvedLocal(incident.status === 'resolved');
@@ -694,7 +727,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
       </div>
 
       {/* Row 2: Verification Badges */}
-      {(incident.suiTxDigest || incident.walrusBlobId || confirmCount >= 3) && (
+      {(incident.suiTxDigest || incident.walrusBlobId) && (
         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
           {incident.suiTxDigest && (
             <span style={{
@@ -728,22 +761,6 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               ⬡ Verified on Walrus
             </span>
           )}
-          {confirmCount >= 3 && (
-            <span style={{
-              fontSize: '10px',
-              background: 'rgba(59, 130, 246, 0.1)',
-              color: '#60a5fa',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              padding: '2px 6px',
-              borderRadius: '12px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px'
-            }}>
-              <ThumbsUp size={10} /> Community Verified
-            </span>
-          )}
         </div>
       )}
 
@@ -763,49 +780,8 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
         {incident.description}
       </p>
 
-      {/* Community Confirm button — hide on own incidents and resolved */}
-      {account && account.address !== incident.reporter && !resolvedLocal && (
-        <button
-          onClick={(e) => { e.stopPropagation(); confirm(); }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '3px 8px 3px 10px',
-            marginBottom: '8px',
-            border: confirmed
-              ? '1px solid rgba(59,130,246,0.5)'
-              : '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '6px',
-            background: confirmed
-              ? 'rgba(59,130,246,0.12)'
-              : 'rgba(255,255,255,0.04)',
-            color: confirmed ? '#60a5fa' : '#666',
-            fontSize: '11px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <ThumbsUp size={11} />
-          <span>{confirmed ? '✓ Confirmed' : 'Confirm'}</span>
-          {/* Count badge */}
-          <span style={{
-            background: confirmed ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.08)',
-            color: confirmed ? '#93c5fd' : '#555',
-            borderRadius: '10px',
-            padding: '0px 6px',
-            fontSize: '10px',
-            fontWeight: 700,
-            fontFamily: 'monospace',
-            minWidth: '18px',
-            textAlign: 'center',
-            lineHeight: '16px',
-          }}>
-            {confirmCount}
-          </span>
-        </button>
-      )}
+      {/* Flag as Spam — below description, left-aligned */}
+      <FlagButton incident={incident} onFlagIncident={onFlagIncident} />
 
       {/* Row 3: location + time + status */}
       <div
