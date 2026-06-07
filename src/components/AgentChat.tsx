@@ -2,7 +2,7 @@
 // Chat interface with the MemWal-powered AI agent
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Brain, User, Loader2 } from 'lucide-react';
+import { Send, Brain, User, Loader2, AlertCircle } from 'lucide-react';
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
