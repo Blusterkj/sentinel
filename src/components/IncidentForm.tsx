@@ -220,32 +220,38 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             incident = { ...incident, createdAt: storeData.createdAt };
           }
 
-          // Step B & C — Build and Execute Sui transaction
-          const tx = new Transaction();
-          tx.moveCall({
-            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-            arguments: [
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
-              tx.object('0x6'), // Clock object ID on Sui
-            ],
-          });
-          const txResult = await signAndExecute({ transaction: tx });
-          txDigest = txResult.digest;
-          
-          try {
-            const txRes = await suiClient.waitForTransaction({
-              digest: txDigest,
-              options: { showObjectChanges: true },
-            });
-            if (txRes.objectChanges) {
-               const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
-               if (createdObj && 'objectId' in createdObj) {
-                 suiObjectId = createdObj.objectId;
-               }
+          // Step B & C — Sui on-chain anchor (only when dapp-kit wallet connected)
+          if (account) {
+            try {
+              const tx = new Transaction();
+              tx.moveCall({
+                target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
+                arguments: [
+                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
+                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
+                  tx.object('0x6'), // Clock object ID on Sui
+                ],
+              });
+              const txResult = await signAndExecute({ transaction: tx });
+              txDigest = txResult.digest;
+
+              try {
+                const txRes = await suiClient.waitForTransaction({
+                  digest: txDigest,
+                  options: { showObjectChanges: true },
+                });
+                if (txRes.objectChanges) {
+                   const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
+                   if (createdObj && 'objectId' in createdObj) {
+                     suiObjectId = createdObj.objectId;
+                   }
+                }
+              } catch (e) {
+                console.warn("Could not fetch object changes", e);
+              }
+            } catch (txErr) {
+              console.warn('Sui anchor failed (non-blocking, Walrus store succeeded):', txErr);
             }
-          } catch (e) {
-            console.warn("Could not fetch object changes", e);
           }
 
           // Save blob ID mapping to localStorage so Memory page picks it up

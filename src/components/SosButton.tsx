@@ -8,6 +8,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { v4 as uuidv4 } from 'uuid';
 import type { Incident } from '../types/incident';
 import { PROXY_URL } from '../lib/api';
+import { useAuthStore } from '../lib/authStore';
 
 
 interface SosButtonProps {
@@ -20,6 +21,9 @@ type SosState = 'idle' | 'submitting';
 export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const { address: inAppAddress } = useAuthStore();
+  // Either wallet is sufficient — dapp-kit for desktop Slush, in-app Ed25519 for mobile
+  const walletAddress = account?.address ?? inAppAddress ?? null;
   const [state, setState] = useState<SosState>('idle');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
@@ -29,8 +33,8 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
   };
 
   const handleSos = async () => {
-    if (!account) {
-      showToast('Connect your wallet to use SOS', 'warning');
+    if (!walletAddress) {
+      showToast('No wallet found — please sign in first', 'warning');
       return;
     }
 
@@ -71,7 +75,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         reportedBy: 'SOS',
         status: 'active',
         createdByMe: true,
-        reporter: account.address,
+        reporter: walletAddress ?? undefined,
       };
 
       // Step 4: Store on Walrus
@@ -91,18 +95,24 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
             incident = { ...incident, createdAt: storeData.createdAt };
           }
 
-          // Step 5: Sui transaction
-          const tx = new Transaction();
-          tx.moveCall({
-            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-            arguments: [
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
-              tx.object('0x6'),
-            ],
-          });
-          const txResult = await signAndExecute({ transaction: tx });
-          txDigest = txResult.digest;
+          // Step 5: Sui on-chain tx — only when dapp-kit wallet is connected
+          if (account) {
+            try {
+              const tx = new Transaction();
+              tx.moveCall({
+                target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
+                arguments: [
+                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
+                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
+                  tx.object('0x6'),
+                ],
+              });
+              const txResult = await signAndExecute({ transaction: tx });
+              txDigest = txResult.digest;
+            } catch (txErr) {
+              console.warn('SOS Sui tx failed (non-blocking):', txErr);
+            }
+          }
         }
       } catch (err) {
         console.warn('SOS proxy/Sui failed (saved locally):', err);
