@@ -823,62 +823,56 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         </div>
       )}
 
-      {/* Submit — allow dapp-kit wallet OR in-app wallet */}
+      {/* Submit — WalletGuard already ensures the user is authenticated */}
       <div className="mobile-submit-area">
-        {(account || inAppAddress) ? (
-          <button
-            type="submit"
-            id="submit-incident-btn"
-            disabled={['submitting', 'recalling', 'locating'].includes(formState)}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background:
-                formState === 'submitting' || formState === 'recalling'
-                  ? '#1a1a1a'
-                  : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              border: 'none',
-              borderRadius: '10px',
-              color:
-                formState === 'submitting' || formState === 'recalling' ? '#666' : '#fff',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor:
-                formState === 'submitting' || formState === 'recalling'
-                  ? 'not-allowed'
-                  : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'all 0.2s',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {formState === 'submitting' && (
-              <>
-                <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                Storing on Walrus & Sui…
-              </>
-            )}
-            {formState === 'recalling' && (
-              <>
-                <Brain size={16} />
-                Agent recalling patterns…
-              </>
-            )}
-            {!['submitting', 'recalling'].includes(formState) && (
-              <>
-                <Send size={16} />
-                Submit to Walrus
-              </>
-            )}
-          </button>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '14px', background: '#1a1a1a', borderRadius: '10px', color: '#888', fontSize: '14px', fontWeight: 600 }}>
-            Connect Wallet to Report Incident
-          </div>
-        )}
+        <button
+          type="submit"
+          id="submit-incident-btn"
+          disabled={['submitting', 'recalling', 'locating'].includes(formState)}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background:
+              formState === 'submitting' || formState === 'recalling'
+                ? '#1a1a1a'
+                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+            border: 'none',
+            borderRadius: '10px',
+            color:
+              formState === 'submitting' || formState === 'recalling' ? '#666' : '#fff',
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor:
+              formState === 'submitting' || formState === 'recalling'
+                ? 'not-allowed'
+                : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            transition: 'all 0.2s',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {formState === 'submitting' && (
+            <>
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              Storing on Walrus…
+            </>
+          )}
+          {formState === 'recalling' && (
+            <>
+              <Brain size={16} />
+              Agent recalling patterns…
+            </>
+          )}
+          {!['submitting', 'recalling'].includes(formState) && (
+            <>
+              <Send size={16} />
+              Submit to Walrus
+            </>
+          )}
+        </button>
 
         <p
           style={{
