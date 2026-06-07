@@ -336,7 +336,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
         }} onClick={() => { setModalIncident(null); setShowProof(false); }}>
           <div style={{
             background: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '16px',
-            width: '100%', maxWidth: '480px', position: 'relative', overflow: 'hidden',
+            width: '100%', maxWidth: '480px', maxHeight: '90vh', position: 'relative', overflow: 'hidden',
             boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column'
           }} onClick={e => e.stopPropagation()}>
             {/* Map Header */}
@@ -395,7 +395,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               </button>
             </div>
 
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', flex: 1 }}>
               {/* Header Info */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -412,11 +412,11 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               {/* Warning Banner */}
               {(modalIncident.severity === 'critical' || modalIncident.severity === 'high') ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#ef4444', fontSize: '14px', fontWeight: 600 }}>
-                  <AlertTriangle size={16} /> ⚠️ Stay clear of this area
+                  <AlertTriangle size={16} /> Stay clear of this area
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '8px', color: '#eab308', fontSize: '14px', fontWeight: 600 }}>
-                  <AlertTriangle size={16} /> ℹ️ Be cautious in this area
+                  <AlertTriangle size={16} /> Be cautious in this area
                 </div>
               )}
 
