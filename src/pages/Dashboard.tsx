@@ -60,14 +60,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { address: inAppAddress } = useAuthStore();
   const isAuthenticated = !!(account || inAppAddress);
   
-  // Listen for external requests to select an incident (e.g. from NearbyAlerts)
+  // Listen for external requests to select an incident (e.g. from Memory page)
+  // NOTE: do NOT call setCenter here — geolocation runs concurrently on mount
+  // and would snap the map back to user location, causing a visible flicker.
+  // The incident modal has its own embedded mini-map + Google Maps link.
   useEffect(() => {
     const handleSelectIncident = (e: Event) => {
       const customEvent = e as CustomEvent<Incident>;
       if (customEvent.detail) {
         setSelectedCluster(null);
         setSelectedIncident(customEvent.detail);
-        setCenter([customEvent.detail.location.lat, customEvent.detail.location.lng]);
+        // Map stays where it is — user can use the mini-map in the modal
       }
     };
     window.addEventListener('selectIncident', handleSelectIncident);
@@ -75,14 +78,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, []);
 
   // Try to get user location on mount and center the map on them
+  // Only update center if no incident is currently selected (avoids snapping away from modal)
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setCenter(loc);
           setUserLocation(loc);
           setLocationObtained(true);
+          // Only pan to user if no incident is selected
+          setSelectedIncident((current) => {
+            if (!current) setCenter(loc);
+            return current;
+          });
         },
         () => {
           // Silently fall back to default center if denied
