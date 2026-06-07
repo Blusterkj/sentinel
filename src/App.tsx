@@ -125,7 +125,7 @@ export default function App() {
 
   useEffect(() => {
     fetchIncidents();
-    pollRef.current = setInterval(fetchIncidents, 15_000);
+    pollRef.current = setInterval(fetchIncidents, 5_000);
     return () => {
       if (pollRef.current !== null) clearInterval(pollRef.current);
     };

@@ -228,7 +228,8 @@ Severity: ${(incident.severity || 'medium').toUpperCase()}
 Location: ${incident.location?.address || 'Unknown'} (lat: ${incident.location?.lat || 0}, lng: ${incident.location?.lng || 0})
 Description: ${incident.description}
 Reported By: ${incident.reportedBy || 'Anonymous'}
-Status: ${incident.status || 'active'}`;
+Status: ${incident.status || 'active'}
+JSONDATA: ${JSON.stringify(incident)}`;
 
   console.log(`\n📝 Store: ${incident.id} (${incident.type}/${incident.severity})`);
   console.log(`   📍 ${incident.location?.address || 'No address'}`);
@@ -495,6 +496,43 @@ wss.on('connection', (ws) => {
   ws.on('close', () => sessions.delete(sessionId));
 });
 
+/**
+ * Rehydrate incidentRegistry from MemWal/Walrus on startup.
+ * Parses the JSONDATA: footer embedded in each stored incident blob.
+ * This makes cross-device sync resilient to Railway restarts.
+ */
+async function rehydrateRegistry() {
+  try {
+    console.log('[SENTINEL] Rehydrating incidentRegistry from MemWal...');
+    const result = await memwal.recall('SENTINEL INCIDENT REPORT', 100);
+    const items = result?.results ?? result ?? [];
+    let count = 0;
+    for (const item of items) {
+      try {
+        const text = item.text || '';
+        const marker = 'JSONDATA: ';
+        const idx = text.indexOf(marker);
+        if (idx === -1) continue;
+        const incident = JSON.parse(text.slice(idx + marker.length));
+        if (incident?.id && !incidentRegistry.has(incident.id)) {
+          incidentRegistry.set(incident.id, {
+            ...incident,
+            walrusBlobId: item.blob_id ?? incident.walrusBlobId,
+            walrusStatus: 'synced',
+            flagCount: incident.flagCount ?? 0,
+            flaggedBy: incident.flaggedBy ?? [],
+          });
+          count++;
+        }
+      } catch { /* skip unparseable blobs */ }
+    }
+    console.log(`[SENTINEL] Rehydrated ${count} incidents from MemWal`);
+  } catch (err) {
+    // Non-blocking — proxy works fine with empty registry
+    console.warn('[SENTINEL] Rehydration skipped:', err.message);
+  }
+}
+
 server.listen(PORT, () => {
   console.log(`\n🛡️  Sentinel MemWal Proxy`);
   console.log(`   http://localhost:${PORT}`);
@@ -507,4 +545,7 @@ server.listen(PORT, () => {
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);
+
+  // Re-populate registry from Walrus after any Railway restart
+  rehydrateRegistry();
 });
