@@ -522,15 +522,28 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                               setWalrusData(null);
                               setWalrusFetchError(null);
                               try {
-                                const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${modalIncident.walrusBlobId}`);
-                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                const text = await res.text();
-                                setWalrusData(text);
-                                setWalrusFetchState('done');
-                              } catch (err: any) {
-                                setWalrusFetchError(err.message || 'Failed to fetch');
-                                setWalrusFetchState('error');
-                              }
+                                  const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${modalIncident.walrusBlobId}`);
+                                  if (!res.ok) {
+                                    if (res.status === 404) {
+                                      throw new Error('Blob not yet propagated to all nodes — please try again in 30 seconds');
+                                    } else if (res.status === 403) {
+                                      throw new Error('Access restricted on this node — try View on WalrusScan instead');
+                                    } else {
+                                      throw new Error(`HTTP ${res.status} — try View on WalrusScan instead`);
+                                    }
+                                  }
+                                  const text = await res.text();
+                                  setWalrusData(text);
+                                  setWalrusFetchState('done');
+                                } catch (err: any) {
+                                  const msg = err?.message || '';
+                                  if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
+                                    setWalrusFetchError('Network error — check your connection');
+                                  } else {
+                                    setWalrusFetchError(msg || 'Unknown error — try View on WalrusScan instead');
+                                  }
+                                  setWalrusFetchState('error');
+                                }
                             }}
                             disabled={walrusFetchState === 'loading'}
                             style={{
@@ -576,13 +589,16 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                               lineHeight: '1.5',
                               fontFamily: 'monospace',
                             }}>
-                              {walrusData}
+                              {(() => {
+                                try { return JSON.stringify(JSON.parse(walrusData), null, 2); }
+                                catch { return walrusData; }
+                              })()}
                             </pre>
                           )}
 
                           {walrusFetchState === 'error' && walrusFetchError && (
                             <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', color: '#ef4444', fontSize: '11px' }}>
-                              Failed to fetch: {walrusFetchError}
+                              {walrusFetchError}
                             </div>
                           )}
                         </>
