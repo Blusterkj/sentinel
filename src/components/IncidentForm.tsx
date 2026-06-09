@@ -1,7 +1,7 @@
 // src/components/IncidentForm.tsx
 // Form to report a new incident — stores it in MemWal and shows pattern analysis
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Send,
@@ -9,6 +9,10 @@ import {
   CheckCircle2,
   ExternalLink,
   Search,
+  CheckCircle,
+  Link,
+  Radio,
+  Shield,
 } from 'lucide-react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
@@ -705,10 +709,10 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 };
 
 // ─── Pipeline Timeline ────────────────────────────────────────────────────────
-const PIPELINE_STEPS = [
-  { emoji: '✅', label: 'Stored on Walrus',  sub: 'Your report is permanently recorded', color: '#22c55e' },
-  { emoji: '⛓️', label: 'Anchored on Sui',   sub: 'Immutable proof written on-chain',    color: '#a78bfa' },
-  { emoji: '📡', label: 'Broadcasting',       sub: 'Nearby users are being alerted',      color: '#38bdf8' },
+const PIPELINE_STEPS: { icon: (active: boolean) => React.ReactNode; label: string; sub: string; color: string }[] = [
+  { icon: (a) => <CheckCircle size={22} color={a ? '#22c55e' : '#333'} strokeWidth={2} />, label: 'Stored on Walrus',  sub: 'Your report is permanently recorded', color: '#22c55e' },
+  { icon: (a) => <Link      size={22} color={a ? '#a78bfa' : '#333'} strokeWidth={2} />, label: 'Anchored on Sui',   sub: 'Immutable proof written on-chain',    color: '#a78bfa' },
+  { icon: (a) => <Radio     size={22} color={a ? '#38bdf8' : '#333'} strokeWidth={2} />, label: 'Broadcasting',       sub: 'Nearby users are being alerted',      color: '#38bdf8' },
 ];
 
 const PipelineTimeline: React.FC<{ hasSuiAnchor: boolean }> = () => {
@@ -730,7 +734,7 @@ const PipelineTimeline: React.FC<{ hasSuiAnchor: boolean }> = () => {
         {PIPELINE_STEPS.map((step, i) => (
           <React.Fragment key={i}>
             <div style={{ flex: 1, background: '#111', border: `1px solid ${visible[i] ? step.color + '50' : '#1f1f1f'}`, borderRadius: '10px', padding: '14px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center', opacity: visible[i] ? 1 : 0, transform: visible[i] ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity 0.35s ease, transform 0.35s ease, border-color 0.35s' }}>
-              <div style={{ fontSize: '22px', lineHeight: 1 }}>{step.emoji}</div>
+              <div style={{ lineHeight: 1, display: 'flex' }}>{step.icon(visible[i])}</div>
               <div style={{ fontSize: '12px', fontWeight: 700, color: visible[i] ? step.color : '#555' }}>{step.label}</div>
               <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.3' }}>{step.sub}</div>
             </div>
@@ -751,8 +755,8 @@ const PipelineTimeline: React.FC<{ hasSuiAnchor: boolean }> = () => {
             {i < PIPELINE_STEPS.length - 1 && (
               <div style={{ position: 'absolute', left: '17px', top: '40px', bottom: '-4px', width: '2px', background: 'repeating-linear-gradient(to bottom, #2a2a2a 0, #2a2a2a 4px, transparent 4px, transparent 8px)' }} />
             )}
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${step.color}15`, border: `2px solid ${visible[i] ? step.color + '80' : '#222'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '16px', opacity: visible[i] ? 1 : 0.3, transition: 'opacity 0.35s, border-color 0.35s' }}>
-              {step.emoji}
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${step.color}15`, border: `2px solid ${visible[i] ? step.color + '80' : '#222'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: visible[i] ? 1 : 0.3, transition: 'opacity 0.35s, border-color 0.35s' }}>
+              {step.icon(visible[i])}
             </div>
             <div style={{ paddingBottom: '16px', paddingTop: '4px', opacity: visible[i] ? 1 : 0, transform: visible[i] ? 'translateX(0)' : 'translateX(6px)', transition: 'opacity 0.35s, transform 0.35s' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: visible[i] ? step.color : '#555' }}>{step.label}</div>
@@ -773,34 +777,17 @@ const PipelineTimeline: React.FC<{ hasSuiAnchor: boolean }> = () => {
 };
 
 // ─── Incident Impact Card ─────────────────────────────────────────────────────
-function useCountUp(target: number, durationMs = 900) {
-  const [value, setValue] = useState(0);
-  const frameRef = useRef<number | null>(null);
-  useEffect(() => {
-    const start = performance.now();
-    const tick = (now: number) => {
-      const progress = Math.min((now - start) / durationMs, 1);
-      setValue(Math.round(progress * target));
-      if (progress < 1) frameRef.current = requestAnimationFrame(tick);
-    };
-    frameRef.current = requestAnimationFrame(tick);
-    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
-  }, [target, durationMs]);
-  return value;
-}
-
 const IncidentImpactCard: React.FC<{ incident: Incident }> = ({ incident }) => {
-  const notified = useCountUp(7, 900);
   const shortBlob = incident.walrusBlobId ? incident.walrusBlobId.slice(0, 10) + '…' : null;
 
-  const rows: { icon: string; label: string; value: React.ReactNode }[] = [
+  const rows: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
     {
-      icon: '📡',
+      icon: <Radio size={16} color="#38bdf8" />,
       label: 'Users Notified',
-      value: <span style={{ color: '#38bdf8', fontWeight: 700 }}>{notified}+ within 5km</span>,
+      value: <span style={{ color: '#38bdf8', fontWeight: 600 }}>Nearby users alerted</span>,
     },
     {
-      icon: '🐋',
+      icon: <Shield size={16} color="#a78bfa" />,
       label: 'Stored Permanently',
       value: shortBlob ? (
         <a href={`https://walruscan.com/testnet/blob/${incident.walrusBlobId}`} target="_blank" rel="noopener noreferrer"
@@ -811,7 +798,7 @@ const IncidentImpactCard: React.FC<{ incident: Incident }> = ({ incident }) => {
       ) : <span style={{ color: '#22c55e', fontWeight: 700 }}>Verified on Walrus</span>,
     },
     {
-      icon: '⛓️',
+      icon: <Link size={16} color="#a78bfa" />,
       label: 'On-Chain Record',
       value: incident.suiTxDigest ? (
         <a href={`https://suiscan.xyz/testnet/tx/${incident.suiTxDigest}`} target="_blank" rel="noopener noreferrer"
@@ -830,7 +817,7 @@ const IncidentImpactCard: React.FC<{ incident: Incident }> = ({ incident }) => {
       {rows.map((row, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderBottom: i < rows.length - 1 ? '1px solid #141414' : 'none', minHeight: '44px', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <span style={{ fontSize: '16px' }}>{row.icon}</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}>{row.icon}</span>
             <span style={{ fontSize: '12px', color: '#888', fontWeight: 500 }}>{row.label}</span>
           </div>
           <div style={{ fontSize: '12px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }}>
