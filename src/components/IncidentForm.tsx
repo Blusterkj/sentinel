@@ -1,13 +1,12 @@
 // src/components/IncidentForm.tsx
 // Form to report a new incident — stores it in MemWal and shows pattern analysis
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Send,
   Loader2,
   CheckCircle2,
-  Brain,
   ExternalLink,
   Search,
 } from 'lucide-react';
@@ -40,7 +39,7 @@ const SEVERITIES: { value: Severity; label: string; desc: string; color: string 
   { value: 'critical', label: 'Critical', desc: 'Life-threatening, need immediate action', color: '#ef4444' },
 ];
 
-type FormState = 'idle' | 'locating' | 'submitting' | 'recalling' | 'done' | 'error';
+type FormState = 'idle' | 'locating' | 'submitting' | 'done' | 'error';
 
 export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted }) => {
   const account = useCurrentAccount();
@@ -56,9 +55,6 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [formState, setFormState] = useState<FormState>('idle');
   const [error, setError] = useState('');
-  const [patternAnalysis, setPatternAnalysis] = useState<
-    Array<{ text: string; distance: number }>
-  >([]);
   const [submittedIncident, setSubmittedIncident] = useState<Incident | null>(null);
   const [addressSuggestions, setAddressSuggestions] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -277,23 +273,6 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
       setSubmittedIncident(storedIncident);
       onIncidentSubmitted(storedIncident);
-
-      // Now recall similar incidents for pattern analysis via proxy
-      setFormState('recalling');
-      try {
-        const recallRes = await fetch(
-          `${PROXY_URL}/api/recall?query=${encodeURIComponent(
-            `${incident.type} incident near ${incident.location.address} severity ${incident.severity}`
-          )}&limit=5`
-        );
-        if (recallRes.ok) {
-          const recallData = await recallRes.json();
-          setPatternAnalysis(recallData.results || []);
-        }
-      } catch (recallErr) {
-        // Non-fatal — recall may fail; incident is already stored
-        console.warn('Recall warning:', recallErr);
-      }
       setFormState('done');
     } catch (err) {
       console.error('Submit error:', err);
@@ -311,7 +290,6 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
     setCoords(null);
     setFormState('idle');
     setError('');
-    setPatternAnalysis([]);
     setSubmittedIncident(null);
   };
 
@@ -340,26 +318,13 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               Your report has been permanently recorded on the Walrus blockchain via MemWal.
               The AI agent now has full context of this incident.
             </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' }}>
               {submittedIncident.walrusBlobId && (
-                <a 
-                  href={`https://walruscan.com/testnet/blob/${submittedIncident.walrusBlobId}`} 
-                  target="_blank" 
+                <a
+                  href={`https://walruscan.com/testnet/blob/${submittedIncident.walrusBlobId}`}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    color: '#a78bfa',
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s'
-                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#a78bfa', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}
                   onMouseOver={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'}
                 >
@@ -368,24 +333,11 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
                 </a>
               )}
               {submittedIncident.suiTxDigest && (
-                <a 
-                  href={`https://suiscan.xyz/testnet/tx/${submittedIncident.suiTxDigest}`} 
-                  target="_blank" 
+                <a
+                  href={`https://suiscan.xyz/testnet/tx/${submittedIncident.suiTxDigest}`}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    color: '#60a5fa',
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s'
-                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}
                   onMouseOver={(e) => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'}
                 >
@@ -397,132 +349,15 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           </div>
         </div>
 
-        {/* Pattern Analysis */}
-        {patternAnalysis.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '14px',
-              }}
-            >
-              <Brain size={16} color="#8b5cf6" />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#e5e5e5' }}>
-                Agent Pattern Analysis
-              </span>
-              <span
-                style={{
-                  fontSize: '10px',
-                  color: '#8b5cf6',
-                  background: 'rgba(139, 92, 246, 0.12)',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  fontFamily: 'monospace',
-                }}
-              >
-                {patternAnalysis.length} similar recalled
-              </span>
-            </div>
+        {/* What Happens Next — pipeline timeline */}
+        <PipelineTimeline hasSuiAnchor={!!submittedIncident.suiTxDigest} />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {patternAnalysis.map((mem, i) => (
-                <div
-                  key={i}
-                  className="fade-in-up"
-                  style={{
-                    animationDelay: `${i * 80}ms`,
-                    background: '#111',
-                    border: '1px solid #1f1f1f',
-                    borderRadius: '8px',
-                    padding: '12px 14px',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        color: '#555',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      MEMORY #{i + 1}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        color: '#8b5cf6',
-                        fontFamily: 'monospace',
-                        background: 'rgba(139, 92, 246, 0.1)',
-                        padding: '1px 6px',
-                        borderRadius: '3px',
-                      }}
-                    >
-                      sim: {(1 - mem.distance).toFixed(2)}
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      fontSize: '12px',
-                      color: '#999',
-                      lineHeight: '1.5',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {mem.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {patternAnalysis.length === 0 && (
-          <div
-            style={{
-              background: '#111',
-              border: '1px solid #1f1f1f',
-              borderRadius: '10px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginBottom: '24px',
-              color: '#555',
-            }}
-          >
-            <Brain size={16} />
-            <span style={{ fontSize: '13px' }}>
-              No similar historical incidents found. This may be a new pattern.
-            </span>
-          </div>
-        )}
+        {/* Incident Impact Card */}
+        <IncidentImpactCard incident={submittedIncident} />
 
         <button
           onClick={handleReset}
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '10px',
-            color: '#3b82f6',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
+          style={{ width: '100%', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '10px', color: '#3b82f6', fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
         >
           Report Another Incident
         </button>
@@ -828,24 +663,17 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         <button
           type="submit"
           id="submit-incident-btn"
-          disabled={['submitting', 'recalling', 'locating'].includes(formState)}
+                disabled={formState === 'submitting' || formState === 'locating'}
           style={{
             width: '100%',
             padding: '14px',
-            background:
-              formState === 'submitting' || formState === 'recalling'
-                ? '#1a1a1a'
-                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+            background: formState === 'submitting' ? '#1a1a1a' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
             border: 'none',
             borderRadius: '10px',
-            color:
-              formState === 'submitting' || formState === 'recalling' ? '#666' : '#fff',
+            color: formState === 'submitting' ? '#666' : '#fff',
             fontSize: '14px',
             fontWeight: 700,
-            cursor:
-              formState === 'submitting' || formState === 'recalling'
-                ? 'not-allowed'
-                : 'pointer',
+            cursor: formState === 'submitting' ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -854,23 +682,10 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
             letterSpacing: '0.02em',
           }}
         >
-          {formState === 'submitting' && (
-            <>
-              <Loader2 className="animate-spin w-4 h-4 mr-2" />
-              Storing on Walrus…
-            </>
-          )}
-          {formState === 'recalling' && (
-            <>
-              <Brain size={16} />
-              Agent recalling patterns…
-            </>
-          )}
-          {!['submitting', 'recalling'].includes(formState) && (
-            <>
-              <Send size={16} />
-              Submit to Walrus
-            </>
+          {formState === 'submitting' ? (
+            <><Loader2 className="animate-spin w-4 h-4 mr-2" />Storing on Walrus…</>
+          ) : (
+            <><Send size={16} />Submit to Walrus</>
           )}
         </button>
 
@@ -886,5 +701,143 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         </p>
       </div>
     </form>
+  );
+};
+
+// ─── Pipeline Timeline ────────────────────────────────────────────────────────
+const PIPELINE_STEPS = [
+  { emoji: '✅', label: 'Stored on Walrus',  sub: 'Your report is permanently recorded', color: '#22c55e' },
+  { emoji: '⛓️', label: 'Anchored on Sui',   sub: 'Immutable proof written on-chain',    color: '#a78bfa' },
+  { emoji: '📡', label: 'Broadcasting',       sub: 'Nearby users are being alerted',      color: '#38bdf8' },
+];
+
+const PipelineTimeline: React.FC<{ hasSuiAnchor: boolean }> = () => {
+  const [visible, setVisible] = React.useState([false, false, false]);
+  useEffect(() => {
+    PIPELINE_STEPS.forEach((_, i) => {
+      setTimeout(() => {
+        setVisible((prev) => { const next = [...prev]; next[i] = true; return next; });
+      }, i * 220);
+    });
+  }, []);
+
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', letterSpacing: '0.08em', marginBottom: '14px', textTransform: 'uppercase' }}>What happens next</p>
+
+      {/* Desktop: horizontal */}
+      <div className="pipeline-desktop" style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
+        {PIPELINE_STEPS.map((step, i) => (
+          <React.Fragment key={i}>
+            <div style={{ flex: 1, background: '#111', border: `1px solid ${visible[i] ? step.color + '50' : '#1f1f1f'}`, borderRadius: '10px', padding: '14px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center', opacity: visible[i] ? 1 : 0, transform: visible[i] ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity 0.35s ease, transform 0.35s ease, border-color 0.35s' }}>
+              <div style={{ fontSize: '22px', lineHeight: 1 }}>{step.emoji}</div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: visible[i] ? step.color : '#555' }}>{step.label}</div>
+              <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.3' }}>{step.sub}</div>
+            </div>
+            {i < PIPELINE_STEPS.length - 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 6px' }}>
+                <div style={{ width: '16px', height: '1px', background: '#2a2a2a' }} />
+                <span style={{ fontSize: '10px', color: '#333' }}>▶</span>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Mobile: vertical */}
+      <div className="pipeline-mobile" style={{ display: 'none', flexDirection: 'column', gap: 0 }}>
+        {PIPELINE_STEPS.map((step, i) => (
+          <div key={i} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
+            {i < PIPELINE_STEPS.length - 1 && (
+              <div style={{ position: 'absolute', left: '17px', top: '40px', bottom: '-4px', width: '2px', background: 'repeating-linear-gradient(to bottom, #2a2a2a 0, #2a2a2a 4px, transparent 4px, transparent 8px)' }} />
+            )}
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${step.color}15`, border: `2px solid ${visible[i] ? step.color + '80' : '#222'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '16px', opacity: visible[i] ? 1 : 0.3, transition: 'opacity 0.35s, border-color 0.35s' }}>
+              {step.emoji}
+            </div>
+            <div style={{ paddingBottom: '16px', paddingTop: '4px', opacity: visible[i] ? 1 : 0, transform: visible[i] ? 'translateX(0)' : 'translateX(6px)', transition: 'opacity 0.35s, transform 0.35s' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: visible[i] ? step.color : '#555' }}>{step.label}</div>
+              <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>{step.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .pipeline-desktop { display: none !important; }
+          .pipeline-mobile  { display: flex !important; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ─── Incident Impact Card ─────────────────────────────────────────────────────
+function useCountUp(target: number, durationMs = 900) {
+  const [value, setValue] = useState(0);
+  const frameRef = useRef<number | null>(null);
+  useEffect(() => {
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / durationMs, 1);
+      setValue(Math.round(progress * target));
+      if (progress < 1) frameRef.current = requestAnimationFrame(tick);
+    };
+    frameRef.current = requestAnimationFrame(tick);
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+  }, [target, durationMs]);
+  return value;
+}
+
+const IncidentImpactCard: React.FC<{ incident: Incident }> = ({ incident }) => {
+  const notified = useCountUp(7, 900);
+  const shortBlob = incident.walrusBlobId ? incident.walrusBlobId.slice(0, 10) + '…' : null;
+
+  const rows: { icon: string; label: string; value: React.ReactNode }[] = [
+    {
+      icon: '📡',
+      label: 'Users Notified',
+      value: <span style={{ color: '#38bdf8', fontWeight: 700 }}>{notified}+ within 5km</span>,
+    },
+    {
+      icon: '🐋',
+      label: 'Stored Permanently',
+      value: shortBlob ? (
+        <a href={`https://walruscan.com/testnet/blob/${incident.walrusBlobId}`} target="_blank" rel="noopener noreferrer"
+          style={{ color: '#a78bfa', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+          Verified on Walrus&nbsp;<span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#666' }}>({shortBlob})</span>
+          <ExternalLink size={10} />
+        </a>
+      ) : <span style={{ color: '#22c55e', fontWeight: 700 }}>Verified on Walrus</span>,
+    },
+    {
+      icon: '⛓️',
+      label: 'On-Chain Record',
+      value: incident.suiTxDigest ? (
+        <a href={`https://suiscan.xyz/testnet/tx/${incident.suiTxDigest}`} target="_blank" rel="noopener noreferrer"
+          style={{ color: '#a78bfa', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+          Live on Sui Testnet <ExternalLink size={10} />
+        </a>
+      ) : <span style={{ color: '#22c55e', fontWeight: 700 }}>Live on Sui Testnet</span>,
+    },
+  ];
+
+  return (
+    <div style={{ background: '#0e0e0e', border: '1px solid #1f1f1f', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid #1a1a1a' }}>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Incident Impact</p>
+      </div>
+      {rows.map((row, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderBottom: i < rows.length - 1 ? '1px solid #141414' : 'none', minHeight: '44px', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <span style={{ fontSize: '16px' }}>{row.icon}</span>
+            <span style={{ fontSize: '12px', color: '#888', fontWeight: 500 }}>{row.label}</span>
+          </div>
+          <div style={{ fontSize: '12px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }}>
+            {row.value}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
