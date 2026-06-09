@@ -677,6 +677,16 @@ const BLOCKLIST_IDS = new Set([
   'b4d4b128-5066-4b99-8104-2a4ddbe98368',
   // Duplicate: "Flash flooding across low-lying areas of Hyderabad" — kept the fuller version (4ea50409)
   'dd082ff9-f40a-4af0-abc8-97bb691e8231',
+  
+  // Incidents created BEFORE the Walrus dual-store fix. These have MemWal encrypted blob IDs 
+  // that show "No data yet" on Walruscan. Blocklisted to keep the demo clean.
+  'de042265-6585-4491-a6b2-0bb010d31e52', // "a man got hit by a biker"
+  '54492bc2-ad65-48dc-ace0-3f1d8516ffdf', // "Heavy rainfall ,drainage issue"
+  '75be7456-ac4f-4b28-aa70-9801d64e289b', // "Major fire reported"
+  'f44396a8-7227-490e-b3f0-e48a0c5b71a8', // "Elderly man collapsed"
+  '71f13e8d-e1b2-46e5-b208-d3ff8ee8c640', // "Serious road accident"
+  '0e3b1195-f157-4155-9fe2-a95670fd3990', // "Armed robbery reported"
+  '4ea50409-7131-4118-b0f5-92af99b547af', // "Flash flooding reported"
 ]);
 
 /**
