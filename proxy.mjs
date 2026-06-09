@@ -275,6 +275,9 @@ app.post('/api/store', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid incident data' });
   }
 
+  // Strip client-only fields for clean storage
+  const { walrusStatus: _ws, createdByMe: _cm, walrusBlobId: _oldWb, suiTxDigest: _oldSt, flagCount: _oldFc, flaggedBy: _oldFb, ...cleanIncident } = incident;
+
   const text = `SENTINEL INCIDENT REPORT
 ID: ${incident.id}
 Created: ${incident.createdAt}
@@ -284,14 +287,14 @@ Location: ${incident.location?.address || 'Unknown'} (lat: ${incident.location?.
 Description: ${incident.description}
 Reported By: ${incident.reportedBy || 'Anonymous'}
 Status: ${incident.status || 'active'}
-JSONDATA: ${JSON.stringify(incident)}`;
+JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
   console.log(`\n📝 Store: ${incident.id} (${incident.type}/${incident.severity})`);
   console.log(`   📍 ${incident.location?.address || 'No address'}`);
 
   try {
     // ── Step 1: Store directly on Walrus publisher (public, verifiable on Walruscan)
-    const walrusResult = await storeOnWalrusPublisher(incident);
+    const walrusResult = await storeOnWalrusPublisher(cleanIncident);
     const walrusBlobId = walrusResult.blobId;
     console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
 
