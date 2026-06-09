@@ -243,9 +243,11 @@ JSONDATA: ${JSON.stringify(incident)}`;
     const txDigest = await anchorOnSui(result.blob_id);
 
     // Persist in in-memory registry for cross-device sync
+    // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
     const storedIncident = {
       ...incident,
       walrusBlobId: result.blob_id,
+      walrusStatus: 'synced',
       suiTxDigest: txDigest || undefined,
       flagCount: 0,
       flaggedBy: [],
@@ -566,6 +568,9 @@ async function rehydrateRegistry() {
         if (incident?.id && !incidentRegistry.has(incident.id)) {
           incidentRegistry.set(incident.id, {
             ...incident,
+            // KEY FIX: rehydrated incidents ARE on Walrus — set blobId from the blob we just read
+            walrusBlobId: incident.walrusBlobId || item.blob_id,
+            walrusStatus: 'synced',
             flagCount:  incident.flagCount  ?? 0,
             flaggedBy:  incident.flaggedBy  ?? [],
           });
