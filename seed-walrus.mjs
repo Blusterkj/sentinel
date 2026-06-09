@@ -14,7 +14,7 @@ import { writeFileSync, existsSync, readFileSync } from 'fs';
 
 // ─── Config ──────────────────────────────────────────────────
 const PUBLISHER_URL = 'https://publisher.walrus-testnet.walrus.space/v1/blobs';
-const EPOCHS = 5; // store for 5 epochs
+const EPOCHS = 10; // store for 10 epochs — persist through hackathon deadline
 const OUTPUT_FILE = 'public/blob-map.json';
 
 // ─── Seed Incidents ──────────────────────────────────────────
@@ -59,12 +59,13 @@ Status: ${incident.status}`;
 }
 
 // ─── Store a blob directly to Walrus publisher ───────────────
-async function storeOnWalrus(text) {
+async function storeOnWalrus(incident) {
   const url = `${PUBLISHER_URL}?epochs=${EPOCHS}`;
+  const bodyBytes = new Uint8Array(Buffer.from(JSON.stringify(incident)));
   const res = await fetch(url, {
     method: 'PUT',
-    body: text,
-    headers: { 'Content-Type': 'text/plain' },
+    body: bodyBytes,
+    headers: { 'Content-Type': 'application/octet-stream' },
   });
 
   if (!res.ok) {
@@ -134,13 +135,12 @@ async function main() {
 
   for (let i = 0; i < toSeed.length; i++) {
     const incident = toSeed[i];
-    const text = formatIncidentText(incident);
     const progress = `[${i + 1}/${toSeed.length}]`;
 
     process.stdout.write(`${progress} ${incident.id} (${incident.type}) → `);
 
     try {
-      const blobId = await storeOnWalrus(text);
+      const blobId = await storeOnWalrus(incident);
       blobMap[incident.id] = blobId;
       successes++;
       console.log(`✅ ${blobId}`);
@@ -154,7 +154,7 @@ async function main() {
 
     // Gentle delay between requests
     if (i < toSeed.length - 1) {
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 2000));
     }
   }
 

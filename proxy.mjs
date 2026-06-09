@@ -128,7 +128,7 @@ app.use(express.json());
 app.get('/', (_req, res) => {
   res.json({
     service: 'sentinel-proxy',
-    version: '2.0.0',
+    version: '3.0.0',
     routes: [
       'GET  /health',
       'GET  /api/health',
@@ -138,6 +138,8 @@ app.get('/', (_req, res) => {
       'POST /api/store',
       'POST /api/unflag',
       'POST /api/chat',
+      'GET  /api/walrus/test',
+      'GET  /api/walrus/read/:blobId',
     ],
   });
 });
@@ -204,10 +206,63 @@ app.get('/api/recall/blob/:blobId', async (req, res) => {
   }
 });
 
+// ─── Walrus Publisher — direct store for publicly verifiable blobs ────────────
+const WALRUS_PUBLISHER_URL = 'https://publisher.walrus-testnet.walrus.space';
+const WALRUS_STORE_EPOCHS = 5; // enough for hackathon demo (June 21)
+
+/**
+ * Store raw data directly on Walrus testnet publisher.
+ * Returns the real, publicly verifiable blob ID that shows on Walruscan.
+ *
+ * Walrus publisher returns one of two shapes:
+ *   - newlyCreated:      { newlyCreated: { blobObject: { blobId, ... } } }
+ *   - alreadyCertified:  { alreadyCertified: { blobId, ... } }
+ */
+async function storeOnWalrusPublisher(data) {
+  const jsonStr = JSON.stringify(data);
+  const bodyBytes = new Uint8Array(Buffer.from(jsonStr));
+  const url = `${WALRUS_PUBLISHER_URL}/v1/blobs?epochs=${WALRUS_STORE_EPOCHS}`;
+
+  console.log(`   🐋 Walrus PUT ${url} (${bodyBytes.length} bytes)`);
+
+  let walrusRes;
+  try {
+    walrusRes = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: bodyBytes,
+    });
+  } catch (fetchErr) {
+    console.error('   🐋 Walrus fetch error:', fetchErr.message, fetchErr.cause || '');
+    throw new Error(`Walrus publisher unreachable: ${fetchErr.message}`);
+  }
+
+  if (!walrusRes.ok) {
+    const errText = await walrusRes.text().catch(() => '');
+    throw new Error(`Walrus publisher returned ${walrusRes.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const walrusJson = await walrusRes.json();
+  console.log('   🐋 WALRUS RAW RESPONSE:', JSON.stringify(walrusJson, null, 2));
+
+  // Extract blob ID from either response shape
+  const blobId =
+    walrusJson.newlyCreated?.blobObject?.blobId ||
+    walrusJson.alreadyCertified?.blobId ||
+    null;
+
+  if (!blobId) {
+    throw new Error(`Walrus store succeeded but no blobId found in response: ${JSON.stringify(walrusJson).slice(0, 300)}`);
+  }
+
+  return { blobId, raw: walrusJson };
+}
+
 /**
  * POST /api/store
  *
- * Stores an incident on Walrus via MemWal. Returns the real blob ID.
+ * Stores an incident on Walrus (public, verifiable) AND MemWal (AI memory).
+ * Returns the real Walrus blob ID that can be verified on Walruscan.
  * Body: { id, type, severity, description, location: { lat, lng, address }, timestamp, reportedBy, status }
  */
 app.post('/api/store', async (req, res) => {
@@ -235,18 +290,34 @@ JSONDATA: ${JSON.stringify(incident)}`;
   console.log(`   📍 ${incident.location?.address || 'No address'}`);
 
   try {
-    const result = await memwal.rememberAndWait(text, undefined, {
-      pollIntervalMs: 2000,
-      timeoutMs: 120000,
-    });
-    console.log(`   ✅ Stored → blob: ${result.blob_id}`);
-    const txDigest = await anchorOnSui(result.blob_id);
+    // ── Step 1: Store directly on Walrus publisher (public, verifiable on Walruscan)
+    const walrusResult = await storeOnWalrusPublisher(incident);
+    const walrusBlobId = walrusResult.blobId;
+    console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
+
+    // ── Step 2: Store on MemWal for AI memory/recall (runs in parallel, non-blocking)
+    let memwalBlobId = null;
+    try {
+      const memwalResult = await memwal.rememberAndWait(text, undefined, {
+        pollIntervalMs: 2000,
+        timeoutMs: 120000,
+      });
+      memwalBlobId = memwalResult.blob_id;
+      console.log(`   ✅ MemWal → blob: ${memwalBlobId}`);
+    } catch (memwalErr) {
+      // MemWal failure is non-blocking — Walrus store already succeeded
+      console.warn(`   ⚠️  MemWal store failed (non-blocking):`, memwalErr.message || memwalErr);
+    }
+
+    // Use Walrus publisher blob ID as the primary (publicly verifiable) blob ID
+    const blobId = walrusBlobId;
+    const txDigest = await anchorOnSui(blobId);
 
     // Persist in in-memory registry for cross-device sync
     // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
     const storedIncident = {
       ...incident,
-      walrusBlobId: result.blob_id,
+      walrusBlobId: blobId,
       walrusStatus: 'synced',
       suiTxDigest: txDigest || undefined,
       flagCount: 0,
@@ -286,7 +357,7 @@ JSONDATA: ${JSON.stringify(incident)}`;
       }
     }
 
-    res.json({ success: true, blobId: result.blob_id, tx_digest: txDigest, createdAt: incident.createdAt });
+    res.json({ success: true, blobId, tx_digest: txDigest, createdAt: incident.createdAt });
   } catch (err) {
     console.error(`   ❌ Store failed:`, err.message || err);
     res.status(502).json({ success: false, error: err.message || String(err) });
@@ -501,6 +572,51 @@ app.get('/api/health', async (_req, res) => {
     res.json({ proxy: 'ok', memwal: h });
   } catch (err) {
     res.json({ proxy: 'ok', memwal: { error: err.message } });
+  }
+});
+
+/**
+ * GET /api/walrus/test
+ *
+ * Diagnostic: stores a small test blob on Walrus publisher and returns the
+ * blob ID. Use this to verify Walrus connectivity and that blob IDs are real.
+ * Check the returned blobId at: https://walruscan.com/testnet/blob/{blobId}
+ */
+app.get('/api/walrus/test', async (_req, res) => {
+  try {
+    const testData = {
+      test: true,
+      timestamp: new Date().toISOString(),
+      message: 'Sentinel Walrus connectivity test',
+    };
+    const result = await storeOnWalrusPublisher(testData);
+    res.json({
+      success: true,
+      blobId: result.blobId,
+      walruscanUrl: `https://walruscan.com/testnet/blob/${result.blobId}`,
+      raw: result.raw,
+    });
+  } catch (err) {
+    res.status(502).json({ success: false, error: err.message || String(err) });
+  }
+});
+
+/**
+ * GET /api/walrus/read/:blobId
+ *
+ * Reads a blob back from the Walrus aggregator to verify it exists.
+ */
+app.get('/api/walrus/read/:blobId', async (req, res) => {
+  const { blobId } = req.params;
+  try {
+    const aggRes = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`);
+    if (!aggRes.ok) {
+      return res.status(aggRes.status).json({ found: false, status: aggRes.status });
+    }
+    const data = await aggRes.text();
+    res.json({ found: true, blobId, size: data.length, data: data.slice(0, 500) });
+  } catch (err) {
+    res.status(502).json({ found: false, error: err.message || String(err) });
   }
 });
 
