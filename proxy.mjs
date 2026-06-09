@@ -559,10 +559,26 @@ function parseIncidentBlob(text, blobId) {
 async function rehydrateRegistry() {
   try {
     console.log('[SENTINEL] Rehydrating incidentRegistry from MemWal...');
-    const result = await memwal.recall('SENTINEL INCIDENT REPORT', 100);
-    const items  = result?.results ?? result ?? [];
+    // Run two recall queries with different phrasings to maximize coverage
+    // MemWal semantic recall may rank some blobs lower — using two queries
+    // with limit=200 each catches incidents that would otherwise be missed.
+    const [result1, result2] = await Promise.allSettled([
+      memwal.recall('SENTINEL INCIDENT REPORT', 200),
+      memwal.recall('incident report severity location', 200),
+    ]);
+    const items1 = result1.status === 'fulfilled' ? (result1.value?.results ?? result1.value ?? []) : [];
+    const items2 = result2.status === 'fulfilled' ? (result2.value?.results ?? result2.value ?? []) : [];
+
+    // Deduplicate by blob_id before processing
+    const seen = new Set();
+    const allItems = [...items1, ...items2].filter(item => {
+      if (!item.blob_id || seen.has(item.blob_id)) return false;
+      seen.add(item.blob_id);
+      return true;
+    });
+
     let count = 0;
-    for (const item of items) {
+    for (const item of allItems) {
       try {
         const incident = parseIncidentBlob(item.text || '', item.blob_id);
         if (incident?.id && !incidentRegistry.has(incident.id)) {
