@@ -552,6 +552,44 @@ function parseIncidentBlob(text, blobId) {
 }
 
 /**
+ * IDs of incidents that should NEVER be shown — test submissions, malformed blobs, etc.
+ * Add IDs here to permanently exclude them from rehydration even if their blob exists on Walrus.
+ * Walrus is immutable so we can't delete the blobs — this is the practical cleanup mechanism.
+ */
+const BLOCKLIST_IDS = new Set([
+  // Add specific IDs here if needed, e.g.:
+  // 'demo-01', 'demo-02', 'some-uuid-that-was-a-test',
+]);
+
+/**
+ * Returns true if an incident looks like a junk/test submission.
+ * Criteria:
+ *  - description missing or < 15 characters
+ *  - description matches obvious test strings
+ *  - location lat/lng both 0 (placeholder)
+ *  - ID starts with 'demo-' (old seed IDs)
+ */
+function isJunkIncident(incident) {
+  if (!incident) return true;
+
+  const desc = (incident.description || '').trim();
+  if (desc.length < 15) return true;
+
+  const junkPatterns = /^(xyz|test|asdf|asd|qwerty|hello|hi|ok|yes|no|abc|123|lol|foo|bar|baz|sample|dummy|fake|check|checking|trial|trial run|ping|pong|ignore|del|delete|remove)$/i;
+  if (junkPatterns.test(desc)) return true;
+
+  // Lat/lng both exactly 0 = placeholder coords never resolved
+  const lat = incident.location?.lat;
+  const lng = incident.location?.lng;
+  if (lat === 0 && lng === 0) return true;
+
+  // Old demo seed IDs
+  if (typeof incident.id === 'string' && incident.id.startsWith('demo-')) return true;
+
+  return false;
+}
+
+/**
  * Rehydrate incidentRegistry from MemWal/Walrus on startup.
  * Loads ALL historical incidents — both old text-format and new JSONDATA blobs.
  * Makes cross-device sync resilient to Railway restarts AND shows historical data.
@@ -578,23 +616,48 @@ async function rehydrateRegistry() {
     });
 
     let count = 0;
+    let skippedJunk = 0;
+    let skippedBlocklist = 0;
     for (const item of allItems) {
       try {
         const incident = parseIncidentBlob(item.text || '', item.blob_id);
-        if (incident?.id && !incidentRegistry.has(incident.id)) {
-          incidentRegistry.set(incident.id, {
-            ...incident,
-            // KEY FIX: rehydrated incidents ARE on Walrus — set blobId from the blob we just read
-            walrusBlobId: incident.walrusBlobId || item.blob_id,
-            walrusStatus: 'synced',
-            flagCount:  incident.flagCount  ?? 0,
-            flaggedBy:  incident.flaggedBy  ?? [],
-          });
-          count++;
+        if (!incident?.id) continue;
+        if (incidentRegistry.has(incident.id)) continue;
+
+        // Skip blocklisted IDs
+        if (BLOCKLIST_IDS.has(incident.id)) {
+          console.log(`   🚫 Blocklisted: ${incident.id}`);
+          skippedBlocklist++;
+          continue;
         }
+
+        // Skip junk/test incidents
+        if (isJunkIncident(incident)) {
+          console.log(`   🗑  Skipping junk: [${incident.id}] "${(incident.description || '').slice(0, 50)}"`);
+          skippedJunk++;
+          continue;
+        }
+
+        incidentRegistry.set(incident.id, {
+          ...incident,
+          // KEY FIX: rehydrated incidents ARE on Walrus — set blobId from the blob we just read
+          walrusBlobId: incident.walrusBlobId || item.blob_id,
+          walrusStatus: 'synced',
+          flagCount:  incident.flagCount  ?? 0,
+          flaggedBy:  incident.flaggedBy  ?? [],
+        });
+        console.log(`   ✅ Loaded: [${incident.id}] "${(incident.description || '').slice(0, 60)}"`);
+        count++;
       } catch { /* skip unparseable blobs */ }
     }
-    console.log(`[SENTINEL] Rehydrated ${count} incidents from MemWal`);
+
+    console.log(`[SENTINEL] Rehydrated ${count} incidents | skipped ${skippedJunk} junk + ${skippedBlocklist} blocklisted`);
+
+    // Print final registry for verification
+    console.log('[SENTINEL] Final incident registry:');
+    for (const [id, inc] of incidentRegistry.entries()) {
+      console.log(`   • ${id} | ${inc.type}/${inc.severity} | "${(inc.description || '').slice(0, 60)}"`);
+    }
   } catch (err) {
     console.warn('[SENTINEL] Rehydration skipped:', err.message);
   }
