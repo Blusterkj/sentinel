@@ -52,7 +52,7 @@ function saveBlobMapToStorage(map: Record<string, string>): void {
  */
 async function loadBlobMapFromFile(): Promise<Record<string, string>> {
   try {
-    const res = await fetch('/blob-map.json');
+    const res = await fetch(`/blob-map.json?t=${Date.now()}`);
     if (!res.ok) return {};
     const data = await res.json();
     return data && typeof data === 'object' ? data : {};
