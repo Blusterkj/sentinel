@@ -557,8 +557,10 @@ function parseIncidentBlob(text, blobId) {
  * Walrus is immutable so we can't delete the blobs — this is the practical cleanup mechanism.
  */
 const BLOCKLIST_IDS = new Set([
-  // Add specific IDs here if needed, e.g.:
-  // 'demo-01', 'demo-02', 'some-uuid-that-was-a-test',
+  // Duplicate: shorter "Armed robbery at a jewellery store" — kept the richer version (0e3b1195)
+  'b4d4b128-5066-4b99-8104-2a4ddbe98368',
+  // Duplicate: "Flash flooding across low-lying areas of Hyderabad" — kept the fuller version (4ea50409)
+  'dd082ff9-f40a-4af0-abc8-97bb691e8231',
 ]);
 
 /**
