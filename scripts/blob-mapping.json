@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-06-09T04:43:10.894Z",
+  "proxyUrl": "https://sentinelproduction.up.railway.app",
+  "summary": {
+    "alreadyVerified": 0,
+    "successfullyStored": 3,
+    "failed": 2
+  },
+  "results": [
+    {
+      "id": "0e3b1195-f157-4155-9fe2-a95670fd3990",
+      "oldBlobId": "REP1yRhN0GtENvkDRHx8O9NLJ6kqYeNSeaV_8_2tm2c",
+      "newBlobId": null,
+      "status": "failed",
+      "error": "fetch failed"
+    },
+    {
+      "id": "4ea50409-7131-4118-b0f5-92af99b547af",
+      "oldBlobId": "YeEG92YdVUaWSVDdz_DDIAZgsK3F0oOuxGF7v3D-dBo",
+      "newBlobId": null,
+      "status": "failed",
+      "error": "fetch failed"
+    },
+    {
+      "id": "71f13e8d-e1b2-46e5-b208-d3ff8ee8c640",
+      "oldBlobId": "BlYn5LCRmjEulvOr3IbcsFRhPH1FYjzXRZP7aVWvKlo",
+      "newBlobId": "XH895uSmRCxxra_7pB9SFSBXKW_8KSvJi0QhJkLE2GQ",
+      "status": "stored"
+    },
+    {
+      "id": "f44396a8-7227-490e-b3f0-e48a0c5b71a8",
+      "oldBlobId": "xS0F3ffIHmnGrNdAqWexUJapNa46SUcxdvDo40rIkAM",
+      "newBlobId": "UPq-VvJ62L5DkzKtKBVvlH79OHwxV6Ip01lDnwfng04",
+      "status": "stored"
+    },
+    {
+      "id": "75be7456-ac4f-4b28-aa70-9801d64e289b",
+      "oldBlobId": "VeEq0JKRdToakvl5I1LpCDPVtaVoB1kCsBNu9ta1334",
+      "newBlobId": "FlUauK0THb0nCVHN7Gb6hArj2YGc8VtuLsKfviSvZso",
+      "status": "stored"
+    }
+  ]
+}

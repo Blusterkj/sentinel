@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-06-09T04:33:28.608Z",
+  "results": [
+    {
+      "id": "75be7456-ac4f-4b28-aa70-9801d64e289b",
+      "type": "fire",
+      "severity": "critical",
+      "description": "Major fire reported at a multi-storey commercial complex on MG Road. Thick black smoke visible from over 2km away. Fire tenders have been dispatched and residents in adjacent buildings are being evacuated.",
+      "location": {
+        "lat": 12.9716,
+        "lng": 77.5946,
+        "address": "MG Road, Bengaluru, Karnataka 560001, India"
+      },
+      "timestamp": "2026-06-09T04:13:33.219Z",
+      "reportedBy": "community",
+      "status": "seeded",
+      "walrusBlobId": "VeEq0JKRdToakvl5I1LpCDPVtaVoB1kCsBNu9ta1334"
+    },
+    {
+      "id": "f44396a8-7227-490e-b3f0-e48a0c5b71a8",
+      "type": "medical",
+      "severity": "high",
+      "description": "Elderly man collapsed near India Gate metro station. Bystanders performing CPR. Ambulance has been called but has not arrived yet. Patient is unresponsive and requires immediate medical attention.",
+      "location": {
+        "lat": 28.6129,
+        "lng": 77.2295,
+        "address": "India Gate, New Delhi, Delhi 110001, India"
+      },
+      "timestamp": "2026-06-09T04:22:33.221Z",
+      "reportedBy": "community",
+      "status": "seeded",
+      "walrusBlobId": "xS0F3ffIHmnGrNdAqWexUJapNa46SUcxdvDo40rIkAM"
+    },
+    {
+      "id": "71f13e8d-e1b2-46e5-b208-d3ff8ee8c640",
+      "type": "accident",
+      "severity": "high",
+      "description": "Serious road accident on the Mumbai-Pune Expressway near Khopoli. Two vehicles involved — one truck and one passenger car. Car is overturned. At least 3 people injured, one critically. Traffic backed up for over 4km.",
+      "location": {
+        "lat": 18.7879,
+        "lng": 73.3441,
+        "address": "Mumbai-Pune Expressway, Khopoli, Maharashtra, India"
+      },
+      "timestamp": "2026-06-09T03:57:33.221Z",
+      "reportedBy": "community",
+      "status": "failed",
+      "error": "fetch failed"
+    },
+    {
+      "id": "4ea50409-7131-4118-b0f5-92af99b547af",
+      "type": "natural_disaster",
+      "severity": "critical",
+      "description": "Flash flooding reported across multiple low-lying areas of Hyderabad following 3 hours of heavy rainfall. Hussain Sagar lake overflow is imminent. Several vehicles stranded on submerged roads. NDRF teams deployed.",
+      "location": {
+        "lat": 17.385,
+        "lng": 78.4867,
+        "address": "Hussain Sagar, Hyderabad, Telangana 500004, India"
+      },
+      "timestamp": "2026-06-09T03:39:33.221Z",
+      "reportedBy": "community",
+      "status": "failed",
+      "error": "fetch failed"
+    },
+    {
+      "id": "0e3b1195-f157-4155-9fe2-a95670fd3990",
+      "type": "crime",
+      "severity": "high",
+      "description": "Armed robbery reported at a jewellery shop on Park Street, Kolkata. Three masked individuals fled with cash and ornaments estimated at over ₹15 lakhs. Police have been notified and are reviewing CCTV footage from nearby cameras.",
+      "location": {
+        "lat": 22.5514,
+        "lng": 88.3612,
+        "address": "Park Street, Kolkata, West Bengal 700016, India"
+      },
+      "timestamp": "2026-06-09T04:05:33.221Z",
+      "reportedBy": "community",
+      "status": "failed",
+      "error": "fetch failed"
+    }
+  ]
+}
