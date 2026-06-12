@@ -508,8 +508,13 @@ app.post('/api/chat', async (req, res) => {
   if (currentIncidents && currentIncidents.length > 0) {
     const activeCount = currentIncidents.filter(i => i.status === 'active').length;
     const resolvedCount = currentIncidents.filter(i => i.status === 'resolved').length;
-    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Pay close attention to whether an incident is marked as "active" or "resolved".\n\n${
-      currentIncidents.map(i => `- [${i.status.toUpperCase()}] ${i.type} at ${i.location.address} (Severity: ${i.severity}) - "${i.description}"`).join('\n')
+    
+    // Sort just in case the frontend didn't, to guarantee chronological order
+    const sortedLive = [...currentIncidents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const topLive = sortedLive.slice(0, 50); // Cap to avoid massive context
+    
+    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are the most recent incidents in the system, STRICTLY SORTED from MOST RECENT to oldest. Use THIS list to answer any questions about "latest", "most recent", or chronological order.\n\n${
+      topLive.map((i, index) => `${index + 1}. [${i.status.toUpperCase()}] ${i.type} at ${i.location.address} (Severity: ${i.severity}) - "${i.description}" (Reported: ${new Date(i.createdAt).toISOString()})`).join('\n')
     }`;
   }
 
