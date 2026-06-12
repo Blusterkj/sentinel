@@ -3,10 +3,19 @@
 
 import React from 'react';
 import { AgentChat } from '../components/AgentChat';
-import { Brain, Database, Network } from 'lucide-react';
+import { Brain, Database, Network, Trash2 } from 'lucide-react';
 import type { Incident } from '../types/incident';
+import { useAppStore } from '../store/appStore';
+import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useAuthStore } from '../lib/authStore';
+import { PROXY_URL } from '../lib/api';
 
 export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
+  const { agentMessages, clearAgentMessages } = useAppStore();
+  const account = useCurrentAccount();
+  const { address: inAppAddress } = useAuthStore();
+  const userId = account?.address ?? inAppAddress ?? null;
+  
   return (
     <div
       style={{
@@ -35,10 +44,52 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
         </span>
         <TechBadge icon={<Database size={10} />} label="MemWal" color="#8b5cf6" />
         <TechBadge icon={<Network size={10} />} label="Walrus" color="#3b82f6" />
+        
+        {/* Clear Chat Button */}
+        {agentMessages.length > 1 && (
+          <button
+            onClick={() => {
+              clearAgentMessages();
+              // Overwrite MemWal blob with empty history so it doesn't rehydrate on next load
+              if (userId) {
+                fetch(`${PROXY_URL}/api/chat-memory/save`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, messages: [] }),
+                }).catch(() => {});
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '6px',
+              color: '#ef4444',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+            }}
+          >
+            <Trash2 size={12} />
+            <span className="hidden sm:inline">Clear Chat</span>
+          </button>
+        )}
       </div>
 
       {/* Chat — fills rest of space */}
-      <div style={{ flex: 1, overflow: 'hidden', paddingTop: '24px' }}>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
         <AgentChat incidents={incidents} />
       </div>
     </div>
