@@ -649,12 +649,12 @@ app.get('/api/walrus/read/:blobId', async (req, res) => {
  * POST /api/chat-memory/save
  *
  * Persists a user's AgentChat conversation history to MemWal.
- * Body: { userId, messages: AgentMessage[] }
+ * Body: { userId, messages: AgentMessage[], cleared?: boolean }
  * Uses a fixed key tag "CHAT_HISTORY:{userId}" so we can retrieve it deterministically.
  * Non-blocking — failure is silently swallowed on the client side.
  */
 app.post('/api/chat-memory/save', async (req, res) => {
-  const { userId, messages } = req.body;
+  const { userId, messages, cleared } = req.body;
   if (!userId || !Array.isArray(messages)) {
     return res.status(400).json({ success: false, error: 'userId and messages[] are required' });
   }
@@ -664,9 +664,11 @@ app.post('/api/chat-memory/save', async (req, res) => {
 
   // Format: tagged text blob so recall can find it by userId
   // Include a timestamp so we can sort multiple results by recency
-  const text = `CHAT_HISTORY:${userId}\nTIMESTAMP:${Date.now()}\n${JSON.stringify(toSave)}`;
+  // Save as an object to support the `cleared` flag while maintaining backward compatibility
+  const payload = { cleared: !!cleared, messages: toSave, clearedAt: cleared ? Date.now() : undefined };
+  const text = `CHAT_HISTORY:${userId}\nTIMESTAMP:${Date.now()}\n${JSON.stringify(payload)}`;
 
-  console.log(`\n💬 Chat-memory save: userId=${userId.slice(0, 10)}… (${toSave.length} messages)`);
+  console.log(`\n💬 Chat-memory save: userId=${userId.slice(0, 10)}… (${toSave.length} messages, cleared: ${!!cleared})`);
 
   try {
     const result = await memwal.rememberAndWait(text, undefined, {
@@ -687,7 +689,7 @@ app.post('/api/chat-memory/save', async (req, res) => {
  *
  * Retrieves the most recent chat history for a user from MemWal.
  * Searches by "CHAT_HISTORY:{userId}" tag and returns the closest match.
- * Returns: { found: boolean, messages: AgentMessage[] }
+ * Returns: { found: boolean, cleared?: boolean, messages: AgentMessage[] }
  */
 app.get('/api/chat-memory/load', async (req, res) => {
   const { userId } = req.query;
@@ -724,25 +726,37 @@ app.get('/api/chat-memory/load', async (req, res) => {
 
     const match = matches[0];
 
-    // Find the JSON array
-    const jsonStartIdx = match.text.indexOf('[');
+    // Find the JSON array or object
+    const jsonStartIdx = match.text.search(/[{[]/);
     if (jsonStartIdx === -1) {
-      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}… (No array found)`);
+      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}… (No JSON found)`);
       return res.json({ found: false, messages: [] });
     }
 
     const jsonStr = match.text.slice(jsonStartIdx);
     let messages = [];
+    let isCleared = false;
+
     try {
-      messages = JSON.parse(jsonStr);
-      if (!Array.isArray(messages)) messages = [];
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) {
+        messages = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        messages = Array.isArray(parsed.messages) ? parsed.messages : [];
+        isCleared = !!parsed.cleared;
+      }
     } catch {
       console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}…`);
       return res.json({ found: false, messages: [] });
     }
 
-    console.log(`   ✅ Loaded ${messages.length} messages for userId=${String(userId).slice(0, 10)}…`);
-    res.json({ found: true, messages });
+    // Treat empty message array as cleared state too
+    if (messages.length === 0) {
+      isCleared = true;
+    }
+
+    console.log(`   ✅ Loaded ${messages.length} messages (cleared: ${isCleared}) for userId=${String(userId).slice(0, 10)}…`);
+    res.json({ found: true, cleared: isCleared, messages });
   } catch (err) {
     console.error(`   ❌ Chat-memory load failed:`, err.message || err);
     // Return 200 + empty so client silently falls back to empty chat

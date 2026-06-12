@@ -55,7 +55,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
                 fetch(`${PROXY_URL}/api/chat-memory/save`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, messages: [] }),
+                  body: JSON.stringify({ userId, messages: [], cleared: true, clearedAt: Date.now() }),
                 }).catch(() => {});
               }
             }}

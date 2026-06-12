@@ -46,20 +46,24 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
     if (!userId || hasRestoredRef.current) return;
     hasRestoredRef.current = true;
 
-    // Only restore if we have nothing beyond the welcome message in the store
-    const currentMessages = useAppStore.getState().agentMessages;
-    const hasRealMessages = currentMessages.some((m) => m.id !== 'welcome');
-    if (hasRealMessages) return; // already have in-session messages, skip
-
     const loadHistory = async () => {
       setIsRestoring(true);
       try {
         const res = await fetch(`${PROXY_URL}/api/chat-memory/load?userId=${encodeURIComponent(userId)}`);
         if (!res.ok) return; // silently fail — never break the UI
         const data = await res.json();
-        if (data.found && Array.isArray(data.messages) && data.messages.length > 0) {
-          // Prepend the welcome message, then the restored history
-          setMessages([WELCOME_MESSAGE, ...data.messages]);
+        
+        if (data.found && data.cleared) {
+          // Explicitly cleared on another device — wipe local state
+          setMessages([WELCOME_MESSAGE]);
+        } else if (data.found && Array.isArray(data.messages) && data.messages.length > 0) {
+          // Only restore history if we don't already have in-session messages
+          const currentMessages = useAppStore.getState().agentMessages;
+          const hasRealMessages = currentMessages.some((m) => m.id !== 'welcome');
+          if (!hasRealMessages) {
+            // Prepend the welcome message, then the restored history
+            setMessages([WELCOME_MESSAGE, ...data.messages]);
+          }
         }
       } catch {
         // Network error — silently fall back to empty chat
