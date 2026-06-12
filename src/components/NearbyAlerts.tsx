@@ -2,6 +2,7 @@ import { useNearbyAlerts } from '../hooks/useNearbyAlerts';
 import { MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Incident } from '../types/incident';
+import { getSeverityColor } from './SeverityBadge';
 
 const EMOJI_MAP: Record<string, string> = {
   fire: '🔥',
@@ -26,32 +27,42 @@ export function NearbyAlerts({ onNewIncident, onIncidentUpdated }: NearbyAlertsP
   const extraCount = alerts.length - 5;
 
   return (
-    <div className="absolute bottom-8 z-[800] w-80 space-y-4" style={{ left: '24px' }}>
+    <div className="absolute z-[800]" style={{ left: 0, bottom: 0, right: 0, pointerEvents: 'none' }}>
       <AnimatePresence>
         {displayAlerts.map((alert, idx) => {
           const emoji = EMOJI_MAP[alert.type] || EMOJI_MAP.other;
           return (
             <motion.div
               key={`${alert.location.lat}-${alert.location.lng}-${idx}`}
-              initial={{ opacity: 0, x: -50, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -50, scale: 0.9 }}
+              className="mobile-incident-popup fade-in-up"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               onClick={() => {
+                dismissAlert(idx);
                 window.history.pushState({}, '', '/dashboard');
                 window.dispatchEvent(new Event('popstate'));
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('selectIncident', { detail: alert }));
-                }, 100);
+                }, 300);
               }}
-              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl relative overflow-hidden group cursor-pointer hover:bg-white/15 transition-colors"
-              style={{ paddingTop: '14px', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px' }}
+              style={{
+                pointerEvents: 'auto',
+                cursor: 'pointer',
+                position: 'absolute',
+                bottom: '24px',
+                left: '24px',
+                zIndex: 800,
+                width: '240px',
+                background: 'rgba(13,13,13,0.92)',
+                backdropFilter: 'blur(14px)',
+                border: `1px solid ${getSeverityColor(alert.severity as any)}40`,
+                borderRadius: '12px',
+                padding: '14px',
+                boxShadow: `0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px ${getSeverityColor(alert.severity as any)}20`,
+              }}
             >
-              <div className={`absolute right-0 top-0 bottom-0 w-1 ${
-                alert.severity === 'critical' ? 'bg-red-500' :
-                alert.severity === 'high' ? 'bg-orange-500' :
-                alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
-              }`} />
               
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
@@ -70,7 +81,18 @@ export function NearbyAlerts({ onNewIncident, onIncidentUpdated }: NearbyAlertsP
                 </div>
               </div>
               
-              <p className="text-sm text-white/70 line-clamp-2 mb-3 pr-8 text-left">
+              <p style={{ 
+                fontSize: '12px', 
+                color: '#999', 
+                lineHeight: '1.5', 
+                marginBottom: '10px',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'left'
+              }}>
                 {alert.description}
               </p>
               

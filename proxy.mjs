@@ -140,6 +140,8 @@ app.get('/', (_req, res) => {
       'POST /api/chat',
       'GET  /api/walrus/test',
       'GET  /api/walrus/read/:blobId',
+      'POST /api/chat-memory/save',
+      'GET  /api/chat-memory/load',
     ],
   });
 });
@@ -623,6 +625,96 @@ app.get('/api/walrus/read/:blobId', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/chat-memory/save
+ *
+ * Persists a user's AgentChat conversation history to MemWal.
+ * Body: { userId, messages: AgentMessage[] }
+ * Uses a fixed key tag "CHAT_HISTORY:{userId}" so we can retrieve it deterministically.
+ * Non-blocking — failure is silently swallowed on the client side.
+ */
+app.post('/api/chat-memory/save', async (req, res) => {
+  const { userId, messages } = req.body;
+  if (!userId || !Array.isArray(messages)) {
+    return res.status(400).json({ success: false, error: 'userId and messages[] are required' });
+  }
+
+  // Only persist real messages (strip welcome message with id 'welcome')
+  const toSave = messages.filter((m) => m.id !== 'welcome');
+  if (toSave.length === 0) {
+    return res.json({ success: true, skipped: true });
+  }
+
+  // Format: tagged text blob so recall can find it by userId
+  const text = `CHAT_HISTORY:${userId}\n${JSON.stringify(toSave)}`;
+
+  console.log(`\n💬 Chat-memory save: userId=${userId.slice(0, 10)}… (${toSave.length} messages)`);
+
+  try {
+    const result = await memwal.rememberAndWait(text, undefined, {
+      pollIntervalMs: 2000,
+      timeoutMs: 60000,
+    });
+    console.log(`   ✅ Chat-memory saved → blob: ${result.blob_id}`);
+    res.json({ success: true, blobId: result.blob_id });
+  } catch (err) {
+    console.warn(`   ⚠️  Chat-memory save failed (non-blocking):`, err.message || err);
+    // Return 200 so the client doesn't surface this as an error
+    res.json({ success: false, error: err.message || String(err) });
+  }
+});
+
+/**
+ * GET /api/chat-memory/load?userId=...
+ *
+ * Retrieves the most recent chat history for a user from MemWal.
+ * Searches by "CHAT_HISTORY:{userId}" tag and returns the closest match.
+ * Returns: { found: boolean, messages: AgentMessage[] }
+ */
+app.get('/api/chat-memory/load', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing ?userId= parameter' });
+  }
+
+  const query = `CHAT_HISTORY:${userId}`;
+  console.log(`\n💬 Chat-memory load: userId=${String(userId).slice(0, 10)}…`);
+
+  try {
+    const result = await memwal.recall(query, 10);
+    const items = result.results ?? result ?? [];
+
+    // Find the item most likely to be THIS user's chat history
+    // The tag is exact so the nearest semantic match should be their blob
+    const match = items.find((item) =>
+      item.text && item.text.startsWith(`CHAT_HISTORY:${userId}`)
+    );
+
+    if (!match) {
+      console.log(`   ℹ️  No chat history found for userId=${String(userId).slice(0, 10)}…`);
+      return res.json({ found: false, messages: [] });
+    }
+
+    // Strip the tag header, parse the JSON array
+    const jsonStr = match.text.replace(`CHAT_HISTORY:${userId}\n`, '');
+    let messages = [];
+    try {
+      messages = JSON.parse(jsonStr);
+      if (!Array.isArray(messages)) messages = [];
+    } catch {
+      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}…`);
+      return res.json({ found: false, messages: [] });
+    }
+
+    console.log(`   ✅ Loaded ${messages.length} messages for userId=${String(userId).slice(0, 10)}…`);
+    res.json({ found: true, messages });
+  } catch (err) {
+    console.error(`   ❌ Chat-memory load failed:`, err.message || err);
+    // Return 200 + empty so client silently falls back to empty chat
+    res.json({ found: false, messages: [], error: err.message || String(err) });
+  }
+});
+
 // ─── Start ───────────────────────────────────────────────────
 const server = createServer(app);
 wss = new WebSocketServer({ server });
@@ -805,6 +897,8 @@ server.listen(PORT, () => {
   console.log(`     POST /api/unflag`);
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
+  console.log(`     POST /api/chat-memory/save`);
+  console.log(`     GET  /api/chat-memory/load`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);
 
   // Restore incidents from Walrus after any Railway restart.

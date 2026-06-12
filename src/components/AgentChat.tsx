@@ -1,36 +1,105 @@
 // src/components/AgentChat.tsx
-// Chat interface with the MemWal-powered AI agent
+// Chat interface with the MemWal-powered AI agent.
+// Chat history is persisted to MemWal (Walrus) — not localStorage.
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Brain, User, Loader2, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, Brain, User, Loader2, AlertCircle, CloudDownload } from 'lucide-react';
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PROXY_URL } from '../lib/api';
+import { useAppStore } from '../store/appStore';
+import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useAuthStore } from '../lib/authStore';
 
-
+// Welcome message constant — kept out of the store so the same object is reused
+const WELCOME_MESSAGE: AgentMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content: `I'm **Sentinel**, your AI community safety agent. I have permanent, cryptographically-verified memory of every incident ever reported in this system — stored on the Walrus blockchain via MemWal.\n\nAsk me anything: patterns, historical incidents, area status, triage recommendations, or emerging threats. My memory never fades.`,
+  timestamp: new Date().toISOString(),
+};
 
 export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
-  const [messages, setMessages] = useState<AgentMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: `I'm **Sentinel**, your AI community safety agent. I have permanent, cryptographically-verified memory of every incident ever reported in this system — stored on the Walrus blockchain via MemWal.
-
-Ask me anything: patterns, historical incidents, area status, triage recommendations, or emerging threats. My memory never fades.`,
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const { agentMessages: messages, setAgentMessages: setMessages } = useAppStore();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isRestoring, setIsRestoring] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasRestoredRef = useRef(false); // ensure we only attempt restore once per mount
 
+  // ── Resolve wallet userId (dapp-kit preferred, in-app fallback) ──────────────
+  const account = useCurrentAccount();
+  const { address: inAppAddress } = useAuthStore();
+  const userId = account?.address ?? inAppAddress ?? null;
+
+  // ── Scroll to bottom whenever messages change ─────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // ── Load chat history from MemWal on mount (once per wallet session) ──────────
+  useEffect(() => {
+    if (!userId || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
+    // Only restore if we have nothing beyond the welcome message in the store
+    const currentMessages = useAppStore.getState().agentMessages;
+    const hasRealMessages = currentMessages.some((m) => m.id !== 'welcome');
+    if (hasRealMessages) return; // already have in-session messages, skip
+
+    const loadHistory = async () => {
+      setIsRestoring(true);
+      try {
+        const res = await fetch(`${PROXY_URL}/api/chat-memory/load?userId=${encodeURIComponent(userId)}`);
+        if (!res.ok) return; // silently fail — never break the UI
+        const data = await res.json();
+        if (data.found && Array.isArray(data.messages) && data.messages.length > 0) {
+          // Prepend the welcome message, then the restored history
+          setMessages([WELCOME_MESSAGE, ...data.messages]);
+        }
+      } catch {
+        // Network error — silently fall back to empty chat
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+
+    loadHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // ── Debounced MemWal save — fires 2s after the last message change ───────────
+  const scheduleSave = useCallback(
+    (latestMessages: AgentMessage[]) => {
+      if (!userId) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(async () => {
+        try {
+          await fetch(`${PROXY_URL}/api/chat-memory/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, messages: latestMessages }),
+          });
+        } catch {
+          // Silent fail — in-session state is still intact
+        }
+      }, 2000);
+    },
+    [userId]
+  );
+
+  // Clean up save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  // ── Send message ──────────────────────────────────────────────────────────────
   const handleSend = async (messageText?: string) => {
     const text = (messageText ?? input).trim();
     if (!text || isLoading) return;
@@ -72,7 +141,13 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
         content: data.response,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, agentMsg]);
+
+      setMessages((prev) => {
+        const updated = [...prev, agentMsg];
+        // Schedule MemWal save after every assistant reply (debounced 2s)
+        scheduleSave(updated);
+        return updated;
+      });
     } catch (err) {
       console.error('Agent error:', err);
       if (err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
@@ -101,19 +176,65 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
         display: 'flex',
         flexDirection: 'column',
         background: '#0a0a0a',
+        position: 'relative',
       }}
     >
+      {/* ── Restoring indicator — desktop: inline in chat, mobile: centered sub-header ── */}
+      {isRestoring && (
+        <>
+          {/* Desktop: right-aligned, floats above the message list */}
+          <div
+            className="hidden md:flex"
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '14px',
+              zIndex: 10,
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '11px',
+              color: '#555',
+              fontFamily: 'monospace',
+              pointerEvents: 'none',
+            }}
+          >
+            <CloudDownload size={11} style={{ opacity: 0.6 }} />
+            Restoring conversation…
+          </div>
 
+          {/* Mobile: centered banner just below the page header */}
+          <div
+            className="flex md:hidden"
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 0',
+              fontSize: '11px',
+              color: '#555',
+              fontFamily: 'monospace',
+              borderBottom: '1px solid #111',
+              flexShrink: 0,
+            }}
+          >
+            <CloudDownload size={11} style={{ opacity: 0.6 }} />
+            Restoring conversation…
+          </div>
+        </>
+      )}
 
       {/* Messages */}
       <div
-        className="p-5 pb-[120px] md:pb-5"
+        className="pb-[120px] md:pb-10"
         style={{
           flex: 1,
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
+          paddingTop: '16px',
+          paddingLeft: '8px',
+          paddingRight: '8px',
         }}
       >
         {messages.map((msg) => (
@@ -138,9 +259,10 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
               <Brain size={14} color="#fff" />
             </div>
             <div
+              className="glass-card"
               style={{
-                background: '#111',
-                border: '1px solid #1f1f1f',
+                background: 'linear-gradient(145deg, rgba(40,40,40,0.8), rgba(20,20,20,0.9))',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
                 borderRadius: '10px',
                 padding: '12px 16px',
                 display: 'flex',
@@ -180,11 +302,13 @@ Ask me anything: patterns, historical incidents, area status, triage recommendat
 
       {/* Input */}
       <div
-        className="mobile-agent-input"
+        className="mobile-agent-input pt-4"
         style={{
-          padding: '16px 20px',
           background: 'transparent',
           flexShrink: 0,
+          paddingLeft: '8px',
+          paddingRight: '8px',
+          paddingBottom: '24px',
         }}
       >
         <div
@@ -288,12 +412,14 @@ const ChatMessage: React.FC<{ message: AgentMessage }> = ({ message }) => {
 
   return (
     <div
-      className="fade-in-up"
+      className="fade-in-up max-w-[85%] md:max-w-[70%]"
       style={{
         display: 'flex',
         gap: '10px',
         alignItems: 'flex-start',
         flexDirection: isAgent ? 'row' : 'row-reverse',
+        marginRight: isAgent ? 'auto' : undefined,
+        marginLeft: !isAgent ? 'auto' : undefined,
       }}
     >
       {/* Avatar */}
@@ -321,11 +447,13 @@ const ChatMessage: React.FC<{ message: AgentMessage }> = ({ message }) => {
 
       {/* Bubble */}
       <div
+        className={isAgent ? 'glass-card' : ''}
         style={{
           maxWidth: '80%',
-          background: isAgent ? '#111' : 'rgba(59, 130, 246, 0.1)',
+          background: isAgent ? 'linear-gradient(145deg, rgba(40,40,40,0.8), rgba(20,20,20,0.9))' : 'rgba(59, 130, 246, 0.15)',
+          boxShadow: isAgent ? '0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' : undefined,
           border: isAgent
-            ? '1px solid #1f1f1f'
+            ? undefined
             : '1px solid rgba(59, 130, 246, 0.2)',
           borderRadius: isAgent ? '4px 10px 10px 10px' : '10px 4px 10px 10px',
           padding: '12px 14px',
