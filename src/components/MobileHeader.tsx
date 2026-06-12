@@ -6,7 +6,7 @@ import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
 import { clearWallet } from '../lib/inAppWallet';
 import { AuthModal } from './AuthModal';
-import { Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-react';
+import { Wallet, ChevronDown, LogOut, Copy, Check, User } from 'lucide-react';
 
 interface MobileHeaderProps {
   onActivate?: () => void;
@@ -69,7 +69,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           height: '48px',
           background: '#0a0a0a',
           borderBottom: '1px solid #1a1a1a',
-          zIndex: 200,
+          zIndex: 2000,
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 16px',
@@ -117,12 +117,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 cursor: 'pointer', transition: 'border-color 0.15s',
               }}
             >
-              <div style={{
-                width: '6px', height: '6px', borderRadius: '50%',
-                background: isInApp ? '#8b5cf6' : '#22c55e',
-                boxShadow: `0 0 6px ${isInApp ? '#8b5cf6' : '#22c55e'}`,
-                flexShrink: 0,
-              }} />
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink: 0}}>
+                <path d="M12 2L20 8.5V15.5L12 22L4 15.5V8.5L12 2Z" fill="#6fbcf0"/>
+                <path d="M12 6L17 9.5V14.5L12 18L7 14.5V9.5L12 6Z" fill="white" opacity="0.4"/>
+              </svg>
               <span style={{ color: '#fff', fontSize: '12px', fontFamily: 'monospace' }}>
                 {displayAddress.slice(0, 6)}…{displayAddress.slice(-4)}
               </span>
@@ -159,19 +157,31 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                     <p style={{ color: '#555', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px' }}>
                       {isInApp ? 'In-App Wallet' : 'Connected Wallet'}
                     </p>
-                    <p style={{ color: '#888', fontSize: '11px', fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' }}>
-                      {displayAddress.slice(0, 10)}…{displayAddress.slice(-6)}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <p style={{ color: '#888', fontSize: '11px', fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' }}>
+                        {displayAddress.slice(0, 10)}…{displayAddress.slice(-6)}
+                      </p>
+                      <button
+                        onClick={handleCopy}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}
+                        title="Copy Address"
+                      >
+                        {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} color="#888" />}
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Copy */}
                   <button
-                    id="mobile-dropdown-copy"
-                    onClick={handleCopy}
+                    id="mobile-dropdown-activity"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      window.history.pushState({}, '', '/activity');
+                      window.dispatchEvent(new Event('popstate'));
+                    }}
                     style={dropdownBtnStyle}
                   >
-                    {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
-                    {copied ? 'Copied!' : 'Copy Address'}
+                    <User size={14} />
+                    My Activity
                   </button>
 
                   {/* Disconnect */}

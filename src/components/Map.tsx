@@ -29,9 +29,18 @@ const TYPE_ICONS: Record<string, string> = {
 // Auto-pan and zoom to center when it changes
 function MapController({ center }: { center: [number, number] }) {
   const map = useMap();
+  const prevCenter = React.useRef<[number, number] | null>(null);
+
   useEffect(() => {
-    map.setView(center, Math.max(map.getZoom(), 16), { animate: true });
-  }, [center, map]);
+    const [lat, lng] = center;
+    const prev = prevCenter.current;
+    // Only fly if coordinates actually changed
+    if (!prev || Math.abs(prev[0] - lat) > 0.0001 || Math.abs(prev[1] - lng) > 0.0001) {
+      prevCenter.current = [lat, lng];
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { animate: true, duration: 0.8 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center[0], center[1], map]);
   return null;
 }
 
@@ -73,7 +82,7 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
       <div className="absolute z-[1000] left-[16px] md:left-[20px] top-[60px] md:top-[20px]">
         <button
           onClick={() => map.flyTo(userLocation, 12, { animate: true, duration: 1.5 })}
-          className="glass-card flex items-center justify-center w-9 h-9 rounded-full md:w-auto md:h-auto md:px-4 md:py-2.5 md:rounded-lg"
+          className="glass-card flex items-center justify-center w-9 h-9 rounded-full md:w-auto md:h-auto md:pl-4 md:pr-10 md:py-2.5 md:rounded-lg"
           style={{
             color: '#fff',
             border: '1px solid #333',
@@ -88,7 +97,7 @@ function ReturnToLocation({ userLocation }: { userLocation: [number, number] }) 
           onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(17,17,17,0.85)')}
         >
           <span className="md:hidden flex items-center justify-center">📍</span>
-          <span className="hidden md:inline">📍 Navigate to your location</span>
+          <span className="hidden md:inline" style={{ paddingRight: '12px' }}>📍 Navigate to your location</span>
         </button>
       </div>
     );

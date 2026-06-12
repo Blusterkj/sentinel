@@ -3,10 +3,11 @@ import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import { BottomSheet } from '../components/BottomSheet';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock } from 'lucide-react';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock, CheckCircle } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
+import { useAppStore } from '../store/appStore';
 
 
 interface DashboardProps {
@@ -24,7 +25,6 @@ interface DashboardProps {
   activeFilter: boolean;
   setActiveFilter: (val: boolean) => void;
   onResolveIncident?: (id: string) => void;
-  onDeleteIncident?: (id: string) => void;
   onFlagIncident?: (updated: Incident) => void;
   sidebarCollapsed?: boolean;
 }
@@ -38,7 +38,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   activeFilter,
   setActiveFilter,
   onResolveIncident,
-  onDeleteIncident,
   onFlagIncident,
   sidebarCollapsed
 }) => {
@@ -61,16 +60,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const isAuthenticated = !!(account || inAppAddress);
   
   // Listen for external requests to select an incident (e.g. from Memory page)
-  // NOTE: do NOT call setCenter here — geolocation runs concurrently on mount
-  // and would snap the map back to user location, causing a visible flicker.
-  // The incident modal has its own embedded mini-map + Google Maps link.
   useEffect(() => {
     const handleSelectIncident = (e: Event) => {
       const customEvent = e as CustomEvent<Incident>;
       if (customEvent.detail) {
         setSelectedCluster(null);
         setSelectedIncident(customEvent.detail);
-        // Map stays where it is — user can use the mini-map in the modal
+        setCenter([customEvent.detail.location.lat, customEvent.detail.location.lng]);
       }
     };
     window.addEventListener('selectIncident', handleSelectIncident);
@@ -228,6 +224,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
         {/* Map */}
         <div style={{ flex: 1, position: 'relative' }}>
+          <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] z-[400]" />
           <WeatherStatus />
           <Map
             incidents={incidents}
@@ -281,8 +278,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Selected incident card — anchored below the weather widget, top-right */}
           {selectedIncident && (
             <div
-              className="fade-in-up"
+              className="fade-in-up mobile-incident-popup"
               onClick={() => {
+                // Fly map to incident location
+                setCenter([selectedIncident.location.lat, selectedIncident.location.lng]);
+                // Open full modal
                 window.dispatchEvent(new CustomEvent('openIncidentModal', { detail: selectedIncident }));
               }}
               style={{
@@ -306,8 +306,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span style={{ fontSize: '15px' }}>
                     {{'medical':'🏥','fire':'🔥','crime':'🚨','accident':'💥','natural_disaster':'🌩️','other':'⚠️'}[selectedIncident.type] || '⚠️'}
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#e5e5e5' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#e5e5e5', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {{'medical':'Medical','fire':'Fire','crime':'Crime','accident':'Accident','natural_disaster':'Disaster','other':'Other'}[selectedIncident.type]}
+                    {selectedIncident.status === 'resolved' && (
+                      <CheckCircle size={14} color="#22c55e" strokeWidth={2.5} />
+                    )}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -321,15 +324,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
-              {/* Resolved badge */}
-              {selectedIncident.status === 'resolved' && (
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', padding: '2px 8px', borderRadius: '4px', marginBottom: '8px', fontFamily: 'monospace' }}>
-                  ✓ RESOLVED
-                </span>
-              )}
-
               {/* Description */}
-              <p style={{ fontSize: '12px', color: '#999', lineHeight: '1.5', marginBottom: '10px' }}>
+              <p style={{ 
+                fontSize: '12px', 
+                color: '#999', 
+                lineHeight: '1.5', 
+                marginBottom: '10px',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
                 {selectedIncident.description}
               </p>
 
@@ -465,7 +471,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             activeFilter={activeFilter}
             myReportsFilter={myReportsFilter}
             onResolveIncident={onResolveIncident}
-            onDeleteIncident={onDeleteIncident}
             onFlagIncident={onFlagIncident}
           />
         </div>
@@ -530,7 +535,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         activeFilter={activeFilter}
         myReportsFilter={myReportsFilter}
         onResolveIncident={onResolveIncident}
-        onDeleteIncident={onDeleteIncident}
         onFlagIncident={onFlagIncident}
       />
     </div>
@@ -548,18 +552,19 @@ const StatPill: React.FC<{
 }> = ({ icon, label, value, color, pulse, highlight, onClick }) => (
   <div
     onClick={onClick}
-    className="mobile-pill-item"
+    className="mobile-pill-item hover:-translate-y-0.5 hover:scale-[1.02] cursor-pointer"
     style={{
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
       padding: '6px 16px',
-      background: highlight ? `${color}28` : `${color}10`,
+      background: highlight ? `${color}28` : `rgba(8, 8, 8, 0.80)`,
       border: `1px solid ${highlight ? color : `${color}25`}`,
       borderRadius: '24px',
       cursor: onClick ? 'pointer' : 'default',
       transition: 'all 0.35s ease',
       boxShadow: highlight ? `0 0 12px ${color}40` : 'none',
+      backdropFilter: 'blur(8px)',
     }}
   >
     {icon}
@@ -618,15 +623,10 @@ const getAqiColor = (aqi?: number) => {
 
 const WeatherStatus: React.FC = () => {
   const [time, setTime] = useState(new Date());
-  const [weather, setWeather] = useState<{
-    temp: number;
-    code: number;
-    city: string;
-    humidity?: number;
-    windSpeed?: number;
-    aqi?: number;
-  } | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  // ── Cache-first: read from appStore, only fetch when stale (TTL: 10 min) ───
+  const { weather, setWeather, isWeatherStale } = useAppStore();
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -634,6 +634,9 @@ const WeatherStatus: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Skip the network round-trip if we have fresh cached data
+    if (!isWeatherStale()) return;
+
     const fetchWeather = async (lat: number, lon: number) => {
       try {
         // Fetch weather from Open-Meteo (free, no API key)
@@ -661,6 +664,7 @@ const WeatherStatus: React.FC = () => {
           city = geoData.address?.city || geoData.address?.town || geoData.address?.county || geoData.address?.state || 'Your Location';
         } catch { /* fallback to default */ }
 
+        // Commit to the global cache — all future Dashboard mounts skip this fetch
         setWeather({
           temp: Math.round(weatherData.current.temperature_2m),
           code: weatherData.current.weather_code,
@@ -670,7 +674,7 @@ const WeatherStatus: React.FC = () => {
           city,
         });
       } catch {
-        // Fallback to hardcoded if API fails
+        // Fallback to hardcoded if API fails — still commit so we don't retry every mount
         setWeather({ temp: 28, code: 2, city: 'Bengaluru', humidity: 65, windSpeed: 12, aqi: 45 });
       }
     };
@@ -687,6 +691,7 @@ const WeatherStatus: React.FC = () => {
     } else {
       fetchWeather(12.9716, 77.5946);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hours = time.getHours();
@@ -710,7 +715,17 @@ const WeatherStatus: React.FC = () => {
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         minWidth: '200px',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)';
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.2)';
+        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 40px rgba(0,0,0,0.6)';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.08)';
+        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.4)';
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>

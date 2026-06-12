@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ConnectButton } from '@mysten/dapp-kit';
+import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Wallet, Key, X, ChevronLeft } from 'lucide-react';
 import { generateWallet, importWallet, saveWallet } from '../lib/inAppWallet';
 import { useAuthStore } from '../lib/authStore';
@@ -19,12 +19,19 @@ type InAppView = 'menu' | 'create' | 'import';
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { setInAppAuth } = useAuthStore();
+  const account = useCurrentAccount();
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (account) {
+      onClose();
+    }
+  }, [account, onClose]);
 
   return isDesktop ? (
     <DesktopModal onClose={onClose} setInAppAuth={setInAppAuth} />
@@ -49,8 +56,9 @@ const SlushButton: React.FC<{ id: string }> = ({ id }) => (
         background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
         border: 'none', borderRadius: '12px',
         color: '#fff', fontSize: '15px', fontWeight: 700,
-        cursor: 'pointer', transition: 'opacity 0.15s',
+        cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
+      className="hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(124,58,237,0.4)]"
       onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
     >

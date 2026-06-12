@@ -139,7 +139,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         style={{
           padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
-          background: '#0d0d0d',
+          background: 'transparent',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
@@ -189,7 +189,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '20px',
           padding: '24px',
-          background: '#0a0a0a',
+          background: 'transparent',
           flexShrink: 0,
         }}
       >
@@ -262,23 +262,30 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           />
         </div>
 
-        {/* Type filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={14} color="#888" />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as IncidentType | 'all')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#bbb',
-              fontSize: '13px',
-              outline: 'none',
-              cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 500,
-            }}
-          >
+        {/* Mobile-responsive wrapper for filters + count */}
+        <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
+          <div className="flex items-center gap-2 flex-1 min-w-0 md:flex-initial">
+            {/* Type filter */}
+            <div className="flex items-center gap-1 min-w-0">
+              <Filter size={14} color="#888" className="flex-shrink-0" />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as IncidentType | 'all')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#bbb',
+                  fontSize: '13px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 500,
+                  minWidth: 0,
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                }}
+              >
             <option value="all" style={{ background: '#111' }}>All Types</option>
             <option value="medical" style={{ background: '#111' }}>Medical</option>
             <option value="fire" style={{ background: '#111' }}>Fire</option>
@@ -286,47 +293,51 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             <option value="accident" style={{ background: '#111' }}>Accident</option>
             <option value="natural_disaster" style={{ background: '#111' }}>Natural Disaster</option>
           </select>
-        </div>
+            </div>
 
-        {/* Severity filter */}
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#bbb',
-            fontSize: '13px',
-            outline: 'none',
-            cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 500,
-          }}
-        >
+            {/* Severity filter */}
+            <select
+              value={severityFilter}
+              onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#bbb',
+                fontSize: '13px',
+                outline: 'none',
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                minWidth: 0,
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+              }}
+            >
           <option value="all" style={{ background: '#111' }}>All Severities</option>
           <option value="high" style={{ background: '#111' }}>High</option>
           <option value="medium" style={{ background: '#111' }}>Medium</option>
           <option value="low" style={{ background: '#111' }}>Low</option>
-        </select>
+            </select>
+          </div>
 
-        {/* Result count */}
-        <span className="mobile-result-count" style={{
-          fontSize: '12px',
-          color: '#888',
-          fontFamily: 'monospace',
-          whiteSpace: 'nowrap',
-          marginLeft: 'auto',
-          padding: '3px 12px',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '999px',
-          background: 'rgba(255,255,255,0.03)',
-        }}>
-          {filtered.length} / {incidents.length} results
-        </span>
+          {/* Result count */}
+          <span className="flex-shrink-0 whitespace-nowrap" style={{
+            fontSize: '12px',
+            color: '#888',
+            fontFamily: 'monospace',
+            padding: '3px 12px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '999px',
+            background: 'rgba(255,255,255,0.03)',
+          }}>
+            {filtered.length} / {incidents.length}
+          </span>
+        </div>
       </div>
 
       {/* Memory entries */}
-      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: '#050505' }}>
+      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: 'transparent' }}>
         {filtered.length === 0 ? (
           <div
             style={{
@@ -406,31 +417,20 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
     setProofLoading(true);
     setProofError(null);
     try {
-      // Call the local proxy which does server-side MemWal recall (no CORS issues)
-      const query = `${incident.type} ${incident.location.address} ${incident.severity}`;
-      const res = await fetch(
-        `${PROXY_URL}/api/recall?query=${encodeURIComponent(query)}&limit=5`
-      );
+      if (!blobId) throw new Error("No Walrus Blob ID available for this incident.");
+      
+      const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`);
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Proxy returned ${res.status}`);
+        throw new Error(`Walrus returned ${res.status}`);
       }
-      const data = await res.json();
-      // Find the result matching this incident's blob ID or ID
-      const match =
-        data.results?.find((r: any) => r.blob_id === blobId) ||
-        data.results?.find((r: any) => r.text?.includes(incident.id)) ||
-        data.results?.[0];
-      if (match?.text) {
-        setProofData(match.text);
-      } else {
-        setProofError(`Recall returned ${data.results?.length || 0} results but none matched this blob.`);
-      }
+      
+      const text = await res.text();
+      setProofData(text);
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
-        setProofError('Proxy not running. Start it with: npm run proxy');
+        setProofError('Network error connecting to Walrus aggregator.');
       } else {
-        setProofError(err.message || 'Failed to recall memory from MemWal.');
+        setProofError(err.message || 'Failed to fetch memory from Walrus.');
       }
     } finally {
       setProofLoading(false);
@@ -452,22 +452,24 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
   return (
     <>
     <div
-      className="fade-in-up"
+      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent`}
       onClick={handleGoToIncident}
       style={{
-        background: hovered ? 'rgba(255,255,255,0.025)' : 'transparent',
-        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+        borderRadius: '8px',
         padding: '14px 16px',
         display: 'flex',
         alignItems: 'center',
         gap: '14px',
-        transition: 'background 0.15s ease',
         animationDelay: `${index * 30}ms`,
         cursor: 'pointer',
+        marginBottom: isLast ? '0' : '4px',
+        overflow: 'hidden',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {/* Left accent bar on hover */}
+      <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-[rgba(139,92,246,0.6)] transition-colors duration-300" />
       {/* Type icon */}
       <div
         style={{
@@ -487,7 +489,8 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
 
       {/* Main content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        {/* Row 1: Title/Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>{typeLabel}</span>
           <SeverityBadge severity={incident.severity} size="sm" />
           {resolvedLocal ? (
@@ -514,17 +517,6 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
               </button>
             )
           )}
-          <span
-            style={{
-              fontSize: '10px',
-              color: '#555',
-              fontFamily: 'monospace',
-              marginLeft: 'auto',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {timeAgo(incident.timestamp)}
-          </span>
         </div>
 
         <p
@@ -627,8 +619,21 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         </div>
       </div>
 
-      {/* Verify button — only active if we have a real blob ID */}
-      {isSynced && blobId ? (
+      {/* Right Column: Time + Verify button */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', alignSelf: 'stretch', flexShrink: 0, paddingLeft: '8px' }}>
+        <span
+          style={{
+            fontSize: '10px',
+            color: '#555',
+            fontFamily: 'monospace',
+            whiteSpace: 'nowrap',
+            marginTop: '2px',
+          }}
+        >
+          {timeAgo(incident.timestamp)}
+        </span>
+
+        {isSynced && blobId ? (
         <button
           onClick={(e) => { e.stopPropagation(); handleVerify(); }}
           style={{
@@ -678,9 +683,10 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         </div>
       )}
     </div>
+  </div>
 
-    {/* On-chain proof panel */}
-    {showProof && (
+  {/* On-chain proof panel */}
+  {showProof && (
       <div
         className="fade-in-up"
         style={{
@@ -760,15 +766,16 @@ const StatCard: React.FC<{
 }> = ({ icon, label, value, color }) => (
   <div
     style={{
-      background: '#111',
-      border: 'none',
-      borderRadius: '12px',
+      background: 'linear-gradient(145deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.95))',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+      borderRadius: '16px',
       padding: '24px 24px',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
       minHeight: '110px',
-      justifyContent: 'center'
+      justifyContent: 'center',
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

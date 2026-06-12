@@ -13,7 +13,6 @@ interface BottomSheetProps {
   activeFilter: boolean;
   myReportsFilter?: boolean;
   onResolveIncident?: (id: string) => void;
-  onDeleteIncident?: (id: string) => void;
   onFlagIncident?: (updated: Incident) => void;
 }
 
@@ -31,7 +30,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   activeFilter,
   myReportsFilter = false,
   onResolveIncident,
-  onDeleteIncident,
   onFlagIncident,
 }) => {
   const [sheetState, setSheetState] = useState<SheetState>('collapsed');
@@ -128,7 +126,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             activeFilter={activeFilter}
             myReportsFilter={myReportsFilter}
             onResolveIncident={onResolveIncident}
-            onDeleteIncident={onDeleteIncident}
             onFlagIncident={onFlagIncident}
             hideHeader
           />

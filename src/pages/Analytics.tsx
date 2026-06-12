@@ -18,9 +18,10 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const cardStyle: React.CSSProperties = {
-  background: '#111',
-  border: '1px solid #1f1f1f',
-  borderRadius: '12px',
+  background: 'linear-gradient(145deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.95))',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+  borderRadius: '16px',
   padding: '24px',
 };
 
@@ -31,7 +32,7 @@ function SVGBarChart({ data }: { data: { name: string; value: number }[] }) {
   const barW = (W - PAD * 2 - BAR_GAP * (data.length - 1)) / Math.max(data.length, 1);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H + 40}`} style={{ width: '100%', height: 'auto' }}>
+    <svg viewBox={`0 0 ${W} ${H + PAD + 30}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
       {/* Y gridlines */}
       {[0, 0.25, 0.5, 0.75, 1].map(pct => {
         const y = PAD + (1 - pct) * H;

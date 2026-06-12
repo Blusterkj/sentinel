@@ -398,7 +398,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         >
           INCIDENT TYPE
         </label>
-        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+        <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
           {INCIDENT_TYPES.map((t) => {
             const isSelected = type === t.value;
             const isHovered = hoveredType === t.value;

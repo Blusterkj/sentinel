@@ -53,6 +53,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
               }}
             >
               <div
+                className="active:scale-95 transition-transform"
                 style={{
                   width: '48px',
                   height: '48px',
@@ -63,12 +64,12 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
                   justifyContent: 'center',
                   boxShadow: isActive ? '0 0 16px rgba(239, 68, 68, 0.6)' : '0 4px 12px rgba(239, 68, 68, 0.4)',
                   transform: isActive ? 'scale(0.95)' : 'translateY(-12px)',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
               >
                 <Icon size={24} color="#fff" strokeWidth={2.5} />
               </div>
-              <span style={{ fontSize: '10px', color: isActive ? '#ef4444' : '#888', marginTop: isActive ? '4px' : '-8px', fontWeight: isActive ? 600 : 500, transition: 'all 0.2s' }}>
+              <span style={{ fontSize: '10px', color: isActive ? '#ef4444' : '#888', marginTop: isActive ? '4px' : '-8px', fontWeight: isActive ? 600 : 500, transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)' }}>
                 {tab.label}
               </span>
             </div>
@@ -79,6 +80,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
           <div
             key={tab.id}
             onClick={() => navigate(tab.id)}
+            className="active:scale-95 transition-transform"
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -91,21 +93,28 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
               gap: '4px',
             }}
           >
-            {isActive && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  width: '24px',
-                  height: '3px',
-                  background: '#3b82f6',
-                  borderRadius: '0 0 4px 4px',
-                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.5)',
-                }}
-              />
-            )}
-            <Icon size={22} color={isActive ? '#3b82f6' : '#666'} />
-            <span style={{ fontSize: '10px', color: isActive ? '#3b82f6' : '#666', fontWeight: isActive ? 600 : 500 }}>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ 
+                transform: isActive ? 'scale(1.15)' : 'scale(1)', 
+                transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)' 
+              }}>
+                <Icon size={22} color={isActive ? '#3b82f6' : '#666'} />
+              </div>
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '-8px',
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    background: '#3b82f6',
+                    boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)',
+                  }}
+                />
+              )}
+            </div>
+            <span style={{ fontSize: '10px', color: isActive ? '#3b82f6' : '#666', fontWeight: isActive ? 600 : 500, marginTop: '2px' }}>
               {tab.label}
             </span>
           </div>

@@ -72,6 +72,7 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
           <button
             id="wallet-guard-signin-btn"
             onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+            className="hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(59,130,246,0.4)] transition-all duration-300"
             style={{
               background: '#3b82f6', border: 'none',
               borderRadius: '8px', color: '#fff',

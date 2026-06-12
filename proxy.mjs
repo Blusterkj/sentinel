@@ -375,7 +375,8 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       suiTxDigest: txDigest || undefined,
       flagCount: 0,
       flaggedBy: [],
-      isSimulated: incident.reportedBy === 'System' || incident.reportedBy === 'SOS' ? true : false,
+      // Only System (demo button) incidents are simulated — SOS and real user reports are NOT
+      isSimulated: incident.reportedBy === 'System',
     };
     incidentRegistry.set(incident.id, storedIncident);
 
@@ -1023,8 +1024,8 @@ async function rehydrateRegistry(isRetry = false) {
           walrusStatus: 'synced',
           flagCount:  incident.flagCount  ?? 0,
           flaggedBy:  incident.flaggedBy  ?? [],
-          // Mark as simulated/historical so My Activity can filter them out
-          isSimulated: !incident.reporter || incident.reportedBy === 'System',
+          // Only mark as simulated if explicitly from System (⚡ demo button)
+          isSimulated: incident.reportedBy === 'System',
         });
         console.log(`   ✅ Loaded: [${incident.id}] "${(incident.description || '').slice(0, 60)}"`);
         count++;

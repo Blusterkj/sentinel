@@ -63,11 +63,11 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
     () =>
       incidents
         .filter((i) => {
-          // Exclude simulated/seed incidents
+          // Exclude demo/simulated incidents (reportedBy === 'System')
           if (i.isSimulated) return false;
           // Include if wallet matches reporter field (case-insensitive)
           if (address && i.reporter && i.reporter.toLowerCase() === address.toLowerCase()) return true;
-          // Include if createdByMe flag is set
+          // Include if createdByMe flag is set (local session flag)
           if (i.createdByMe) return true;
           return false;
         })
