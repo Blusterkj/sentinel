@@ -296,9 +296,14 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
   try {
     // ── Step 1: Store directly on Walrus publisher (public, verifiable on Walruscan)
-    const walrusResult = await storeOnWalrusPublisher(cleanIncident);
-    const walrusBlobId = walrusResult.blobId;
-    console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
+    let walrusBlobId = null;
+    try {
+      const walrusResult = await storeOnWalrusPublisher(cleanIncident);
+      walrusBlobId = walrusResult.blobId;
+      console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
+    } catch (err) {
+      console.warn(`   ⚠️  Walrus publisher failed:`, err.message || err);
+    }
 
     // ── Step 2: Store on MemWal for AI memory/recall (runs in parallel, non-blocking)
     let memwalBlobId = null;
@@ -314,8 +319,13 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       console.warn(`   ⚠️  MemWal store failed (non-blocking):`, memwalErr.message || memwalErr);
     }
 
-    // Use Walrus publisher blob ID as the primary (publicly verifiable) blob ID
-    const blobId = walrusBlobId;
+    // Use MemWal blob ID as the primary verifiable blob ID because it guarantees aggregator availability.
+    // Fallback to direct Walrus publisher blob ID if MemWal fails.
+    const blobId = memwalBlobId || walrusBlobId;
+    if (!blobId) {
+      throw new Error("Both MemWal and Walrus publisher failed to return a blob ID");
+    }
+
     const txDigest = await anchorOnSui(blobId);
 
     // Persist in in-memory registry for cross-device sync
