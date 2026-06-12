@@ -661,12 +661,10 @@ app.post('/api/chat-memory/save', async (req, res) => {
 
   // Only persist real messages (strip welcome message with id 'welcome')
   const toSave = messages.filter((m) => m.id !== 'welcome');
-  if (toSave.length === 0) {
-    return res.json({ success: true, skipped: true });
-  }
 
   // Format: tagged text blob so recall can find it by userId
-  const text = `CHAT_HISTORY:${userId}\n${JSON.stringify(toSave)}`;
+  // Include a timestamp so we can sort multiple results by recency
+  const text = `CHAT_HISTORY:${userId}\nTIMESTAMP:${Date.now()}\n${JSON.stringify(toSave)}`;
 
   console.log(`\n💬 Chat-memory save: userId=${userId.slice(0, 10)}… (${toSave.length} messages)`);
 
@@ -704,19 +702,36 @@ app.get('/api/chat-memory/load', async (req, res) => {
     const result = await memwal.recall(query, 10);
     const items = result.results ?? result ?? [];
 
-    // Find the item most likely to be THIS user's chat history
-    // The tag is exact so the nearest semantic match should be their blob
-    const match = items.find((item) =>
+    // Find all items that are this user's chat history
+    const matches = items.filter((item) =>
       item.text && item.text.startsWith(`CHAT_HISTORY:${userId}`)
     );
 
-    if (!match) {
+    if (matches.length === 0) {
       console.log(`   ℹ️  No chat history found for userId=${String(userId).slice(0, 10)}…`);
       return res.json({ found: false, messages: [] });
     }
 
-    // Strip the tag header, parse the JSON array
-    const jsonStr = match.text.replace(`CHAT_HISTORY:${userId}\n`, '');
+    // Sort by timestamp descending (newest first).
+    // If no timestamp is found, it defaults to 0 (older than timestamped ones).
+    matches.sort((a, b) => {
+      const getTs = (text) => {
+        const m = text.match(/TIMESTAMP:(\d+)/);
+        return m ? parseInt(m[1], 10) : 0;
+      };
+      return getTs(b.text) - getTs(a.text);
+    });
+
+    const match = matches[0];
+
+    // Find the JSON array
+    const jsonStartIdx = match.text.indexOf('[');
+    if (jsonStartIdx === -1) {
+      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}… (No array found)`);
+      return res.json({ found: false, messages: [] });
+    }
+
+    const jsonStr = match.text.slice(jsonStartIdx);
     let messages = [];
     try {
       messages = JSON.parse(jsonStr);
