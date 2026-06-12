@@ -126,7 +126,11 @@ export default function App() {
         // that haven't been echoed back from the proxy yet
         const fetchedIds = new Set(fetched.map((i) => i.id));
         const localOnly = prev.filter((i) => !fetchedIds.has(i.id) && !i.walrusBlobId);
-        return [...localOnly, ...fetched];
+        return [...localOnly, ...fetched].sort((a, b) => {
+          const timeA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
+          const timeB = new Date(b.timestamp || b.createdAt || 0).getTime() || 0;
+          return timeB - timeA;
+        });
       });
     } catch {
       // Network unavailable — keep current state, retry next tick
@@ -161,11 +165,14 @@ export default function App() {
             const data = JSON.parse(event.data);
             console.log('[SENTINEL] WS message received:', data.type);
             if (data.type === 'NEW_INCIDENT' && data.incident) {
-              setIncidents((prev) =>
-                prev.some((i) => i.id === data.incident.id)
-                  ? prev
-                  : [data.incident, ...prev]
-              );
+              setIncidents((prev) => {
+                const filtered = prev.filter(i => i.id !== data.incident.id);
+                return [data.incident, ...filtered].sort((a, b) => {
+                  const timeA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
+                  const timeB = new Date(b.timestamp || b.createdAt || 0).getTime() || 0;
+                  return timeB - timeA;
+                });
+              });
             } else if (data.type === 'INCIDENT_UPDATED' && data.incident) {
               setIncidents((prev) =>
                 prev.map((i) => i.id === data.incident.id ? { ...i, ...data.incident } : i)
