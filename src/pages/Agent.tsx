@@ -15,6 +15,7 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
   const account = useCurrentAccount();
   const { address: inAppAddress } = useAuthStore();
   const userId = account?.address ?? inAppAddress ?? null;
+  const [isClearing, setIsClearing] = React.useState(false);
   
   return (
     <div
@@ -48,16 +49,26 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
         {/* Clear Chat Button */}
         {agentMessages.length > 1 && (
           <button
-            onClick={() => {
+            disabled={isClearing}
+            onClick={async () => {
+              if (isClearing) return;
+              setIsClearing(true);
+              sessionStorage.setItem('sentinel_chat_cleared', '1');
               clearAgentMessages();
+              
               // Overwrite MemWal blob with empty history so it doesn't rehydrate on next load
               if (userId) {
-                fetch(`${PROXY_URL}/api/chat-memory/save`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, messages: [], cleared: true, clearedAt: Date.now() }),
-                }).catch(() => {});
+                try {
+                  await fetch(`${PROXY_URL}/api/chat-memory/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, messages: [], cleared: true, clearedAt: Date.now() }),
+                  });
+                } catch {
+                  // Silent fail
+                }
               }
+              setIsClearing(false);
             }}
             style={{
               display: 'flex',
@@ -70,20 +81,23 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
               color: '#ef4444',
               fontSize: '11px',
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: isClearing ? 'wait' : 'pointer',
+              opacity: isClearing ? 0.7 : 1,
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
+              if (isClearing) return;
               e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
               e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
             }}
             onMouseLeave={(e) => {
+              if (isClearing) return;
               e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
               e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
             }}
           >
             <Trash2 size={12} />
-            <span className="hidden sm:inline">Clear Chat</span>
+            <span className="hidden sm:inline">{isClearing ? 'Clearing...' : 'Clear Chat'}</span>
           </button>
         )}
       </div>

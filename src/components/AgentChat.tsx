@@ -46,6 +46,12 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
     if (!userId || hasRestoredRef.current) return;
     hasRestoredRef.current = true;
 
+    // Safety net for immediate refresh race condition
+    if (sessionStorage.getItem('sentinel_chat_cleared') === '1') {
+      setTimeout(() => sessionStorage.removeItem('sentinel_chat_cleared'), 3000);
+      return;
+    }
+
     const loadHistory = async () => {
       setIsRestoring(true);
       try {
