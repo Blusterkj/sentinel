@@ -364,8 +364,36 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
     res.json({ success: true, blobId, tx_digest: txDigest, createdAt: incident.createdAt });
   } catch (err) {
-    console.error(`   ❌ Store failed:`, err.message || err);
-    res.status(502).json({ success: false, error: err.message || String(err) });
+    console.error('   ❌ Store Error:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/reblob
+ * Re-uploads an expired incident to Walrus to get a fresh blob ID.
+ */
+app.post('/api/reblob', async (req, res) => {
+  const { incidentId } = req.body;
+  if (!incidentId) return res.status(400).json({ success: false, error: 'incidentId required' });
+
+  const incident = incidentRegistry.get(incidentId);
+  if (!incident) return res.status(404).json({ success: false, error: 'incident not found' });
+
+  try {
+    const { walrusStatus: _ws, createdByMe: _cm, walrusBlobId: _oldWb, suiTxDigest: _oldSt, flagCount: _oldFc, flaggedBy: _oldFb, ...cleanIncident } = incident;
+    const walrusResult = await storeOnWalrusPublisher(cleanIncident);
+    const newBlobId = walrusResult.blobId;
+
+    // Update in-memory registry
+    incident.walrusBlobId = newBlobId;
+    incidentRegistry.set(incidentId, incident);
+
+    console.log(`[SENTINEL] Reblobbed ${incidentId} -> new blob: ${newBlobId}`);
+    return res.json({ success: true, newBlobId });
+  } catch (err) {
+    console.error(`[SENTINEL] Reblob failed for ${incidentId}:`, err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

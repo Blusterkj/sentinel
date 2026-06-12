@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { useNow } from '../hooks/useNow';
-import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download } from 'lucide-react';
+import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
 import { Transaction } from '@mysten/sui/transactions';
@@ -22,7 +22,6 @@ interface IncidentFeedProps {
   activeFilter?: boolean;
   myReportsFilter?: boolean;
   onResolveIncident?: (id: string) => void;
-  onDeleteIncident?: (id: string) => void;
   onFlagIncident?: (updated: Incident) => void;
   hideHeader?: boolean;
 }
@@ -54,6 +53,18 @@ function formatRelativeTime(timestamp: string, now: number): string {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function getSafetyMessage(type: string, severity: string): string {
+  const t = type?.toLowerCase();
+  if (t === 'sos' || t === 'panic') return '🚨 User needs immediate help — call 112 or assist now';
+  if (t === 'medical') return '🏥 Call emergency services immediately (112)';
+  if (t === 'fire') return '🔥 Stay clear — evacuate the area immediately';
+  if (t === 'crime') return '🚔 Do not approach — contact police immediately';
+  if (t === 'accident') return '🚑 Clear the road — emergency services needed';
+  if (t === 'natural' || t === 'natural disaster') return '⛈️ Move to higher ground / safe shelter now';
+  if (severity?.toLowerCase() === 'critical') return '🚨 Critical situation — take immediate action';
+  return '⚠️ Stay alert and exercise caution in this area';
 }
 
 // ── Flag as Spam button ──────────────────────────────
@@ -176,7 +187,6 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   activeFilter,
   myReportsFilter,
   onResolveIncident,
-  onDeleteIncident,
   onFlagIncident,
   hideHeader = false,
 }) => {
@@ -189,8 +199,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const [walrusFetchState, setWalrusFetchState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [walrusData, setWalrusData] = React.useState<string | null>(null);
   const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
+  const [markedFalseAlarm, setMarkedFalseAlarm] = React.useState<string | null>(null);
 
-  // Listen for external requests to open the incident modal (e.g. from Dashboard selectedIncident)
+  // Listen for external requests to open or close the incident modal
   React.useEffect(() => {
     const handleOpenModal = (e: Event) => {
       const customEvent = e as CustomEvent<Incident>;
@@ -203,8 +214,16 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
         setWalrusFetchError(null);
       }
     };
+    const handleCloseModal = () => {
+      setModalIncident(null);
+      setShowProof(false);
+    };
     window.addEventListener('openIncidentModal', handleOpenModal);
-    return () => window.removeEventListener('openIncidentModal', handleOpenModal);
+    window.addEventListener('closeIncidentModal', handleCloseModal);
+    return () => {
+      window.removeEventListener('openIncidentModal', handleOpenModal);
+      window.removeEventListener('closeIncidentModal', handleCloseModal);
+    };
   }, [modalAccount, modalInAppAddress]);
 
   React.useEffect(() => {
@@ -333,9 +352,9 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
           background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', backdropFilter: 'blur(4px)'
         }}
-          onClick={() => { setModalIncident(null); setShowProof(false); }}
+          onClick={() => window.dispatchEvent(new CustomEvent('closeIncidentModal'))}
         >
-          <div style={{
+          <div className="animate-in fade-in zoom-in-95 duration-200 ease-out" style={{
             background: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '16px',
             width: '100%', maxWidth: '480px', maxHeight: '90vh', position: 'relative', overflow: 'hidden',
             boxShadow: '0 24px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column'
@@ -393,7 +412,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 </MapContainer>
               </a>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, #0d0d0d, transparent)', pointerEvents: 'none' }} />
-              <button onClick={() => { setModalIncident(null); setShowProof(false); }} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
+              <button onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('closeIncidentModal')); }} className="hover:rotate-90 hover:scale-110 transition-transform duration-200" style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}>
                 <X size={16} />
               </button>
             </div>
@@ -403,23 +422,37 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '24px' }}>{TYPE_ICONS[modalIncident.type]}</span>
-                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>{TYPE_LABELS[modalIncident.type]}</h2>
-                  <SeverityBadge severity={modalIncident.severity} />
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {TYPE_LABELS[modalIncident.type]}
+                    {modalIncident.status === 'resolved' && markedFalseAlarm !== modalIncident.id && (
+                      <span title="Resolved"><CheckCircle size={18} color="#22c55e" strokeWidth={2.5} /></span>
+                    )}
+                    {modalIncident.status === 'resolved' && markedFalseAlarm === modalIncident.id && (
+                      <span title="Marked as False Alarm"><AlertCircle size={18} color="#eab308" strokeWidth={2.5} /></span>
+                    )}
+                  </h2>
+                  <SeverityBadge severity={modalIncident.severity} pulse={true} />
                 </div>
-                <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {formatRelativeTime(modalIncident.createdAt ?? modalIncident.timestamp, now)}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {modalIncident.location.address}</span>
+                <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                  <span style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <Clock size={12} style={{ marginTop: '3px', flexShrink: 0 }} /> 
+                    <span>{formatRelativeTime(modalIncident.createdAt ?? modalIncident.timestamp, now)}</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <MapPin size={12} style={{ marginTop: '3px', flexShrink: 0 }} /> 
+                    <span>{modalIncident.location.address}</span>
+                  </span>
                 </div>
               </div>
 
               {/* Warning Banner */}
               {(modalIncident.severity === 'critical' || modalIncident.severity === 'high') ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#ef4444', fontSize: '14px', fontWeight: 600 }}>
-                  <AlertTriangle size={16} /> Stay clear of this area
+                  {getSafetyMessage(modalIncident.type, modalIncident.severity)}
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '8px', color: '#eab308', fontSize: '14px', fontWeight: 600 }}>
-                  <AlertTriangle size={16} /> Be cautious in this area
+                  {getSafetyMessage(modalIncident.type, modalIncident.severity)}
                 </div>
               )}
 
@@ -459,26 +492,32 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 />
               </div>
 
-              {/* Row 2: Resolve + Delete (only when applicable) */}
-              {(modalIncident.createdByMe && (modalIncident.status === 'active' || onDeleteIncident)) && (
-                <div style={{ display: 'grid', gridTemplateColumns: modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && onDeleteIncident ? '1fr 1fr' : '1fr', gap: '10px' }}>
-                  {modalIncident.createdByMe && modalIncident.status === 'active' && onResolveIncident && (
-                    <button
-                      onClick={() => { onResolveIncident(modalIncident.id); setModalIncident({ ...modalIncident, status: 'resolved' }); }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                    >
-                      <CheckCircle size={14} /> Resolve
-                    </button>
+              {/* Row 2: Resolve + False Alarm (only when applicable) */}
+              {modalIncident.createdByMe && (
+                <>
+                  {modalIncident.status === 'active' && onResolveIncident && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <button
+                        onClick={() => { onResolveIncident(modalIncident.id); setModalIncident({ ...modalIncident, status: 'resolved' }); }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                      >
+                        <CheckCircle size={14} /> Resolve
+                      </button>
+                      <button
+                        onClick={() => {
+                          onResolveIncident(modalIncident.id);
+                          setMarkedFalseAlarm(modalIncident.id);
+                          setModalIncident({ ...modalIncident, status: 'resolved' });
+                        }}
+                        className="bg-yellow-900/40 text-yellow-400 border border-yellow-800 hover:bg-yellow-900/60 transition-all duration-200"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                      >
+                        ⚠️ Resolve as False Alarm
+                      </button>
+                    </div>
                   )}
-                  {modalIncident.createdByMe && onDeleteIncident && (
-                    <button
-                      onClick={() => { onDeleteIncident(modalIncident.id); setModalIncident(null); }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                    >
-                      <X size={14} /> Delete
-                    </button>
-                  )}
-                </div>
+                  {/* False alarm UI moved to header */}
+                </>
               )}
 
               {/* Blockchain Proof (Collapsible) */}
@@ -522,19 +561,47 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                               setWalrusData(null);
                               setWalrusFetchError(null);
                               try {
-                                  const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${modalIncident.walrusBlobId}`);
+                                  let blobIdToFetch = modalIncident.walrusBlobId;
+                                  let res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobIdToFetch}`);
+                                  
                                   if (!res.ok) {
                                     if (res.status === 404) {
-                                      throw new Error('Blob not yet propagated to all nodes — please try again in 30 seconds');
+                                      const ageMs = Date.now() - new Date(modalIncident.createdAt || modalIncident.timestamp).getTime();
+                                      if (ageMs > 5 * 60 * 1000) {
+                                        // Auto-heal: blob expired, reblob it!
+                                        setWalrusFetchError('Blob expired — re-uploading to Walrus...');
+                                        const reblobRes = await fetch(`${PROXY_URL}/api/reblob`, {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ incidentId: modalIncident.id })
+                                        });
+                                        const reblobData = await reblobRes.json();
+                                        if (reblobData.success && reblobData.newBlobId) {
+                                          blobIdToFetch = reblobData.newBlobId;
+                                          setModalIncident({ ...modalIncident, walrusBlobId: blobIdToFetch });
+                                          
+                                          // Retry fetch with new blob
+                                          res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobIdToFetch}`);
+                                          if (!res.ok) {
+                                            throw new Error('Blob not yet propagated to all nodes — please try again in 30 seconds');
+                                          }
+                                        } else {
+                                          throw new Error(reblobData.error || 'Failed to re-upload blob');
+                                        }
+                                      } else {
+                                        throw new Error('Blob not yet propagated to all nodes — please try again in 30 seconds');
+                                      }
                                     } else if (res.status === 403) {
                                       throw new Error('Access restricted on this node — try View on WalrusScan instead');
                                     } else {
                                       throw new Error(`HTTP ${res.status} — try View on WalrusScan instead`);
                                     }
                                   }
+                                  
                                   const text = await res.text();
                                   setWalrusData(text);
                                   setWalrusFetchState('done');
+                                  setWalrusFetchError(null);
                                 } catch (err: any) {
                                   const msg = err?.message || '';
                                   if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
@@ -681,23 +748,19 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="fade-in-up"
+      className={`fade-in-up transition-all duration-300 hover:-translate-y-1 hover:bg-white/5 border border-transparent border-b-white/5 ${
+        isCritical ? 'hover:shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:border-red-500/30' : 
+        isHigh ? 'hover:shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:border-orange-500/30' : 
+        'hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-500/20'
+      }`}
       style={{
         animationDelay: `${animDelay}ms`,
-        padding: '14px 4px',
-        borderRadius: '0',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        background: 'transparent',
+        padding: '14px 10px',
+        borderRadius: '8px',
         cursor: 'pointer',
-        transition: 'background 0.15s ease',
         position: 'relative',
         overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.025)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+        marginBottom: '4px',
       }}
     >
       {/* High severity left bar */}
@@ -798,10 +861,37 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
         {incident.description}
       </p>
 
-      {/* Flag as Spam — below description, left-aligned */}
-      <FlagButton incident={incident} onFlagIncident={onFlagIncident} />
+      {/* Actions: Flag + Resolve status */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <FlagButton incident={incident} onFlagIncident={onFlagIncident} />
 
-      {/* Row 3: location + time + status */}
+        {resolvedLocal ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontSize: '11px', fontWeight: 600, background: 'rgba(34, 197, 94, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+            <CheckCircle size={11} /> Resolved
+          </div>
+        ) : (
+          account?.address === incident.reporter && incident.suiObjectId && (
+            <button 
+              onClick={handleResolve}
+              disabled={resolving}
+              style={{ 
+                background: 'rgba(34, 197, 94, 0.1)', 
+                border: '1px solid rgba(34, 197, 94, 0.3)', 
+                color: '#22c55e', 
+                fontSize: '11px', 
+                fontWeight: 600, 
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                cursor: resolving ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {resolving ? '...' : 'Resolve'}
+            </button>
+          )
+        )}
+      </div>
+
+      {/* Row 3: location + time */}
       <div
         style={{
           display: 'flex',
@@ -815,7 +905,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
             style={{
               fontSize: '11px',
               color: '#555',
-              maxWidth: '140px',
+              maxWidth: '180px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -824,37 +914,11 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
             {incident.location.address || 'Unknown location'}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {resolvedLocal ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontSize: '11px', fontWeight: 600, background: 'rgba(34, 197, 94, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-              <CheckCircle size={11} /> Resolved
-            </div>
-          ) : (
-            account?.address === incident.reporter && incident.suiObjectId && (
-              <button 
-                onClick={handleResolve}
-                disabled={resolving}
-                style={{ 
-                  background: 'rgba(34, 197, 94, 0.1)', 
-                  border: '1px solid rgba(34, 197, 94, 0.3)', 
-                  color: '#22c55e', 
-                  fontSize: '11px', 
-                  fontWeight: 600, 
-                  padding: '2px 6px', 
-                  borderRadius: '4px',
-                  cursor: resolving ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {resolving ? '...' : 'Resolve'}
-              </button>
-            )
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={11} color="#555" />
-            <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>
-              {formatRelativeTime(incident.createdAt ?? incident.timestamp, now)}
-            </span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <Clock size={11} color="#555" />
+          <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>
+            {formatRelativeTime(incident.createdAt ?? incident.timestamp, now)}
+          </span>
         </div>
       </div>
     </div>
