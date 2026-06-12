@@ -938,9 +938,8 @@ async function rehydrateRegistry(isRetry = false) {
 
         incidentRegistry.set(incident.id, {
           ...incident,
-          // KEY FIX: Old incidents may have bad direct-publisher blob IDs in their JSON payload.
-          // Overwrite with item.blob_id (the reliable MemWal blob ID) so Walruscan links work.
-          walrusBlobId: item.blob_id,
+          // KEY FIX: rehydrated incidents ARE on Walrus — set blobId from the blob we just read
+          walrusBlobId: incident.walrusBlobId || item.blob_id,
           walrusStatus: 'synced',
           flagCount:  incident.flagCount  ?? 0,
           flaggedBy:  incident.flaggedBy  ?? [],
