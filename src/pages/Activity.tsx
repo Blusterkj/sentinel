@@ -26,7 +26,7 @@ interface ActivityProps {
 }
 
 function timeAgo(incident: { createdAt?: string; timestamp: string }): string {
-  const ts = incident.timestamp || incident.createdAt;
+  const ts = incident.timestamp || incident.createdAt || '';
   const diff = Date.now() - new Date(ts).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
@@ -71,7 +71,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
           if (i.createdByMe) return true;
           return false;
         })
-        .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()),
+        .sort((a, b) => new Date(b.timestamp || b.createdAt || '').getTime() - new Date(a.timestamp || a.createdAt || '').getTime()),
     [incidents, address]
   );
 
