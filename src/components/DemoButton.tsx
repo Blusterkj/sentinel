@@ -4,19 +4,18 @@ import type { Incident } from '../types/incident';
 import { PROXY_URL } from '../lib/api';
 
 const INCIDENTS = [
-  { type: 'fire' as const,            severity: 'critical' as const, description: 'Fire reported at a commercial building. Smoke visible from street level.',            address: 'MG Road, Bengaluru',          lat: 12.9716, lng: 77.5946 },
-  { type: 'medical' as const,         severity: 'high' as const,     description: 'Person unconscious near bus stop. Ambulance requested by bystanders.',               address: 'Connaught Place, Delhi',       lat: 28.6315, lng: 77.2167 },
-  { type: 'accident' as const,        severity: 'medium' as const,   description: 'Two-vehicle collision at intersection. Minor injuries reported.',                     address: 'Banjara Hills, Hyderabad',     lat: 17.4126, lng: 78.4483 },
-  { type: 'crime' as const,           severity: 'high' as const,     description: 'Chain snatching reported. Suspects fled on motorcycle.',                              address: 'Salt Lake, Kolkata',           lat: 22.5726, lng: 88.4319 },
-  { type: 'natural_disaster' as const, severity: 'critical' as const, description: 'Waterlogging reported on main road. Vehicles stranded.',                             address: 'Andheri West, Mumbai',         lat: 19.1136, lng: 72.8697 },
-  { type: 'fire' as const,            severity: 'high' as const,     description: 'Gas leak and fire in residential building. Residents evacuating.',                    address: 'Anna Nagar, Chennai',          lat: 13.0827, lng: 80.2707 },
+  { id: 'demo-fire-001', type: 'fire' as const,            severity: 'critical' as const, description: 'Fire reported at a commercial building. Smoke visible from street level.',            address: 'MG Road, Bengaluru',          lat: 12.9716, lng: 77.5946 },
+  { id: 'demo-medical-002', type: 'medical' as const,         severity: 'high' as const,     description: 'Person unconscious near bus stop. Ambulance requested by bystanders.',               address: 'Connaught Place, Delhi',       lat: 28.6315, lng: 77.2167 },
+  { id: 'demo-accident-003', type: 'accident' as const,        severity: 'medium' as const,   description: 'Two-vehicle collision at intersection. Minor injuries reported.',                     address: 'Banjara Hills, Hyderabad',     lat: 17.4126, lng: 78.4483 },
+  { id: 'demo-crime-004', type: 'crime' as const,           severity: 'high' as const,     description: 'Chain snatching reported. Suspects fled on motorcycle.',                              address: 'Salt Lake, Kolkata',           lat: 22.5726, lng: 88.4319 },
+  { id: 'demo-disaster-005', type: 'natural_disaster' as const, severity: 'critical' as const, description: 'Waterlogging reported on main road. Vehicles stranded.',                             address: 'Andheri West, Mumbai',         lat: 19.1136, lng: 72.8697 },
+  { id: 'demo-fire-006', type: 'fire' as const,            severity: 'high' as const,     description: 'Gas leak and fire in residential building. Residents evacuating.',                    address: 'Anna Nagar, Chennai',          lat: 13.0827, lng: 80.2707 },
 ];
 
 export async function buildSimulatedIncident(): Promise<Incident> {
-  const { v4: uuidv4 } = await import('uuid');
   const pick = INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
   const incident: Incident = {
-    id: uuidv4(),
+    id: pick.id,
     type: pick.type,
     severity: pick.severity,
     description: pick.description,

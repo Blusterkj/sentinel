@@ -461,11 +461,18 @@ app.post('/api/reblob', async (req, res) => {
  * NOTE: in-memory only — cleared on every proxy restart (intentional for demo).
  */
 app.get('/api/incidents', (_req, res) => {
-  const seen = new Set();
+  const seenIds = new Set();
+  const seenContent = new Set();
   const list = [...incidentRegistry.values()]
     .filter(i => {
-      if (seen.has(i.id)) return false;
-      seen.add(i.id);
+      if (seenIds.has(i.id)) return false;
+      
+      // Deduplicate simulated/seed duplicates by content
+      const contentKey = `${i.description}|${i.location?.address || ''}`;
+      if (seenContent.has(contentKey)) return false;
+      
+      seenIds.add(i.id);
+      seenContent.add(contentKey);
       return true;
     })
     .sort((a, b) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime());

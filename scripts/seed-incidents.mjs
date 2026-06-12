@@ -17,7 +17,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const INCIDENTS = [
   {
-    id: crypto.randomUUID(),
+    id: 'seed-fire-101',
     type: 'fire',
     severity: 'critical',
     description: 'Major fire reported at a multi-storey commercial complex on MG Road. Thick black smoke visible from over 2km away. Fire tenders have been dispatched and residents in adjacent buildings are being evacuated.',
@@ -27,7 +27,7 @@ const INCIDENTS = [
     status: 'active',
   },
   {
-    id: crypto.randomUUID(),
+    id: 'seed-medical-102',
     type: 'medical',
     severity: 'high',
     description: 'Elderly man collapsed near India Gate metro station. Bystanders performing CPR. Ambulance has been called but has not arrived yet. Patient is unresponsive and requires immediate medical attention.',
@@ -37,7 +37,7 @@ const INCIDENTS = [
     status: 'active',
   },
   {
-    id: crypto.randomUUID(),
+    id: 'seed-accident-103',
     type: 'accident',
     severity: 'high',
     description: 'Serious road accident on the Mumbai-Pune Expressway near Khopoli. Two vehicles involved — one truck and one passenger car. Car is overturned. At least 3 people injured, one critically. Traffic backed up for over 4km.',
@@ -47,7 +47,7 @@ const INCIDENTS = [
     status: 'active',
   },
   {
-    id: crypto.randomUUID(),
+    id: 'seed-disaster-104',
     type: 'natural_disaster',
     severity: 'critical',
     description: 'Flash flooding reported across multiple low-lying areas of Hyderabad following 3 hours of heavy rainfall. Hussain Sagar lake overflow is imminent. Several vehicles stranded on submerged roads. NDRF teams deployed.',
@@ -57,7 +57,7 @@ const INCIDENTS = [
     status: 'active',
   },
   {
-    id: crypto.randomUUID(),
+    id: 'seed-crime-105',
     type: 'crime',
     severity: 'high',
     description: 'Armed robbery reported at a jewellery shop on Park Street, Kolkata. Three masked individuals fled with cash and ornaments estimated at over ₹15 lakhs. Police have been notified and are reviewing CCTV footage from nearby cameras.',
