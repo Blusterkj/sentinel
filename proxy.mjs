@@ -467,17 +467,37 @@ app.post('/api/chat', async (req, res) => {
 
   console.log(`\n🧠 Agent: "${message.slice(0, 80)}${message.length > 80 ? '…' : ''}"`);
 
-  // Step 1: Recall relevant incidents from Walrus
+  // Step 1: Recall relevant incidents from Walrus, then sort by recency
   let recalledContext = '';
   try {
-    const recalled = await memwal.recall(message, 5);
-    console.log(`   🔍 Recalled ${recalled.results.length} incidents from Walrus`);
-    for (const r of recalled.results) {
-      console.log(`      dist: ${r.distance.toFixed(3)}  text: ${r.text.slice(0, 60)}…`);
+    // Fetch more than we need so sorting has enough candidates after filtering
+    const recalled = await memwal.recall(message, 15);
+    console.log(`   🔍 Recalled ${recalled.results.length} blobs from Walrus`);
+
+    // Extract timestamp from the blob text ("Created: <ISO>" line written by /api/store)
+    // Fall back to epoch 0 if the line is missing — ensures missing-timestamp blobs sort last
+    const extractTimestamp = (text) => {
+      const match = (text || '').match(/Created:\s*(\S+)/);
+      if (!match) return 0;
+      const t = Date.parse(match[1]);
+      return isNaN(t) ? 0 : t;
+    };
+
+    // Sort descending: most recently stored incident first
+    const sorted = [...recalled.results].sort(
+      (a, b) => extractTimestamp(b.text) - extractTimestamp(a.text)
+    );
+
+    // Cap at 10 freshest results injected into the context
+    const topN = sorted.slice(0, 10);
+
+    for (const r of topN) {
+      console.log(`      dist: ${r.distance.toFixed(3)}  ts: ${new Date(extractTimestamp(r.text)).toISOString().slice(0,19)}  text: ${r.text.slice(0, 60)}…`);
     }
-    if (recalled.results.length > 0) {
-      recalledContext = `\n\n## RECALLED INCIDENT DATA FROM WALRUS BLOCKCHAIN\nThe following ${recalled.results.length} incidents were retrieved from your on-chain Walrus memory via semantic search. Use this data to answer the user's question with specific facts:\n\n` +
-        recalled.results.map((r, i) => `### Memory ${i + 1} (similarity: ${(1 - r.distance).toFixed(2)})\n${r.text}`).join('\n\n');
+
+    if (topN.length > 0) {
+      recalledContext = `\n\n## RECALLED INCIDENT DATA FROM WALRUS BLOCKCHAIN\nThe following ${topN.length} incidents are sorted from MOST RECENT to oldest. The FIRST entry is the latest incident in the system:\n\n` +
+        topN.map((r, i) => `### Memory ${i + 1} — ${i === 0 ? '⚡ MOST RECENT' : `#${i + 1} by recency`} (similarity: ${(1 - r.distance).toFixed(2)})\n${r.text}`).join('\n\n');
     }
   } catch (err) {
     console.warn(`   ⚠️  Recall failed (non-fatal):`, err.message);
@@ -817,9 +837,9 @@ function isJunkIncident(incident) {
  * Loads ALL historical incidents — both old text-format and new JSONDATA blobs.
  * Makes cross-device sync resilient to Railway restarts AND shows historical data.
  */
-async function rehydrateRegistry() {
+async function rehydrateRegistry(isRetry = false) {
   try {
-    console.log('[SENTINEL] Rehydrating incidentRegistry from MemWal...');
+    console.log(`[SENTINEL] ${isRetry ? '🔄 Retry: r' : 'R'}ehydrating incidentRegistry from MemWal...`);
     // Run two recall queries with different phrasings to maximize coverage
     // MemWal semantic recall may rank some blobs lower — using two queries
     // with limit=200 each catches incidents that would otherwise be missed.
@@ -837,6 +857,17 @@ async function rehydrateRegistry() {
       seen.add(item.blob_id);
       return true;
     });
+
+    // Sort by incident createdAt descending so the registry is loaded newest-first.
+    // This means the first incident registered is the newest, which matters for
+    // display order in GET /api/incidents (already sorted there too, but belt+suspenders).
+    const extractCreatedAt = (item) => {
+      const match = (item.text || '').match(/Created:\s*(\S+)/);
+      if (!match) return 0;
+      const t = Date.parse(match[1]);
+      return isNaN(t) ? 0 : t;
+    };
+    allItems.sort((a, b) => extractCreatedAt(b) - extractCreatedAt(a));
 
     let count = 0;
     let skippedJunk = 0;
@@ -876,6 +907,13 @@ async function rehydrateRegistry() {
 
     console.log(`[SENTINEL] Rehydrated ${count} incidents | skipped ${skippedJunk} junk + ${skippedBlocklist} blocklisted`);
 
+    // Single retry if we got nothing — MemWal may still be warming up after cold start
+    if (count === 0 && !isRetry) {
+      console.log('[SENTINEL] Zero incidents loaded — scheduling one retry in 30s...');
+      setTimeout(() => rehydrateRegistry(true), 30_000);
+      return;
+    }
+
     // Print final registry for verification
     console.log('[SENTINEL] Final incident registry:');
     for (const [id, inc] of incidentRegistry.entries()) {
@@ -883,6 +921,11 @@ async function rehydrateRegistry() {
     }
   } catch (err) {
     console.warn('[SENTINEL] Rehydration skipped:', err.message);
+    // Also retry once on hard error, unless this is already the retry
+    if (!isRetry) {
+      console.log('[SENTINEL] Scheduling rehydration retry in 30s...');
+      setTimeout(() => rehydrateRegistry(true), 30_000);
+    }
   }
 }
 
