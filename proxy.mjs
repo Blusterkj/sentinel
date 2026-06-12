@@ -260,6 +260,37 @@ async function storeOnWalrusPublisher(data) {
   return { blobId, raw: walrusJson };
 }
 
+async function uploadAndVerify(dataBuffer) {
+  const PUBLISHER = 'https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=5';
+  const AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space/v1/blobs';
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const publishRes = await fetch(PUBLISHER, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: dataBuffer
+      });
+      const publishJson = await publishRes.json();
+      const blobId = publishJson.newlyCreated?.blobObject?.blobId
+                  || publishJson.alreadyCertified?.blobId;
+
+      if (!blobId) continue;
+
+      // Poll aggregator for up to 60 seconds (12 x 5s)
+      for (let poll = 0; poll < 12; poll++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const check = await fetch(`${AGGREGATOR}/${blobId}`, { method: 'HEAD' });
+        if (check.ok) return blobId; // confirmed live
+      }
+      // blob never appeared, retry upload
+    } catch (e) {
+      console.error(`Walrus upload attempt ${attempt} failed:`, e.message);
+    }
+  }
+  return null; // all 3 attempts failed, return null
+}
+
 /**
  * POST /api/store
  *
@@ -295,10 +326,15 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
   console.log(`   📍 ${incident.location?.address || 'No address'}`);
 
   try {
-    // ── Step 1: Store directly on Walrus publisher (public, verifiable on Walruscan)
-    const walrusResult = await storeOnWalrusPublisher(cleanIncident);
-    const walrusBlobId = walrusResult.blobId;
-    console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
+    // ── Step 1: Store directly on Walrus publisher with verification
+    const dataBuffer = Buffer.from(JSON.stringify(cleanIncident));
+    const walrusBlobId = await uploadAndVerify(dataBuffer);
+    
+    if (walrusBlobId) {
+      console.log(`   ✅ Walrus publisher → blob: ${walrusBlobId}`);
+    } else {
+      console.warn(`   ⚠️ Walrus publisher failed after 3 attempts. Saving incident without Blob ID for later auto-heal.`);
+    }
 
     // ── Step 2: Store on MemWal for AI memory/recall (runs in parallel, non-blocking)
     let memwalBlobId = null;
@@ -316,7 +352,10 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
     // Use Walrus publisher blob ID as the primary (publicly verifiable) blob ID
     const blobId = walrusBlobId;
-    const txDigest = await anchorOnSui(blobId);
+    let txDigest = undefined;
+    if (blobId) {
+      txDigest = await anchorOnSui(blobId);
+    }
 
     // Persist in in-memory registry for cross-device sync
     // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
