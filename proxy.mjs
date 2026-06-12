@@ -128,7 +128,7 @@ app.use(express.json());
 app.get('/', (_req, res) => {
   res.json({
     service: 'sentinel-proxy',
-    version: '3.0.0',
+    version: '3.1.0',
     routes: [
       'GET  /health',
       'GET  /api/health',
