@@ -870,7 +870,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
             <CheckCircle size={11} /> Resolved
           </div>
         ) : (
-          account?.address === incident.reporter && incident.suiObjectId && (
+          account?.address === incident.reportedBy && incident.suiObjectId && (
             <button 
               onClick={handleResolve}
               disabled={resolving}
@@ -917,7 +917,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Clock size={11} color="#555" />
           <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>
-            {formatRelativeTime(incident.createdAt ?? incident.timestamp, now)}
+            {formatRelativeTime(incident.timestamp || incident.createdAt, now)}
           </span>
         </div>
       </div>

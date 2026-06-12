@@ -26,7 +26,7 @@ interface ActivityProps {
 }
 
 function timeAgo(incident: { createdAt?: string; timestamp: string }): string {
-  const ts = incident.createdAt || incident.timestamp;
+  const ts = incident.timestamp || incident.createdAt;
   const diff = Date.now() - new Date(ts).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
@@ -65,13 +65,13 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         .filter((i) => {
           // Exclude demo/simulated incidents (reportedBy === 'System')
           if (i.isSimulated) return false;
-          // Include if wallet matches reporter field (case-insensitive)
-          if (address && i.reporter && i.reporter.toLowerCase() === address.toLowerCase()) return true;
+          // Include if wallet matches reportedBy field (case-insensitive)
+          if (address && i.reportedBy && i.reportedBy.toLowerCase() === address.toLowerCase()) return true;
           // Include if createdByMe flag is set (local session flag)
           if (i.createdByMe) return true;
           return false;
         })
-        .sort((a, b) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime()),
+        .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()),
     [incidents, address]
   );
 

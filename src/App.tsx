@@ -108,7 +108,7 @@ export default function App() {
   const address = account?.address || inAppAddress;
   const myIncidentCount = incidents.filter(i =>
     !i.isSimulated && (
-      (address && i.reporter && i.reporter.toLowerCase() === address.toLowerCase()) ||
+      (address && i.reportedBy && i.reportedBy.toLowerCase() === address.toLowerCase()) ||
       i.createdByMe
     )
   ).length;

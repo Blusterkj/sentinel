@@ -475,7 +475,7 @@ app.get('/api/incidents', (_req, res) => {
       seenContent.add(contentKey);
       return true;
     })
-    .sort((a, b) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime());
+    .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime());
   console.log('[SENTINEL] GET /api/incidents — returning', list.length, 'incidents');
   // Strip flaggedBy array from response (keep flagCount only)
   const sanitized = list.map(({ flaggedBy, ...rest }) => rest);
