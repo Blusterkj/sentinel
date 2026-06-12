@@ -421,8 +421,15 @@ app.post('/api/reblob', async (req, res) => {
 
   try {
     const { walrusStatus: _ws, createdByMe: _cm, walrusBlobId: _oldWb, suiTxDigest: _oldSt, flagCount: _oldFc, flaggedBy: _oldFb, ...cleanIncident } = incident;
-    const walrusResult = await storeOnWalrusPublisher(cleanIncident);
-    const newBlobId = walrusResult.blobId;
+    const dataBuffer = Buffer.from(JSON.stringify(cleanIncident));
+    const newBlobId = await uploadAndVerify(dataBuffer);
+
+    if (!newBlobId) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Walrus testnet unavailable — try again in a moment' 
+      });
+    }
 
     // Update in-memory registry
     incident.walrusBlobId = newBlobId;
