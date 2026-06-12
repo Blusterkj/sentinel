@@ -53,6 +53,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
   // Use whichever wallet is active — dapp-kit takes precedence
   const walletAddress = account?.address ?? inAppAddress ?? undefined;
   const [type, setType] = useState<IncidentType>('other');
+  const [hoveredType, setHoveredType] = useState<IncidentType | null>(null);
   const [severity, setSeverity] = useState<Severity>('medium');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
@@ -194,6 +195,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
       },
       timestamp: new Date().toISOString(),
       reportedBy: 'You',
+      reporter: walletAddress || undefined,
       status: 'active',
       createdByMe: true,
     };
@@ -203,73 +205,71 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
     try {
       // Store on Walrus via the proxy (bypasses CORS)
-      let blobId: string | null = null;
       let txDigest: string | null = null;
       let suiObjectId: string | undefined = undefined;
-      
-      try {
-        const storeRes = await fetch(`${PROXY_URL}/api/store`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(incident),
-        });
-        const storeData = await storeRes.json();
-        if (storeData.success && storeData.blobId) {
-          blobId = storeData.blobId;
-          if (storeData.createdAt) {
-            incident = { ...incident, createdAt: storeData.createdAt };
-          }
 
-          // Step B & C — Sui on-chain anchor (only when dapp-kit wallet connected)
-          if (account) {
-            try {
-              const tx = new Transaction();
-              tx.moveCall({
-                target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-                arguments: [
-                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
-                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
-                  tx.object('0x6'), // Clock object ID on Sui
-                ],
-              });
-              const txResult = await signAndExecute({ transaction: tx });
-              txDigest = txResult.digest;
+      const storeRes = await fetch(`${PROXY_URL}/api/store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(incident),
+      });
+      const storeData = await storeRes.json();
+      const blobId = storeData?.blobId ?? null;
 
-              try {
-                const txRes = await suiClient.waitForTransaction({
-                  digest: txDigest,
-                  options: { showObjectChanges: true },
-                });
-                if (txRes.objectChanges) {
-                   const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
-                   if (createdObj && 'objectId' in createdObj) {
-                     suiObjectId = createdObj.objectId;
-                   }
-                }
-              } catch (e) {
-                console.warn("Could not fetch object changes", e);
-              }
-            } catch (txErr) {
-              console.warn('Sui anchor failed (non-blocking, Walrus store succeeded):', txErr);
-            }
-          }
-
-          // Save blob ID mapping to localStorage so Memory page picks it up
-          try {
-            const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
-            blobMap[incident.id] = blobId;
-            localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
-          } catch {}
-        }
-      } catch (storeErr) {
-        console.warn('Proxy store failed (incident saved locally):', storeErr);
+      if (!blobId) {
+        throw new Error('Walrus store failed: no blobId returned');
       }
+
+      if (storeData.createdAt) {
+        incident = { ...incident, createdAt: storeData.createdAt };
+      }
+
+      // Step B & C — Sui on-chain anchor (only when dapp-kit wallet connected)
+      if (account) {
+        try {
+          const tx = new Transaction();
+          tx.moveCall({
+            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
+            arguments: [
+              tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId))),
+              tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
+              tx.object('0x6'), // Clock object ID on Sui
+            ],
+          });
+          const txResult = await signAndExecute({ transaction: tx });
+          txDigest = txResult.digest;
+
+          try {
+            const txRes = await suiClient.waitForTransaction({
+              digest: txDigest,
+              options: { showObjectChanges: true },
+            });
+            if (txRes.objectChanges) {
+               const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
+               if (createdObj && 'objectId' in createdObj) {
+                 suiObjectId = createdObj.objectId;
+               }
+            }
+          } catch (e) {
+            console.warn("Could not fetch object changes", e);
+          }
+        } catch (txErr) {
+          console.warn('Sui anchor failed (non-blocking, Walrus store succeeded):', txErr);
+        }
+      }
+
+      // Save blob ID mapping to localStorage so Memory page picks it up
+      try {
+        const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
+        blobMap[incident.id] = blobId;
+        localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
+      } catch {}
 
       // Apply blob ID to incident before registering
       const storedIncident: Incident = {
         ...incident,
-        walrusBlobId: blobId || undefined,
-        walrusStatus: blobId ? 'synced' : 'pending',
+        walrusBlobId: blobId,
+        walrusStatus: 'synced',
         suiTxDigest: txDigest || undefined,
         suiObjectId: suiObjectId || undefined,
         reporter: walletAddress,
@@ -399,31 +399,54 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           INCIDENT TYPE
         </label>
         <div className="mobile-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
-          {INCIDENT_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setType(t.value)}
-              style={{
-                padding: '10px 8px',
-                borderRadius: '8px',
-                border: type === t.value ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid #1f1f1f',
-                background: type === t.value ? 'rgba(59, 130, 246, 0.1)' : '#111',
-                color: type === t.value ? '#3b82f6' : '#888',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.15s',
-                fontSize: '11px',
-                fontWeight: type === t.value ? 600 : 400,
-              }}
-            >
-              <span style={{ fontSize: '20px' }}>{t.icon}</span>
-              {t.label.split(' ')[0]}
-            </button>
-          ))}
+          {INCIDENT_TYPES.map((t) => {
+            const isSelected = type === t.value;
+            const isHovered = hoveredType === t.value;
+            const isActive = isSelected || isHovered;
+            
+            const TYPE_ACCENTS: Record<string, string> = {
+              medical: '#a78bfa',
+              fire: '#f97316',
+              crime: '#ef4444',
+              accident: '#facc15',
+              natural_disaster: '#60a5fa',
+              other: '#f59e0b',
+            };
+            const accentColor = TYPE_ACCENTS[t.value];
+
+            return (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setType(t.value)}
+                onMouseEnter={() => setHoveredType(t.value as IncidentType)}
+                onMouseLeave={() => setHoveredType(null)}
+                style={{
+                  padding: isActive ? '8px 8px 10px 8px' : '10px 8px',
+                  borderRadius: '8px',
+                  borderBottom: isSelected ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  borderLeft: isSelected ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRight: isSelected ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  borderTop: isActive ? `3px solid ${accentColor}` : (isSelected ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid rgba(255, 255, 255, 0.12)'),
+                  background: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'linear-gradient(145deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.95))',
+                  color: isSelected ? '#3b82f6' : '#888',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: isHovered ? 'scale(1.03) translateY(-2px)' : 'scale(1) translateY(0)',
+                  boxShadow: isHovered ? '0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)' : (isSelected ? 'none' : '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'),
+                  fontSize: '11px',
+                  fontWeight: isSelected ? 600 : 400,
+                }}
+              >
+                <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                {t.value === 'natural_disaster' ? 'Natural Disaster' : t.label.split(' ')[0]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -440,16 +463,20 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               key={s.value}
               type="button"
               onClick={() => setSeverity(s.value)}
+              className="hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
               style={{
                 flex: 1,
                 padding: '12px 10px',
                 borderRadius: '8px',
                 border: severity === s.value
                   ? `1px solid ${s.color}60`
-                  : '1px solid #1f1f1f',
+                  : '1px solid rgba(255, 255, 255, 0.12)',
                 background: severity === s.value
                   ? `${s.color}12`
-                  : '#111',
+                  : 'linear-gradient(145deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.95))',
+                boxShadow: severity === s.value
+                  ? 'none'
+                  : '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 textAlign: 'center' as const,
@@ -567,6 +594,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
               type="button"
               onClick={handleGetLocation}
               disabled={formState === 'locating'}
+              className="hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
               style={{
                 padding: '10px 14px',
                 background: coords ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
@@ -667,7 +695,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
         <button
           type="submit"
           id="submit-incident-btn"
-                disabled={formState === 'submitting' || formState === 'locating'}
+          disabled={formState === 'submitting' || formState === 'locating'}
+          className="hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(59,130,246,0.3)] transition-all duration-300"
           style={{
             width: '100%',
             padding: '14px',

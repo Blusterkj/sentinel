@@ -275,20 +275,22 @@ async function uploadAndVerify(dataBuffer) {
       const blobId = publishJson.newlyCreated?.blobObject?.blobId
                   || publishJson.alreadyCertified?.blobId;
 
+      console.log(`[SENTINEL] Walrus upload attempt ${attempt}, blobId: ${blobId}`);
       if (!blobId) continue;
 
-      // Poll aggregator for up to 60 seconds (12 x 5s)
-      for (let poll = 0; poll < 12; poll++) {
-        await new Promise(r => setTimeout(r, 5000));
+      // Poll aggregator for up to 18s (6 x 3s)
+      for (let poll = 0; poll < 6; poll++) {
+        await new Promise(r => setTimeout(r, 3000));
         const check = await fetch(`${AGGREGATOR}/${blobId}`, { method: 'HEAD' });
+        console.log(`[SENTINEL] Aggregator poll ${poll+1}/6 for ${blobId}: ${check.status}`);
         if (check.ok) return blobId; // confirmed live
       }
-      // blob never appeared, retry upload
+      // blob never appeared on aggregator — retry upload
     } catch (e) {
-      console.error(`Walrus upload attempt ${attempt} failed:`, e.message);
+      console.error(`[SENTINEL] Upload attempt ${attempt} error:`, e.message);
     }
   }
-  return null; // all 3 attempts failed, return null
+  return null; // all 3 attempts failed
 }
 
 /**
@@ -306,6 +308,13 @@ app.post('/api/store', async (req, res) => {
   };
   if (!incident.id || !incident.description) {
     return res.status(400).json({ success: false, error: 'Invalid incident data' });
+  }
+
+  // Idempotency guard — skip if already stored (prevents double-add from client retries)
+  if (incidentRegistry.has(incident.id)) {
+    const existing = incidentRegistry.get(incident.id);
+    const { flaggedBy: _fb, ...sanitized } = existing;
+    return res.json({ success: true, blobId: existing.walrusBlobId, tx_digest: existing.suiTxDigest, createdAt: existing.createdAt, _note: 'already_exists' });
   }
 
   // Strip client-only fields for clean storage
@@ -366,6 +375,7 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       suiTxDigest: txDigest || undefined,
       flagCount: 0,
       flaggedBy: [],
+      isSimulated: incident.reportedBy === 'System' || incident.reportedBy === 'SOS' ? true : false,
     };
     incidentRegistry.set(incident.id, storedIncident);
 
@@ -450,8 +460,14 @@ app.post('/api/reblob', async (req, res) => {
  * NOTE: in-memory only — cleared on every proxy restart (intentional for demo).
  */
 app.get('/api/incidents', (_req, res) => {
+  const seen = new Set();
   const list = [...incidentRegistry.values()]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .filter(i => {
+      if (seen.has(i.id)) return false;
+      seen.add(i.id);
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime());
   console.log('[SENTINEL] GET /api/incidents — returning', list.length, 'incidents');
   // Strip flaggedBy array from response (keep flagCount only)
   const sanitized = list.map(({ flaggedBy, ...rest }) => rest);
@@ -1007,6 +1023,8 @@ async function rehydrateRegistry(isRetry = false) {
           walrusStatus: 'synced',
           flagCount:  incident.flagCount  ?? 0,
           flaggedBy:  incident.flaggedBy  ?? [],
+          // Mark as simulated/historical so My Activity can filter them out
+          isSimulated: !incident.reporter || incident.reportedBy === 'System',
         });
         console.log(`   ✅ Loaded: [${incident.id}] "${(incident.description || '').slice(0, 60)}"`);
         count++;

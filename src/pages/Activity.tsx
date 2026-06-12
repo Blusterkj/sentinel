@@ -5,6 +5,7 @@ import React, { useMemo } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import type { Incident } from '../types/incident';
+import { useAuthStore } from '../lib/authStore';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import {
   User,
@@ -24,9 +25,11 @@ interface ActivityProps {
   onNavigateReport?: () => void;
 }
 
-function timeAgo(timestamp: string): string {
-  const diff = Date.now() - new Date(timestamp).getTime();
+function timeAgo(incident: { createdAt?: string; timestamp: string }): string {
+  const ts = incident.createdAt || incident.timestamp;
+  const diff = Date.now() - new Date(ts).getTime();
   const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
@@ -53,13 +56,22 @@ const TYPE_LABELS: Record<string, string> = {
 
 export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport }) => {
   const account = useCurrentAccount();
-  const address = account?.address;
+  const { address: inAppAddress } = useAuthStore();
+  const address = account?.address || inAppAddress;
 
   const myIncidents = useMemo(
     () =>
       incidents
-        .filter((i) => i.reporter === address || i.createdByMe)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+        .filter((i) => {
+          // Exclude simulated/seed incidents
+          if (i.isSimulated) return false;
+          // Include if wallet matches reporter field (case-insensitive)
+          if (address && i.reporter && i.reporter.toLowerCase() === address.toLowerCase()) return true;
+          // Include if createdByMe flag is set
+          if (i.createdByMe) return true;
+          return false;
+        })
+        .sort((a, b) => new Date(b.createdAt || b.timestamp).getTime() - new Date(a.createdAt || a.timestamp).getTime()),
     [incidents, address]
   );
 
@@ -79,7 +91,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         style={{
           padding: '16px 24px',
           borderBottom: '1px solid #1a1a1a',
-          background: '#0d0d0d',
+          background: 'transparent',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
@@ -127,18 +139,19 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         </div>
       </div>
 
-      {/* Stats row */}
-      <div
-        className="mobile-stat-grid-4"
-        style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '20px',
-          padding: '24px',
-          background: '#0a0a0a', 
-          flexShrink: 0 
-        }}
-      >
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Stats row */}
+        <div
+          className="mobile-stat-grid-4"
+          style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '20px',
+            padding: '24px',
+            background: 'transparent', 
+            flexShrink: 0 
+          }}
+        >
         <StatCard
           icon={<FileText size={14} color="#8b5cf6" />}
           label="Total Reported"
@@ -163,10 +176,10 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
           value={String(blobCount)}
           color="#a78bfa"
         />
-      </div>
+        </div>
 
-      {/* Incident list */}
-      <div className="px-6 pt-2 pb-[120px] md:pb-6" style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Incident list */}
+        <div className="px-6 pt-2" style={{ paddingBottom: '80px' }}>
         {myIncidents.length === 0 ? (
           <div
             style={{
@@ -223,6 +236,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         )}
       </div>
     </div>
+  </div>
   );
 };
 
@@ -235,7 +249,6 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [resolving, setResolving] = React.useState(false);
   const [resolvedLocal, setResolvedLocal] = React.useState(incident.status === 'resolved');
-  const [hovered, setHovered] = React.useState(false);
 
   React.useEffect(() => {
     setResolvedLocal(incident.status === 'resolved');
@@ -243,18 +256,33 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
 
   const handleResolve = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!incident.suiObjectId) return;
     setResolving(true);
     try {
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::resolve_incident`,
-        arguments: [tx.object(incident.suiObjectId)],
-      });
-      await signAndExecute({ transaction: tx });
-      setResolvedLocal(true);
+      // Use proxy resolve endpoint (works for all incidents, not just Sui-anchored ones)
+      const { PROXY_URL } = await import('../lib/api');
+      const res = await fetch(`${PROXY_URL}/api/incidents/${incident.id}/resolve`, { method: 'POST' });
+      if (res.ok) {
+        setResolvedLocal(true);
+      } else {
+        throw new Error('Resolve failed');
+      }
     } catch (err: any) {
-      alert(`Error resolving: ${err.message}`);
+      // Fallback to Sui if proxy fails and we have a suiObjectId
+      if (incident.suiObjectId) {
+        try {
+          const tx = new Transaction();
+          tx.moveCall({
+            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::resolve_incident`,
+            arguments: [tx.object(incident.suiObjectId)],
+          });
+          await signAndExecute({ transaction: tx });
+          setResolvedLocal(true);
+        } catch (suiErr: any) {
+          alert(`Error resolving: ${suiErr.message}`);
+        }
+      } else {
+        alert(`Error resolving: ${err.message}`);
+      }
     } finally {
       setResolving(false);
     }
@@ -267,28 +295,31 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
 
   return (
     <div
-      className="fade-in-up"
+      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(59,130,246,0.08)] hover:shadow-[0_8px_24px_rgba(59,130,246,0.15)] hover:border-transparent`}
       style={{
-        background: hovered ? 'rgba(255,255,255,0.025)' : 'transparent',
-        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
-        padding: '16px 4px',
+        borderRadius: '8px',
+        padding: '16px 14px',
         display: 'flex',
         alignItems: 'flex-start',
         gap: '14px',
         animationDelay: `${index * 30}ms`,
-        transition: 'background 0.15s ease',
         cursor: 'pointer',
+        marginBottom: isLast ? '0' : '4px',
+        overflow: 'hidden',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       onClick={() => {
         window.history.pushState({}, '', '/dashboard');
         window.dispatchEvent(new Event('popstate'));
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('selectIncident', { detail: incident }));
-        }, 100);
+          window.dispatchEvent(
+            new CustomEvent('selectIncident', { detail: incident })
+          );
+        }, 200);
       }}
     >
+      {/* Left accent bar on hover */}
+      <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-[rgba(59,130,246,0.6)] transition-colors duration-300" />
+      
       {/* Type icon */}
       <div
         style={{
@@ -333,43 +364,27 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
               <CheckCircle size={10} /> Resolved
             </span>
           ) : (
-            incident.suiObjectId && (
-              <button
-                onClick={handleResolve}
-                disabled={resolving}
-                style={{
-                  background: 'rgba(34,197,94,0.1)',
-                  border: '1px solid rgba(34,197,94,0.3)',
-                  color: '#22c55e',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  padding: '2px 7px',
-                  borderRadius: '4px',
-                  cursor: resolving ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                {resolving ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : null}
-                {resolving ? 'Resolving…' : 'Resolve'}
-              </button>
-            )
+            <button
+              onClick={handleResolve}
+              disabled={resolving}
+              style={{
+                background: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                color: '#22c55e',
+                fontSize: '10px',
+                fontWeight: 600,
+                padding: '2px 7px',
+                borderRadius: '4px',
+                cursor: resolving ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              {resolving ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+              {resolving ? 'Resolving…' : 'Resolve'}
+            </button>
           )}
-          <span
-            style={{
-              marginLeft: 'auto',
-              fontSize: '10px',
-              color: '#555',
-              fontFamily: 'monospace',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            <Clock size={10} /> {timeAgo(incident.timestamp)}
-          </span>
         </div>
 
         {/* Description */}
@@ -429,6 +444,24 @@ const ActivityCard: React.FC<{ incident: Incident; index: number; isLast?: boole
           )}
         </div>
       </div>
+
+      {/* Right Column: Time */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start', flexShrink: 0, paddingLeft: '8px' }}>
+        <span
+          style={{
+            fontSize: '10px',
+            color: '#555',
+            fontFamily: 'monospace',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginTop: '2px',
+          }}
+        >
+          <Clock size={10} /> {timeAgo(incident)}
+        </span>
+      </div>
     </div>
   );
 };
@@ -442,8 +475,10 @@ const StatCard: React.FC<{
 }> = ({ icon, label, value, color }) => (
   <div
     style={{
-      background: '#111',
-      borderRadius: '12px',
+      background: 'linear-gradient(145deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.95))',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+      borderRadius: '16px',
       padding: '24px 24px',
       display: 'flex',
       flexDirection: 'column',

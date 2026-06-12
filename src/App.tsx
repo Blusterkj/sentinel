@@ -49,6 +49,7 @@ const NAV_ITEMS: {
   icon: React.ReactNode;
   badge?: string;
   path: string;
+  count?: number;
 }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dashboard' },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, path: '/analytics' },
@@ -103,6 +104,15 @@ export default function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Count of user's own real incidents (for sidebar badge)
+  const address = account?.address || inAppAddress;
+  const myIncidentCount = incidents.filter(i =>
+    !i.isSimulated && (
+      (address && i.reporter && i.reporter.toLowerCase() === address.toLowerCase()) ||
+      i.createdByMe
+    )
+  ).length;
+
   const fetchIncidents = useCallback(async () => {
     try {
       const url = `${PROXY_URL}/api/incidents`;
@@ -115,7 +125,7 @@ export default function App() {
         // Merge: keep any optimistic local-only incidents (no walrusBlobId yet)
         // that haven't been echoed back from the proxy yet
         const fetchedIds = new Set(fetched.map((i) => i.id));
-        const localOnly = prev.filter((i) => !fetchedIds.has(i.id));
+        const localOnly = prev.filter((i) => !fetchedIds.has(i.id) && !i.walrusBlobId);
         return [...localOnly, ...fetched];
       });
     } catch {
@@ -230,14 +240,6 @@ export default function App() {
     );
   }, []);
 
-  const deleteIncident = useCallback((id: string) => {
-    // Optimistic local remove
-    setIncidents((prev) => prev.filter((inc) => inc.id !== id));
-    // Tell proxy → it broadcasts INCIDENT_DELETED to all other clients
-    fetch(`${PROXY_URL}/api/incidents/${id}/delete`, { method: 'POST' }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const resolveIncident = useCallback((id: string) => {
     // Optimistic local update
     setIncidents((prev) =>
@@ -310,24 +312,27 @@ export default function App() {
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowWalletMenu((v) => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer' }}
+              className="hover:bg-white/[0.08] hover:shadow-[0_0_12px_rgba(111,188,240,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}
             >
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink: 0}}>
+                <path d="M12 2L20 8.5V15.5L12 22L4 15.5V8.5L12 2Z" fill="#6fbcf0"/>
+                <path d="M12 6L17 9.5V14.5L12 18L7 14.5V9.5L12 6Z" fill="white" opacity="0.4"/>
+              </svg>
               <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
                 {account.address.slice(0, 6)}...{account.address.slice(-4)}
               </span>
             </button>
 
             {showWalletMenu && (
-              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '4px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 <button
                   onClick={() => {
                     disconnect();
                     setShowWalletMenu(false);
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left', transition: 'background 0.2s' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.1)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                  className="bg-transparent text-red-500 hover:text-white hover:bg-red-700 hover:shadow-[0_0_12px_rgba(239,68,68,0.6)] hover:scale-[1.02] active:scale-[0.97] transition-all duration-200"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left' }}
                 >
                   <LogOut size={14} /> Disconnect
                 </button>
@@ -339,9 +344,13 @@ export default function App() {
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowWalletMenu((v) => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer' }}
+              className="hover:bg-white/[0.08] hover:shadow-[0_0_12px_rgba(111,188,240,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}
             >
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', boxShadow: '0 0 8px #8b5cf6' }} />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink: 0}}>
+                <path d="M12 2L20 8.5V15.5L12 22L4 15.5V8.5L12 2Z" fill="#6fbcf0"/>
+                <path d="M12 6L17 9.5V14.5L12 18L7 14.5V9.5L12 6Z" fill="white" opacity="0.4"/>
+              </svg>
               <span style={{ color: '#fff', fontSize: '14px', fontFamily: 'monospace' }}>
                 {inAppAddress.slice(0, 6)}...{inAppAddress.slice(-4)}
               </span>
@@ -350,12 +359,11 @@ export default function App() {
               </span>
             </button>
             {showWalletMenu && (
-              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '4px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+              <div className="fade-in-up" style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0px', minWidth: '160px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 <button
                   onClick={async () => { await clearWallet(); clearAuth(); setShowWalletMenu(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.1)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                  className="bg-transparent text-red-500 hover:text-white hover:bg-red-700 hover:shadow-[0_0_12px_rgba(239,68,68,0.6)] hover:scale-[1.02] active:scale-[0.97] transition-all duration-200"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, textAlign: 'left' }}
                 >
                   <LogOut size={14} /> Disconnect
                 </button>
@@ -367,15 +375,22 @@ export default function App() {
           <button
             id="desktop-signin-btn"
             onClick={() => setShowDesktopAuthModal(true)}
+            className="transition-smooth"
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 16px', background: '#1a1a1a',
               border: '1px solid #333', borderRadius: '8px',
               color: '#fff', fontSize: '14px', fontWeight: 600,
-              cursor: 'pointer', transition: 'background 0.15s',
+              cursor: 'pointer',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#252525'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a'; }}
+            onMouseEnter={(e) => { 
+              (e.currentTarget as HTMLButtonElement).style.background = '#252525';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(255,255,255,0.08)';
+            }}
+            onMouseLeave={(e) => { 
+              (e.currentTarget as HTMLButtonElement).style.background = '#1a1a1a';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+            }}
           >
             <Wallet size={15} />
             Sign In
@@ -502,41 +517,36 @@ export default function App() {
                   alignItems: 'center',
                   padding: '10px',
                   borderRadius: '8px',
-                  border: isReport && !isActive
-                    ? '1px solid rgba(239, 68, 68, 0.2)'
-                    : isActive
-                    ? '1px solid rgba(59, 130, 246, 0.3)'
+                  border: isActive
+                    ? '1px solid rgba(255, 255, 255, 0.1)'
                     : '1px solid transparent',
                   background: isActive
-                    ? 'rgba(59, 130, 246, 0.1)'
-                    : isReport && !isActive
-                    ? 'rgba(239, 68, 68, 0.05)'
+                    ? 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))'
                     : 'transparent',
                   color: isActive
-                    ? '#3b82f6'
-                    : isReport && !isActive
+                    ? '#ffffff'
+                    : isReport
                     ? '#ef4444'
                     : '#666',
                   cursor: 'pointer',
                   marginBottom: '4px',
-                  transition: 'all 0.15s',
+                  transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  boxShadow: isActive ? '-3px 0 12px rgba(255, 255, 255, 0.2)' : 'none',
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      isReport ? 'rgba(239, 68, 68, 0.08)' : '#151515';
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      isReport ? '#ef4444' : '#ccc';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)';
+                    (e.currentTarget as HTMLButtonElement).style.color = isReport ? '#ef4444' : '#ccc';
+                    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      isReport ? 'rgba(239, 68, 68, 0.05)' : 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      isReport ? '#ef4444' : '#666';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = isReport ? '#ef4444' : '#666';
+                    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
                   }
                 }}
                 title={sidebarCollapsed ? item.label : undefined}
@@ -574,6 +584,24 @@ export default function App() {
                       }}
                     >
                       {item.badge}
+                    </span>
+                  )}
+                  {item.id === 'activity' && myIncidentCount > 0 && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        color: '#22c55e',
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        marginLeft: '8px',
+                        minWidth: '18px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {myIncidentCount}
                     </span>
                   )}
                 </div>
@@ -667,7 +695,6 @@ export default function App() {
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
             onResolveIncident={resolveIncident}
-            onDeleteIncident={deleteIncident}
             onFlagIncident={handleFlagIncident}
             sidebarCollapsed={sidebarCollapsed}
           />

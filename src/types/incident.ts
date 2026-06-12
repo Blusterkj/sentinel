@@ -45,6 +45,8 @@ export interface Incident {
   flaggedByMe?: boolean;
   /** Wallet addresses that flagged this incident — only present on detailed response, not in list */
   flaggedBy?: string[];
+  /** True for seed/simulated/system-generated incidents — excluded from My Activity */
+  isSimulated?: boolean;
 }
 
 export interface RecalledMemory {
