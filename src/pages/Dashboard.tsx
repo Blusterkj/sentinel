@@ -56,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
     return DEFAULT_CENTER;
   });
-  const [userLocation, setUserLocation] = useState<[number, number]>(DEFAULT_CENTER);
+  const [userLocation, setUserLocation] = useState<[number, number]>(() => userLocationFromStore || DEFAULT_CENTER);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<Incident[] | null>(null);
   const [locationObtained, setLocationObtained] = useState(false);
