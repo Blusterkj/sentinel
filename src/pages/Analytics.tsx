@@ -274,11 +274,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ incidents }) => {
           {hotspots.length === 0 ? (
             <p style={{ color: '#555', fontSize: 13 }}>No hotspot data yet.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
               {hotspots.map(([address, count], idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#555', width: 18 }}>#{idx + 1}</span>
-                  <span style={{ fontSize: '13px', color: '#ddd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</span>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a', minWidth: 0 }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#555', width: 18, flexShrink: 0 }}>#{idx + 1}</span>
+                  <span style={{ fontSize: '13px', color: '#ddd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{address}</span>
                   <span style={{ fontSize: '12px', fontWeight: 600, background: 'rgba(59,130,246,0.1)', color: '#3b82f6', padding: '3px 10px', borderRadius: '999px', flexShrink: 0 }}>{count}</span>
                 </div>
               ))}

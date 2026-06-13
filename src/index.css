@@ -219,6 +219,11 @@ body {
   .mobile-chart-grid,
   .mobile-two-col-grid {
     grid-template-columns: 1fr !important;
+    min-width: 0 !important;
+  }
+  
+  .mobile-chart-card {
+    min-width: 0 !important;
   }
 
   /* ── Memory / Analytics filter bar: allow wrapping ── */
@@ -340,7 +345,7 @@ body {
   /* ── Analytics: clip any overflow at the container level ── */
   .mobile-analytics-container {
     overflow-x: hidden !important;
-    padding: 16px 12px 100px !important;
+    padding: 16px 12px 200px !important;
   }
 
   /* ── Analytics subtitle: close the gap below it ── */
