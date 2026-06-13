@@ -76,6 +76,19 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
 function cleanupRegistry() {
   console.log('[SENTINEL] Running post-rehydration cleanup (dedup + renumber)...');
   
+  // Step 0: Permanently remove simulated/demo incidents
+  [...incidentRegistry.values()].forEach(inc => {
+    if (
+      inc.isSimulated === true ||
+      inc.reportedBy === 'System' ||
+      inc.id.startsWith('sim-') ||
+      inc.id.startsWith('demo-')
+    ) {
+      incidentRegistry.delete(inc.id);
+      console.log(`[SENTINEL] Removed simulated: ${inc.id}`);
+    }
+  });
+
   // Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
   const descSeen = new Map();
   [...incidentRegistry.values()]
