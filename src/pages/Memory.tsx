@@ -79,7 +79,7 @@ const CustomSelect: React.FC<{
           outline: 'none',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{selectedOption?.label}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>{selectedOption?.label}</span>
         <ChevronDown size={14} color="#888" style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
       </button>
 
@@ -129,6 +129,7 @@ const CustomSelect: React.FC<{
                   fontWeight: 500,
                   cursor: 'pointer',
                   textAlign: 'left',
+                  whiteSpace: 'nowrap',
                   transition: 'background 0.1s, color 0.1s',
                 }}
                 onMouseEnter={(e) => {
