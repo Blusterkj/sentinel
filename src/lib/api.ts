@@ -7,8 +7,8 @@
 //      even if the env var is missing from the Vercel build)
 //   3. localhost:3333 only used when running locally AND the env var is absent
 
-const RAILWAY_HTTP = 'https://sentinel-proxy-production.up.railway.app';
-const RAILWAY_WSS  = 'wss://sentinel-proxy-production.up.railway.app';
+const RAILWAY_HTTP = 'https://sentinelproduction.up.railway.app';
+const RAILWAY_WSS  = 'wss://sentinelproduction.up.railway.app';
 
 const isLocalhost =
   typeof window !== 'undefined' && window.location.hostname.includes('localhost');

@@ -237,7 +237,7 @@ body {
   .mobile-memory-list {
     flex: none !important;
     overflow-y: visible !important;
-    padding-bottom: 160px !important; /* tab bar + SOS + breathing room */
+    padding-bottom: 100px !important; /* increased so the last item scrolls past the SOS button */
   }
 
   /* ── Memory result count: sit inline with filters, not pushed to far right ── */
@@ -381,7 +381,7 @@ body {
 
   /* ── IncidentForm: form itself ── */
   .mobile-report-form {
-    padding: 16px !important;
+    padding: 16px 16px 0px 16px !important;
     overflow-x: hidden !important;
   }
 
@@ -401,7 +401,7 @@ body {
 
   /* ── IncidentForm: submit button area — extra bottom margin so it clears tab bar + nav bar ── */
   .mobile-submit-area {
-    margin-bottom: 120px !important;
+    margin-bottom: 80px !important;
   }
 
   /* ── Report header: tighter padding on mobile ── */

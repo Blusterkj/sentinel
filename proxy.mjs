@@ -27,10 +27,28 @@ import os from 'os';
 // Connected sessions: Map<sessionId, { ws, lat, lng }>
 const sessions = new Map();
 
-// In-memory incident registry — keyed by incident ID.
-// NOTE: Deliberately in-memory. Railway restarts / crashes clear this map.
-// That is acceptable for the hackathon demo. Do NOT add file/DB persistence here.
-const incidentRegistry = new Map();
+// Incident registry — keyed by incident ID.
+// Replaced in-memory map with a JSON file persistence to survive Railway restarts.
+const DATA_FILE = '/app/data/incidents.json';
+let initialData = [];
+try {
+  fs.mkdirSync('/app/data', { recursive: true });
+  if (fs.existsSync(DATA_FILE)) {
+    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    initialData = JSON.parse(raw);
+  }
+} catch (e) {
+  console.error("Failed to load /app/data/incidents.json", e);
+}
+const incidentRegistry = new Map(initialData);
+
+function saveIncidentRegistry() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([...incidentRegistry.entries()], null, 2));
+  } catch (e) {
+    console.error("Failed to save /app/data/incidents.json", e);
+  }
+}
 
 // WebSocket server — assigned in the Start section below.
 // Declared here so route handlers can broadcast without circular references.
@@ -313,8 +331,18 @@ app.post('/api/store', async (req, res) => {
   // Idempotency guard — skip if already stored (prevents double-add from client retries)
   if (incidentRegistry.has(incident.id)) {
     const existing = incidentRegistry.get(incident.id);
+    
+    // Update timestamps so it pops to the top in the demo
+    existing.createdAt = incident.createdAt;
+    if (incident.timestamp) existing.timestamp = incident.timestamp;
+    
     const { flaggedBy: _fb, ...sanitized } = existing;
-    return res.json({ success: true, blobId: existing.walrusBlobId, tx_digest: existing.suiTxDigest, createdAt: existing.createdAt, _note: 'already_exists' });
+    saveIncidentRegistry();
+    
+    // Broadcast update so all clients move it to the top
+    broadcast({ type: 'INCIDENT_UPDATED', incident: sanitized });
+    
+    return res.json({ success: true, blobId: existing.walrusBlobId, tx_digest: existing.suiTxDigest, createdAt: existing.createdAt, _note: 'already_exists_updated' });
   }
 
   // Strip client-only fields for clean storage
@@ -379,6 +407,7 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       isSimulated: incident.reportedBy === 'System',
     };
     incidentRegistry.set(incident.id, storedIncident);
+    saveIncidentRegistry();
 
     // Broadcast to all WebSocket clients for instant cross-device sync
     console.log('[SENTINEL] Broadcasting NEW_INCIDENT to', wss ? wss.clients.size : 0, 'clients');
@@ -445,6 +474,7 @@ app.post('/api/reblob', async (req, res) => {
     // Update in-memory registry
     incident.walrusBlobId = newBlobId;
     incidentRegistry.set(incidentId, incident);
+    saveIncidentRegistry();
 
     console.log(`[SENTINEL] Reblobbed ${incidentId} -> new blob: ${newBlobId}`);
     return res.json({ success: true, newBlobId });
@@ -464,6 +494,7 @@ app.get('/api/incidents', (_req, res) => {
   const seenIds = new Set();
   const seenContent = new Set();
   const list = [...incidentRegistry.values()]
+    .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime())
     .filter(i => {
       if (seenIds.has(i.id)) return false;
       
@@ -474,8 +505,7 @@ app.get('/api/incidents', (_req, res) => {
       seenIds.add(i.id);
       seenContent.add(contentKey);
       return true;
-    })
-    .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime());
+    });
   console.log('[SENTINEL] GET /api/incidents — returning', list.length, 'incidents');
   // Strip flaggedBy array from response (keep flagCount only)
   const sanitized = list.map(({ flaggedBy, ...rest }) => rest);
@@ -508,6 +538,7 @@ app.post('/api/unflag', (req, res) => {
     inc.flaggedBy.push(walletAddress);
     inc.flagCount = (inc.flagCount || 0) + 1;
   }
+  saveIncidentRegistry();
   console.log(`   🚩 Flag toggle: ${incidentId} by ${walletAddress.slice(0, 8)}… → ${inc.flagCount} flags`);
   const { flaggedBy: _fb, ...sanitized } = inc;
 
@@ -527,6 +558,7 @@ app.post('/api/incidents/:id/delete', (req, res) => {
     return res.status(404).json({ error: 'Incident not found' });
   }
   incidentRegistry.delete(id);
+  saveIncidentRegistry();
   console.log(`   🗑️  Deleted incident: ${id}`);
   broadcast({ type: 'INCIDENT_DELETED', incidentId: id });
   res.json({ success: true });
@@ -543,6 +575,7 @@ app.post('/api/incidents/:id/resolve', (req, res) => {
     return res.status(404).json({ error: 'Incident not found' });
   }
   inc.status = 'resolved';
+  saveIncidentRegistry();
   const { flaggedBy: _fb, ...sanitized } = inc;
   console.log(`   ✅ Resolved incident: ${id}`);
   broadcast({ type: 'INCIDENT_UPDATED', incident: { ...sanitized } });
@@ -581,13 +614,33 @@ app.post('/api/chat', async (req, res) => {
       return isNaN(t) ? 0 : t;
     };
 
+    // Extract description to deduplicate identical simulation blobs
+    const extractDescription = (text) => {
+      const match = (text || '').match(/Description:\s*(.*)/);
+      return match ? match[1].trim() : '';
+    };
+
+    // Filter out simulated incidents (Reported By: System)
+    const realMemories = recalled.results.filter(r => !(r.text || '').includes('Reported By: System'));
+
     // Sort descending: most recently stored incident first
-    const sorted = [...recalled.results].sort(
+    const sorted = [...realMemories].sort(
       (a, b) => extractTimestamp(b.text) - extractTimestamp(a.text)
     );
 
-    // Cap at 10 freshest results injected into the context
-    const topN = sorted.slice(0, 10);
+    // Deduplicate by description to prevent AI from seeing multiple copies of the same simulation
+    const seenDesc = new Set();
+    const deduplicated = [];
+    for (const r of sorted) {
+      const desc = extractDescription(r.text);
+      if (!desc || !seenDesc.has(desc)) {
+        if (desc) seenDesc.add(desc);
+        deduplicated.push(r);
+      }
+    }
+
+    // Cap at 10 freshest unique results injected into the context
+    const topN = deduplicated.slice(0, 10);
 
     for (const r of topN) {
       console.log(`      dist: ${r.distance.toFixed(3)}  ts: ${new Date(extractTimestamp(r.text)).toISOString().slice(0,19)}  text: ${r.text.slice(0, 60)}…`);
@@ -603,12 +656,15 @@ app.post('/api/chat', async (req, res) => {
 
   // Step 2: Call Groq with system prompt + recalled context + live context + conversation
   let liveContext = '';
-  if (currentIncidents && currentIncidents.length > 0) {
-    const activeCount = currentIncidents.filter(i => i.status === 'active').length;
-    const resolvedCount = currentIncidents.filter(i => i.status === 'resolved').length;
+  // Only feed real (non-simulated) incidents into the AI context
+  const realCurrentIncidents = currentIncidents.filter(i => !i.isSimulated && i.reportedBy !== 'System');
+
+  if (realCurrentIncidents && realCurrentIncidents.length > 0) {
+    const activeCount = realCurrentIncidents.filter(i => i.status === 'active').length;
+    const resolvedCount = realCurrentIncidents.filter(i => i.status === 'resolved').length;
     
     // Sort just in case the frontend didn't, to guarantee chronological order
-    const sortedLive = [...currentIncidents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const sortedLive = [...realCurrentIncidents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const topLive = sortedLive.slice(0, 50); // Cap to avoid massive context
     
     liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are the most recent incidents in the system, STRICTLY SORTED from MOST RECENT to oldest. Use THIS list to answer any questions about "latest", "most recent", or chronological order.\n\n${
@@ -1045,6 +1101,8 @@ async function rehydrateRegistry(isRetry = false) {
     }
 
     console.log(`[SENTINEL] Rehydrated ${count} incidents | skipped ${skippedJunk} junk + ${skippedBlocklist} blocklisted`);
+    
+    saveIncidentRegistry();
 
     // Single retry if we got nothing — MemWal may still be warming up after cold start
     if (count === 0 && !isRetry) {
