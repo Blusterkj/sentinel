@@ -49,8 +49,104 @@ function timeAgo(timestamp: string): string {
   return `${days}d ago`;
 }
 
+const CustomSelect: React.FC<{
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: React.ReactNode }[];
+  minWidth?: string;
+}> = ({ value, onChange, options, minWidth = '140px' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find((o) => o.value === value) || options[0];
 
+  return (
+    <div style={{ position: 'relative', minWidth }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(255,255,255,0.03)',
+          border: isOpen ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '20px',
+          padding: '6px 12px',
+          color: '#eee',
+          fontSize: '12px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          outline: 'none',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{selectedOption?.label}</span>
+        <ChevronDown size={14} color="#888" style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
+      </button>
 
+      {isOpen && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+            onClick={() => setIsOpen(false)}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              right: 0,
+              width: '100%',
+              minWidth: '160px',
+              background: 'rgba(20, 20, 20, 0.95)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: '6px',
+              zIndex: 100,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.8)',
+            }}
+          >
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '8px 10px',
+                  background: opt.value === value ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                  color: opt.value === value ? '#c4b5fd' : '#ccc',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.1s, color 0.1s',
+                }}
+                onMouseEnter={(e) => {
+                  if (opt.value !== value) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                }}
+                onMouseLeave={(e) => {
+                  if (opt.value !== value) e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const TYPE_ICONS: Record<string, string> = {
   medical: '🏥',
@@ -344,60 +440,31 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         {/* Filters Group */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {activeTab === 'incidents' && (
-            <div style={{ position: 'relative' }}>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                style={{
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '20px',
-                  padding: '6px 28px 6px 12px',
-                  color: '#eee',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all" style={{ background: '#111' }}>All Types</option>
-                {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                  <option key={k} value={k} style={{ background: '#111' }}>
-                    {TYPE_ICONS[k]} {v}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} color="#888" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-            </div>
+            <CustomSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              minWidth="140px"
+              options={[
+                { value: 'all', label: 'All Types' },
+                ...Object.entries(TYPE_LABELS).map(([k, v]) => ({
+                  value: k,
+                  label: <>{TYPE_ICONS[k]} {v}</>
+                }))
+              ]}
+            />
           )}
 
           {/* Sort Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as any)}
-              style={{
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '20px',
-                padding: '6px 28px 6px 12px',
-                color: '#eee',
-                fontSize: '12px',
-                fontWeight: 600,
-                outline: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <option value="newest" style={{ background: '#111' }}>Newest First</option>
-              <option value="oldest" style={{ background: '#111' }}>Oldest First</option>
-              <option value="severity" style={{ background: '#111' }}>Highest Severity</option>
-            </select>
-            <ChevronDown size={14} color="#888" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-          </div>
+          <CustomSelect
+            value={sortOption}
+            onChange={(val) => setSortOption(val as any)}
+            minWidth="130px"
+            options={[
+              { value: 'newest', label: 'Newest First' },
+              { value: 'oldest', label: 'Oldest First' },
+              { value: 'severity', label: 'Highest Severity' }
+            ]}
+          />
         </div>
 
         {/* Mobile-responsive wrapper for filters + count */}
