@@ -49,6 +49,29 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
   0
 );
 
+// Backfill sequenceNumbers for legacy incidents that were stored before this field existed.
+// Sort them by their best available timestamp so the numbering reflects real insertion order.
+{
+  const needsBackfill = [...incidentRegistry.values()].filter(i => !i.sequenceNumber);
+  if (needsBackfill.length > 0) {
+    const allSorted = [...incidentRegistry.values()]
+      .sort((a, b) =>
+        new Date(a.serverTimestamp || a.createdAt || a.timestamp || 0).getTime() -
+        new Date(b.serverTimestamp || b.createdAt || b.timestamp || 0).getTime()
+      );
+    allSorted.forEach((inc, idx) => {
+      if (!inc.sequenceNumber) {
+        inc.sequenceNumber = idx + 1;
+        incidentRegistry.set(inc.id, inc);
+      }
+    });
+    // Make sure the counter is at least as high as the largest assigned number
+    incidentSequence = Math.max(incidentSequence, allSorted.length);
+    saveIncidentRegistry();
+    console.log(`[SENTINEL] Backfilled sequenceNumbers for ${needsBackfill.length} legacy incidents (total: ${allSorted.length})`);
+  }
+}
+
 // Memory registry — keyed by blobId.
 const MEMORY_FILE = '/app/data/memories.json';
 let initialMemories = [];
@@ -690,10 +713,15 @@ app.post('/api/chat', async (req, res) => {
     console.warn(`   ⚠️  Recall failed (non-fatal):`, err.message);
   }
 
-  // Step 2: Call Groq with system prompt + recalled context + live context + conversation
+  // Step 2: Build live context from the server's incidentRegistry — source of truth.
+  // We deliberately ignore the frontend's `currentIncidents` payload: the client may be
+  // stale, filtering optimistic-only incidents, or simply not sending the field at all.
+  // Reading directly from the registry guarantees the agent always sees every incident.
+  console.log(`   📋 Frontend sent ${currentIncidents.length} incidents; using ${incidentRegistry.size} from server registry`);
   let liveContext = '';
-  // Only feed real (non-simulated) incidents into the AI context
-  const realCurrentIncidents = currentIncidents.filter(i => !i.isSimulated && i.reportedBy !== 'System');
+  const allServerIncidents = [...incidentRegistry.values()];
+  const realCurrentIncidents = allServerIncidents.filter(i => !i.isSimulated && i.reportedBy !== 'System');
+  console.log(`   📋 Filtered to ${realCurrentIncidents.length} real (non-simulated) incidents for agent context`);
 
   if (realCurrentIncidents && realCurrentIncidents.length > 0) {
     const activeCount = realCurrentIncidents.filter(i => i.status === 'active').length;
