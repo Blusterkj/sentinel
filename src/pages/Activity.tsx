@@ -57,25 +57,26 @@ const TYPE_LABELS: Record<string, string> = {
 export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport }) => {
   const account = useCurrentAccount();
   const { address: inAppAddress } = useAuthStore();
-  const address = account?.address || inAppAddress;
+  const slushAddress = account?.address;
+  const address = slushAddress || inAppAddress;
 
   const myIncidents = useMemo(
     () =>
       incidents
         .filter((i) => {
-          // Exclude demo/simulated incidents (reportedBy === 'System')
-          if (i.isSimulated) return false;
-          // Include if wallet matches reportedBy OR reporter field (case-insensitive)
-          if (address && (
-            (i.reportedBy && i.reportedBy.toLowerCase() === address.toLowerCase()) ||
-            (i.reporter && i.reporter.toLowerCase() === address.toLowerCase())
-          )) return true;
-          // Include if createdByMe flag is set (local session flag)
-          if (i.createdByMe) return true;
-          return false;
+          const isOwner = (addr: string | null | undefined) => {
+            if (!addr) return false;
+            const a = addr.toLowerCase();
+            return (
+              (i.reportedBy && i.reportedBy.toLowerCase() === a) ||
+              (i.reporter && i.reporter.toLowerCase() === a)
+            );
+          };
+          
+          return !i.isSimulated && (isOwner(slushAddress) || isOwner(inAppAddress));
         })
         .sort((a, b) => new Date(b.timestamp || b.createdAt || '').getTime() - new Date(a.timestamp || a.createdAt || '').getTime()),
-    [incidents, address]
+    [incidents, slushAddress, inAppAddress]
   );
 
   const activeCount = myIncidents.filter((i) => i.status === 'active').length;
