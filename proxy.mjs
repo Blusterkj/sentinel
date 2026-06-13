@@ -736,16 +736,21 @@ app.get('/api/walrus/test', async (_req, res) => {
  */
 app.get('/api/walrus/read/:blobId', async (req, res) => {
   const { blobId } = req.params;
-  try {
-    const aggRes = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`);
-    if (!aggRes.ok) {
-      return res.status(aggRes.status).json({ found: false, status: aggRes.status });
-    }
-    const data = await aggRes.text();
-    res.json({ found: true, blobId, size: data.length, data: data.slice(0, 500) });
-  } catch (err) {
-    res.status(502).json({ found: false, error: err.message || String(err) });
+  const aggregators = [
+    `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`,
+    `https://wal-aggregator-testnet.staketab.org/v1/blobs/${blobId}`,
+    `https://walrus-testnet-aggregator.nodeinfra.com/v1/blobs/${blobId}`,
+  ];
+  for (const url of aggregators) {
+    try {
+      const aggRes = await fetch(url);
+      if (aggRes.ok) {
+        const data = await aggRes.text();
+        return res.json({ found: true, blobId, size: data.length, data });
+      }
+    } catch { /* try next node */ }
   }
+  res.status(404).json({ found: false, status: 404, error: 'Blob not found on any aggregator node' });
 });
 
 /**

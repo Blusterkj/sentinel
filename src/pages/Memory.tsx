@@ -418,14 +418,34 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
     setProofError(null);
     try {
       if (!blobId) throw new Error("No Walrus Blob ID available for this incident.");
-      
-      const res = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`);
-      if (!res.ok) {
-        throw new Error(`Walrus returned ${res.status}`);
+
+      // Go through the proxy which tries multiple aggregator nodes
+      const res = await fetch(`${PROXY_URL}/api/walrus/read/${blobId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.found && json.data) {
+          setProofData(json.data);
+          return;
+        }
       }
-      
-      const text = await res.text();
-      setProofData(text);
+
+      // Fallback: try direct aggregator nodes in sequence
+      const aggregators = [
+        `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`,
+        `https://wal-aggregator-testnet.staketab.org/v1/blobs/${blobId}`,
+        `https://walrus-testnet-aggregator.nodeinfra.com/v1/blobs/${blobId}`,
+      ];
+      for (const url of aggregators) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) {
+            const text = await r.text();
+            setProofData(text);
+            return;
+          }
+        } catch { /* try next */ }
+      }
+      throw new Error('Blob not found on any Walrus aggregator — it may still be propagating, try again in 30 seconds');
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
         setProofError('Network error connecting to Walrus aggregator.');
