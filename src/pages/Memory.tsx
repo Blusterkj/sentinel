@@ -444,7 +444,8 @@ const MemoryEntry: React.FC<{ memory: any; index: number; isLast?: boolean }> = 
           width: '38px',
           height: '38px',
           borderRadius: '10px',
-          background: '#1a1a1a',
+          background: memory.type === 'incident' ? 'rgba(255,255,255,0.03)' : '#1a1a1a',
+          border: memory.type === 'incident' ? '1px solid rgba(255,255,255,0.05)' : 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -452,30 +453,61 @@ const MemoryEntry: React.FC<{ memory: any; index: number; isLast?: boolean }> = 
           flexShrink: 0,
         }}
       >
-        💬
+        {memory.type === 'incident' && memory.rawIncident ? TYPE_ICONS[memory.rawIncident.type] || '⚠️' : '💬'}
       </div>
 
       {/* Main content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Row 1: Title/Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>Agent Conversation</span>
-        </div>
-
-        <p
-          style={{
-            fontSize: '12px',
-            color: '#777',
-            lineHeight: '1.4',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            maxWidth: '100%',
-            marginBottom: '6px',
-          }}
-        >
-          {memory.summary}
-        </p>
+        {memory.type === 'incident' && memory.rawIncident ? (
+          <>
+            {/* Incident Mode */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+              <SeverityBadge severity={memory.rawIncident.severity} size="sm" pulse={memory.rawIncident.severity === 'critical'} />
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#ddd' }}>
+                {TYPE_LABELS[memory.rawIncident.type] || 'Incident Report'}
+              </span>
+            </div>
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#aaa',
+                lineHeight: '1.4',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                marginBottom: '6px',
+              }}
+            >
+              {memory.rawIncident.description}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+              📍 {memory.rawIncident.location.address}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Agent Conversation Mode */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>Agent Conversation</span>
+            </div>
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#777',
+                lineHeight: '1.4',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+                marginBottom: '6px',
+              }}
+            >
+              {memory.summary}
+            </p>
+          </>
+        )}
 
         {/* Blob ID row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
