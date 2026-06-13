@@ -762,7 +762,6 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
       ? `${recalledContext}\n\n## USER QUESTION\n${message}`
       : message;
 
-    const messages = [
       ...history.map(h => ({ role: h.role, content: h.content })),
       { role: 'user', content: augmentedUserMessage },
     ];
