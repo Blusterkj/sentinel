@@ -42,6 +42,13 @@ try {
 }
 const incidentRegistry = new Map(initialData);
 
+// Serial sequence counter — always increments server-side, never trusted from client.
+// Seed from the highest existing sequenceNumber so Railway restarts don't reset order.
+let incidentSequence = [...incidentRegistry.values()].reduce(
+  (max, i) => Math.max(max, i.sequenceNumber || 0),
+  0
+);
+
 // Memory registry — keyed by blobId.
 const MEMORY_FILE = '/app/data/memories.json';
 let initialMemories = [];
@@ -417,6 +424,7 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
     // Persist in in-memory registry for cross-device sync
     // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
+    // Assign server-side sequence number and timestamp — never trust client-provided values.
     const storedIncident = {
       ...incident,
       walrusBlobId: blobId,
@@ -426,6 +434,8 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       flaggedBy: [],
       // Only System (demo button) incidents are simulated — SOS and real user reports are NOT
       isSimulated: incident.reportedBy === 'System',
+      sequenceNumber: ++incidentSequence,
+      serverTimestamp: new Date().toISOString(),
     };
     incidentRegistry.set(incident.id, storedIncident);
     saveIncidentRegistry();
@@ -514,15 +524,17 @@ app.post('/api/reblob', async (req, res) => {
 app.get('/api/incidents', (_req, res) => {
   const seenIds = new Set();
   const seenContent = new Set();
+  // Sort by sequenceNumber ascending (oldest first) — server-assigned, never client-provided.
+  // Incidents without a sequenceNumber (legacy) sort first (treated as 0).
   const list = [...incidentRegistry.values()]
-    .sort((a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime())
+    .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0))
     .filter(i => {
       if (seenIds.has(i.id)) return false;
-      
+
       // Deduplicate simulated/seed duplicates by content
       const contentKey = `${i.description}|${i.location?.address || ''}`;
       if (seenContent.has(contentKey)) return false;
-      
+
       seenIds.add(i.id);
       seenContent.add(contentKey);
       return true;
@@ -687,12 +699,17 @@ app.post('/api/chat', async (req, res) => {
     const activeCount = realCurrentIncidents.filter(i => i.status === 'active').length;
     const resolvedCount = realCurrentIncidents.filter(i => i.status === 'resolved').length;
     
-    // Sort just in case the frontend didn't, to guarantee chronological order
-    const sortedLive = [...realCurrentIncidents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Sort by sequenceNumber ascending — server-assigned serial order, never client timestamps.
+    // Incidents without a sequenceNumber (legacy) sort first (treated as 0).
+    const sortedLive = [...realCurrentIncidents]
+      .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
     const topLive = sortedLive.slice(0, 50); // Cap to avoid massive context
-    
-    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are the most recent incidents in the system, STRICTLY SORTED from MOST RECENT to oldest. Use THIS list to answer any questions about "latest", "most recent", or chronological order.\n\n${
-      topLive.map((i, index) => `${index + 1}. [${i.status.toUpperCase()}] ${i.type} at ${i.location.address} (Severity: ${i.severity}) - "${i.description}" (Reported: ${new Date(i.createdAt).toISOString()})`).join('\n')
+
+    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are all incidents in STRICT SERIAL ORDER (#1 = first ever reported, highest # = most recent). Use this list to answer any questions about order, recency, or sequence.\n\n${
+      topLive.map((i) =>
+        `[#${i.sequenceNumber || '?'} - ${i.serverTimestamp || i.createdAt}] ` +
+        `${i.type} | ${i.severity} | ${i.location?.address} — ${i.description}`
+      ).join('\n')
     }`;
   }
 

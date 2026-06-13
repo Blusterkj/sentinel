@@ -146,8 +146,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
     const incidentCoords = coords || { lat: 0, lng: 0 };
 
-    let incident: Incident = {
-      id: uuidv4(),
+    // 1. Generate a temp ID instantly — server will keep this same ID
+    const tempId = uuidv4();
+
+    // 2. Build the optimistic incident object from form state
+    const optimisticIncident: Incident = {
+      id: tempId,
       type,
       severity,
       description: description.trim(),
@@ -161,93 +165,95 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
       reporter: walletAddress || undefined,
       status: 'active',
       createdByMe: true,
+      uploadStatus: 'pending',
     };
 
+    // 3. Disable the button briefly to prevent double-submit
     setFormState('submitting');
     setError('');
 
-    try {
-      // Store on Walrus via the proxy (bypasses CORS)
+    // 4. Push to parent state immediately — NO await — so it appears on dashboard instantly
+    onIncidentSubmitted(optimisticIncident);
+
+    // 5. Navigate away immediately — user never sees a Walrus spinner
+    window.history.pushState({}, '', '/dashboard');
+    window.dispatchEvent(new Event('popstate'));
+
+    // 6. Fire Walrus store in the background — fire and forget
+    // We use a closure over optimisticIncident so the tempId stays correct
+    ;(async () => {
       let txDigest: string | null = null;
       let suiObjectId: string | undefined = undefined;
 
-      const storeRes = await fetch(`${PROXY_URL}/api/store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(incident),
-      });
-      const storeData = await storeRes.json();
-      const blobId = storeData?.blobId ?? null;
-
-      if (!blobId) {
-        throw new Error('Walrus store failed: no blobId returned');
-      }
-
-      if (storeData.createdAt) {
-        incident = { ...incident, createdAt: storeData.createdAt };
-      }
-
-      // Step B & C — Sui on-chain anchor (only when dapp-kit wallet connected)
-      if (account) {
-        try {
-          const tx = new Transaction();
-          tx.moveCall({
-            target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-            arguments: [
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId))),
-              tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
-              tx.object('0x6'), // Clock object ID on Sui
-            ],
-          });
-          const txResult = await signAndExecute({ transaction: tx });
-          txDigest = txResult.digest;
-
-          try {
-            const txRes = await suiClient.waitForTransaction({
-              digest: txDigest,
-              options: { showObjectChanges: true },
-            });
-            if (txRes.objectChanges) {
-               const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
-               if (createdObj && 'objectId' in createdObj) {
-                 suiObjectId = createdObj.objectId;
-               }
-            }
-          } catch (e) {
-            console.warn("Could not fetch object changes", e);
-          }
-        } catch (txErr) {
-          console.warn('Sui anchor failed (non-blocking, Walrus store succeeded):', txErr);
-        }
-      }
-
-      // Save blob ID mapping to localStorage so Memory page picks it up
       try {
-        const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
-        blobMap[incident.id] = blobId;
-        localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
-      } catch {}
+        const storeRes = await fetch(`${PROXY_URL}/api/store`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(optimisticIncident),
+        });
+        const storeData = await storeRes.json();
+        const blobId = storeData?.blobId ?? null;
 
-      // Apply blob ID to incident before registering
-      const storedIncident: Incident = {
-        ...incident,
-        walrusBlobId: blobId,
-        walrusStatus: 'synced',
-        suiTxDigest: txDigest || undefined,
-        suiObjectId: suiObjectId || undefined,
-        reporter: walletAddress,
-      };
+        if (!blobId) throw new Error('No blobId returned');
 
-      setSubmittedIncident(storedIncident);
-      onIncidentSubmitted(storedIncident);
-      setFormState('done');
-    } catch (err) {
-      console.error('Submit error:', err);
-      const msg = err instanceof Error ? err.message : 'Failed to store incident.';
-      setError(msg);
-      setFormState('error');
-    }
+        // Sui on-chain anchor — only when dapp-kit wallet connected
+        if (account) {
+          try {
+            const tx = new Transaction();
+            tx.moveCall({
+              target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
+              arguments: [
+                tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId))),
+                tx.pure.vector('u8', Array.from(new TextEncoder().encode(optimisticIncident.description))),
+                tx.object('0x6'),
+              ],
+            });
+            const txResult = await signAndExecute({ transaction: tx });
+            txDigest = txResult.digest;
+            try {
+              const txRes = await suiClient.waitForTransaction({
+                digest: txDigest,
+                options: { showObjectChanges: true },
+              });
+              if (txRes.objectChanges) {
+                const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
+                if (createdObj && 'objectId' in createdObj) {
+                  suiObjectId = createdObj.objectId;
+                }
+              }
+            } catch (e) {
+              console.warn('Could not fetch object changes', e);
+            }
+          } catch (txErr) {
+            console.warn('Sui anchor failed (non-blocking):', txErr);
+          }
+        }
+
+        // Save blob ID mapping to localStorage so Memory page picks it up
+        try {
+          const blobMap = JSON.parse(localStorage.getItem('sentinel_blob_map') || '{}');
+          blobMap[tempId] = blobId;
+          localStorage.setItem('sentinel_blob_map', JSON.stringify(blobMap));
+        } catch {}
+
+        // Notify parent with confirmed state — updates the card in place
+        onIncidentSubmitted({
+          ...optimisticIncident,
+          walrusBlobId: blobId,
+          walrusStatus: 'synced',
+          suiTxDigest: txDigest || undefined,
+          suiObjectId: suiObjectId || undefined,
+          uploadStatus: 'confirmed',
+          createdAt: storeData.createdAt || optimisticIncident.timestamp,
+        });
+      } catch (err) {
+        console.error('[Sentinel] Background store failed:', err);
+        // Update the card to show the retry icon
+        onIncidentSubmitted({ ...optimisticIncident, uploadStatus: 'failed' });
+      }
+    })();
   };
+
 
   const handleReset = () => {
     setType('other');
@@ -679,7 +685,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
           }}
         >
           {formState === 'submitting' ? (
-            <><Loader2 className="animate-spin w-4 h-4 mr-2" />Storing on Walrus…</>
+            <><Loader2 className="animate-spin w-4 h-4 mr-2" />Submitting…</>
           ) : (
             <><Send size={16} />Submit to Walrus</>
           )}

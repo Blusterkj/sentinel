@@ -861,6 +861,54 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
         </div>
       )}
 
+      {/* Optimistic upload status indicator — only on list cards, not on map pins */}
+      {incident.uploadStatus === 'pending' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px', opacity: 0.75 }}>
+          <span style={{
+            width: '7px', height: '7px', borderRadius: '50%',
+            background: '#eab308', flexShrink: 0,
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+          <span style={{ fontSize: '10px', color: '#eab308', fontFamily: 'monospace', fontWeight: 600 }}>
+            Storing…
+          </span>
+        </div>
+      )}
+      {incident.uploadStatus === 'failed' && (
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            // Inline retry — re-fire POST /api/store for this incident
+            try {
+              const res = await fetch(`${PROXY_URL}/api/store`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(incident),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                // Notify App-level state via a custom event so it can update uploadStatus
+                window.dispatchEvent(new CustomEvent('incidentRetrySuccess', {
+                  detail: { id: incident.id, blobId: data.blobId, createdAt: data.createdAt },
+                }));
+              }
+            } catch { /* silent — indicator stays */ }
+          }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            marginBottom: '6px', padding: '2px 7px',
+            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: '5px', color: '#ef4444', fontSize: '10px', fontWeight: 600,
+            fontFamily: 'monospace', cursor: 'pointer', opacity: 0.85,
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.85')}
+        >
+          <span style={{ fontSize: '12px', lineHeight: 1 }}>↺</span> Store failed — tap to retry
+        </button>
+      )}
+
       {/* Description */}
       <p
         style={{

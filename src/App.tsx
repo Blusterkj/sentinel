@@ -235,7 +235,8 @@ export default function App() {
   };
 
   const handleNewIncident = (incident: Incident) => {
-    // Optimistically prepend — the 15s poll will confirm it from the proxy
+    // Optimistically prepend — the 15s poll will confirm it from the proxy.
+    // Calling again with the same id (e.g. after background Walrus confirms) merges the update.
     setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
   };
 
@@ -245,6 +246,22 @@ export default function App() {
     setIncidents((prev) =>
       prev.map((i) => (i.id === updated.id ? { ...i, flagCount: updated.flagCount, flaggedByMe: updated.flaggedByMe } : i))
     );
+  }, []);
+
+  // Listen for retry-success events dispatched by IncidentCard's inline retry button
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, blobId, createdAt } = (e as CustomEvent).detail;
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.id === id
+            ? { ...i, walrusBlobId: blobId, walrusStatus: 'synced' as const, uploadStatus: 'confirmed' as const, createdAt: createdAt || i.createdAt }
+            : i
+        )
+      );
+    };
+    window.addEventListener('incidentRetrySuccess', handler);
+    return () => window.removeEventListener('incidentRetrySuccess', handler);
   }, []);
 
   const resolveIncident = useCallback((id: string) => {

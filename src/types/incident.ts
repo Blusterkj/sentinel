@@ -47,6 +47,18 @@ export interface Incident {
   flaggedBy?: string[];
   /** True for seed/simulated/system-generated incidents — excluded from My Activity */
   isSimulated?: boolean;
+  /**
+   * Optimistic-UI upload state — only present on locally-submitted incidents before
+   * the proxy confirms storage. Never set by the server.
+   *   'pending'   — fire-and-forget POST in flight
+   *   'confirmed' — proxy returned a blobId (nothing extra shown on card)
+   *   'failed'    — POST failed; a retry icon is shown on the card
+   */
+  uploadStatus?: 'pending' | 'confirmed' | 'failed';
+  /** Server-assigned serial sequence number — never trust client-provided values */
+  sequenceNumber?: number;
+  /** Server-assigned ISO timestamp — authoritative source of truth */
+  serverTimestamp?: string;
 }
 
 export interface RecalledMemory {
