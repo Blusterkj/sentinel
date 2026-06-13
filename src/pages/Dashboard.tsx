@@ -42,7 +42,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   sidebarCollapsed
 }) => {
   const [myReportsFilter, setMyReportsFilter] = useState(false);
+  const userLocationFromStore = useAppStore(state => state.userLocation);
+  const setUserLocationToStore = useAppStore(state => state.setUserLocation);
+  
   const [center, setCenter] = useState<[number, number]>(() => {
+    if (userLocationFromStore) {
+      return userLocationFromStore;
+    }
     if (incidents.length > 0) {
       const centerLat = incidents.reduce((sum, i) => sum + i.location.lat, 0) / incidents.length;
       const centerLng = incidents.reduce((sum, i) => sum + i.location.lng, 0) / incidents.length;
@@ -81,6 +87,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         (pos) => {
           const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
           setUserLocation(loc);
+          setUserLocationToStore(loc);
           setLocationObtained(true);
           // Only pan to user if no incident is selected
           setSelectedIncident((current) => {

@@ -66,6 +66,10 @@ interface AppStore {
   setActivity: (data: Incident[]) => void;
   isActivityStale: () => boolean;
 
+  // 📍 Map / Geolocation State
+  userLocation: [number, number] | null;
+  setUserLocation: (loc: [number, number] | null) => void;
+
   // ── Agent Chat ───────────────────────────────────────────────────────────────
   agentMessages: AgentMessage[];
   setAgentMessages: (messages: AgentMessage[] | ((prev: AgentMessage[]) => AgentMessage[])) => void;
@@ -113,7 +117,11 @@ export const useAppStore = create<AppStore>()(
       setActivity: (data) => set({ activity: data, activityFetchedAt: Date.now() }),
       isActivityStale: () => isStale(get().activityFetchedAt, TTL.activity),
 
-      // ── Agent Chat ───────────────────────────────────────────────────────────
+      // 📍 Map / Geolocation State
+      userLocation: null,
+      setUserLocation: (loc) => set({ userLocation: loc }),
+
+      // 🤖 Agent Chat ───────────────────────────────────────────────────────────
       agentMessages: [{
         id: 'welcome',
         role: 'assistant',
@@ -146,6 +154,7 @@ export const useAppStore = create<AppStore>()(
         memoriesFetchedAt:   state.memoriesFetchedAt,
         activity:            state.activity,
         activityFetchedAt:   state.activityFetchedAt,
+        userLocation:        state.userLocation,
         // NOTE: agentMessages intentionally excluded — persisted to MemWal, not localStorage
       }),
     }
