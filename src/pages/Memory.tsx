@@ -387,6 +387,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -396,7 +397,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             transition: 'background 0.2s',
           }}
         >
-          <Search size={14} color="#888" />
+          <Search size={14} color="#888" style={{ flexShrink: 0 }} />
           <input
             type="text"
             placeholder="Search by location, type, or description…"
@@ -404,6 +405,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               flex: 1,
+              minWidth: 0,
               background: 'transparent',
               border: 'none',
               outline: 'none',
