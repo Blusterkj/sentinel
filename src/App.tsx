@@ -694,7 +694,7 @@ export default function App() {
           }}
         />
         {currentPage === 'landing' && <Landing />}
-        {currentPage === 'dashboard' && (
+        <div style={{ display: currentPage === 'dashboard' ? 'contents' : 'none' }}>
           <Dashboard 
             incidents={incidents} 
             criticalFilter={criticalFilter}
@@ -705,7 +705,7 @@ export default function App() {
             onFlagIncident={handleFlagIncident}
             sidebarCollapsed={sidebarCollapsed}
           />
-        )}
+        </div>
         {currentPage === 'analytics' && <Analytics incidents={incidents} />}
         {currentPage === 'report' && (
           <WalletGuard>
