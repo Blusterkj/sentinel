@@ -86,7 +86,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         .map(i => ({
           type: 'incident',
           blobId: i.walrusBlobId,
-          timestamp: new Date(i.createdAt).getTime(),
+          timestamp: new Date(i.createdAt || Date.now()).getTime(),
           summary: `[${i.severity.toUpperCase()}] ${i.type} at ${i.location.address}: ${i.description}`,
         }));
     }
