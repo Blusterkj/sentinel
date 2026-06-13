@@ -51,7 +51,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const account = useCurrentAccount();
   const { address: inAppAddress } = useAuthStore();
   const isAuthenticated = !!(account || inAppAddress);
+  // Read cached user location from global store (set after Zustand persist rehydrates)
+  const cachedUserLocation = useAppStore(state => state.userLocation);
+  const setCachedUserLocation = useAppStore(state => state.setUserLocation);
   
+  // On mount: immediately snap to the last known location from the cache.
+  // This runs AFTER Zustand persist has rehydrated, so cachedUserLocation is correct.
+  // This is what prevents the jump when navigating back to the dashboard.
+  useEffect(() => {
+    if (cachedUserLocation) {
+      setCenter(cachedUserLocation);
+      setUserLocation(cachedUserLocation);
+      setLocationObtained(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Listen for external requests to select an incident (e.g. from Memory page)
   useEffect(() => {
     const handleSelectIncident = (e: Event) => {
@@ -74,6 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         (pos) => {
           const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
           setUserLocation(loc);
+          setCachedUserLocation(loc); // persist for next navigation back
           setLocationObtained(true);
           // Only pan to user location if no incident is currently selected
           setSelectedIncident((current) => {
