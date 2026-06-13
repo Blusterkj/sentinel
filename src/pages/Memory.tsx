@@ -77,6 +77,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   const [activeTab, setActiveTab] = useState<'incidents' | 'agent'>('incidents');
   const [memories, setMemories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'severity'>('newest');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
 
   // Check proxy health on mount
@@ -115,11 +116,27 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
     return memories.map(m => ({ ...m, type: 'agent' }));
   }, [activeTab, incidents, memories]);
 
-  // Sorted newest first
-  const sorted = useMemo(
-    () => [...activeData].sort((a, b) => b.timestamp - a.timestamp),
-    [activeData]
-  );
+  // Sorted data based on sortOption
+  const sorted = useMemo(() => {
+    const data = [...activeData];
+    
+    if (sortOption === 'newest') {
+      return data.sort((a, b) => b.timestamp - a.timestamp);
+    } 
+    if (sortOption === 'oldest') {
+      return data.sort((a, b) => a.timestamp - b.timestamp);
+    }
+    if (sortOption === 'severity') {
+      const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+      return data.sort((a, b) => {
+        const rankA = (a.rawIncident && severityRank[a.rawIncident.severity]) || 0;
+        const rankB = (b.rawIncident && severityRank[b.rawIncident.severity]) || 0;
+        if (rankA !== rankB) return rankB - rankA;
+        return b.timestamp - a.timestamp; // fallback to newest
+      });
+    }
+    return data;
+  }, [activeData, sortOption]);
 
   // Filtered
   const filtered = useMemo(() => {
@@ -316,6 +333,27 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           <ArrowRightLeft size={14} />
           <span className="hidden md:inline">{activeTab === 'incidents' ? 'Incidents' : 'Agent Convos'}</span>
         </button>
+
+        {/* Sort Dropdown */}
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value as any)}
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '20px',
+            padding: '6px 12px',
+            color: '#eee',
+            fontSize: '12px',
+            fontWeight: 600,
+            outline: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="newest" style={{ background: '#111' }}>Newest First</option>
+          <option value="oldest" style={{ background: '#111' }}>Oldest First</option>
+          <option value="severity" style={{ background: '#111' }}>Highest Severity</option>
+        </select>
 
         {/* Mobile-responsive wrapper for filters + count */}
         <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
