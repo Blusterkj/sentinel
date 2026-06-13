@@ -511,6 +511,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
       <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-[rgba(139,92,246,0.6)] transition-colors duration-300" />
       {/* Type icon */}
       <div
+        className="mobile-memory-icon"
         style={{
           width: '38px',
           height: '38px',
