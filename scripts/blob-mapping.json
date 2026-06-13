@@ -1,42 +1,41 @@
 {
-  "timestamp": "2026-06-09T04:43:10.894Z",
-  "proxyUrl": "https://sentinelproduction.up.railway.app",
+  "timestamp": "2026-06-12T16:16:06.915Z",
+  "proxyUrl": "https://sentinel-proxy-production.up.railway.app",
   "summary": {
     "alreadyVerified": 0,
-    "successfullyStored": 3,
-    "failed": 2
+    "successfullyStored": 4,
+    "failed": 1
   },
   "results": [
     {
-      "id": "0e3b1195-f157-4155-9fe2-a95670fd3990",
-      "oldBlobId": "REP1yRhN0GtENvkDRHx8O9NLJ6kqYeNSeaV_8_2tm2c",
+      "id": "16cbd149-71ad-4a43-8ca7-ea207f30a91a",
+      "oldBlobId": "rp34_44csPEmklFMCn8KLda001QfQg_ne1OCGbiq6RE",
+      "newBlobId": "e4tsw5-kiz5nexcv3pC_iSdlOl89nsN4P8PtDeAqlnw",
+      "status": "stored"
+    },
+    {
+      "id": "a0fed3b5-9ddf-43db-b9f8-8cd606029652",
+      "oldBlobId": "BLk3U29AJenTxpWdCKs0jTVaNwZa5xwUxNWiTljgyBw",
+      "newBlobId": "U5TnxPlVzDm5cxQRANukjtDhEArwHNRVMvQwjIvJo4I",
+      "status": "stored"
+    },
+    {
+      "id": "7250c118-2f55-4fd1-a113-b2e92f5214a7",
+      "oldBlobId": "UERz3sTiddnHmnNGOs_occOr7JC1YUqHben0wZo5E0M",
       "newBlobId": null,
       "status": "failed",
       "error": "fetch failed"
     },
     {
-      "id": "4ea50409-7131-4118-b0f5-92af99b547af",
-      "oldBlobId": "YeEG92YdVUaWSVDdz_DDIAZgsK3F0oOuxGF7v3D-dBo",
-      "newBlobId": null,
-      "status": "failed",
-      "error": "fetch failed"
-    },
-    {
-      "id": "71f13e8d-e1b2-46e5-b208-d3ff8ee8c640",
-      "oldBlobId": "BlYn5LCRmjEulvOr3IbcsFRhPH1FYjzXRZP7aVWvKlo",
-      "newBlobId": "XH895uSmRCxxra_7pB9SFSBXKW_8KSvJi0QhJkLE2GQ",
+      "id": "05d3e1fa-f5ec-41b2-8886-e8b7167819db",
+      "oldBlobId": "3kF4IzRHAZkRimsgsQBv60qGSMgG5im7wP1ePATQJXg",
+      "newBlobId": "AviVM8VHlnlhf_1AcFKsE6rcZVkMR76OSkJ9Qr752Nw",
       "status": "stored"
     },
     {
-      "id": "f44396a8-7227-490e-b3f0-e48a0c5b71a8",
-      "oldBlobId": "xS0F3ffIHmnGrNdAqWexUJapNa46SUcxdvDo40rIkAM",
-      "newBlobId": "UPq-VvJ62L5DkzKtKBVvlH79OHwxV6Ip01lDnwfng04",
-      "status": "stored"
-    },
-    {
-      "id": "75be7456-ac4f-4b28-aa70-9801d64e289b",
-      "oldBlobId": "VeEq0JKRdToakvl5I1LpCDPVtaVoB1kCsBNu9ta1334",
-      "newBlobId": "FlUauK0THb0nCVHN7Gb6hArj2YGc8VtuLsKfviSvZso",
+      "id": "b51baf8c-bd7b-442b-b9d3-0a981d85a276",
+      "oldBlobId": "V_UmnxCdKJKUq8-PR-PLTbbSJv3PbEN8QjKCh7PoTF0",
+      "newBlobId": "AS9pJRJLQuZmRD5KZ490HudCSIowBSPW5h9fX4452KY",
       "status": "stored"
     }
   ]

@@ -320,8 +320,8 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
             {[...displayedIncidents]
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt ?? b.timestamp).getTime() -
-                  new Date(a.createdAt ?? a.timestamp).getTime()
+                  new Date(b.timestamp ?? b.createdAt).getTime() -
+                  new Date(a.timestamp ?? a.createdAt).getTime()
               )
               .map((incident, idx) => (
                 <IncidentCard
@@ -436,7 +436,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                 <div style={{ fontSize: '13px', color: '#888', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                   <span style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                     <Clock size={12} style={{ marginTop: '3px', flexShrink: 0 }} /> 
-                    <span>{formatRelativeTime(modalIncident.createdAt ?? modalIncident.timestamp, now)}</span>
+                    <span>{formatRelativeTime(modalIncident.timestamp ?? modalIncident.createdAt, now)}</span>
                   </span>
                   <span style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                     <MapPin size={12} style={{ marginTop: '3px', flexShrink: 0 }} /> 

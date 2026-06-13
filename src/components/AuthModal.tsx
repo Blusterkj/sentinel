@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
+import { ConnectButton, useCurrentAccount, useCurrentWallet } from '@mysten/dapp-kit';
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Wallet, Key, X, ChevronLeft } from 'lucide-react';
 import { generateWallet, importWallet, saveWallet } from '../lib/inAppWallet';
 import { useAuthStore } from '../lib/authStore';
@@ -20,6 +20,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { setInAppAuth } = useAuthStore();
   const account = useCurrentAccount();
+  const { isConnected } = useCurrentWallet();
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -28,10 +29,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   }, []);
 
   useEffect(() => {
-    if (account) {
+    // If either the account is populated or the wallet reports as connected, close the modal.
+    if (account || isConnected) {
       onClose();
     }
-  }, [account, onClose]);
+  }, [account, isConnected, onClose]);
 
   return isDesktop ? (
     <DesktopModal onClose={onClose} setInAppAuth={setInAppAuth} />

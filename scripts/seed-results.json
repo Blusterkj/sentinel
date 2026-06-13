@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-06-09T04:33:28.608Z",
+  "timestamp": "2026-06-12T17:58:43.400Z",
   "results": [
     {
-      "id": "75be7456-ac4f-4b28-aa70-9801d64e289b",
+      "id": "d13802bc-b890-4ca1-80e9-37bf869d0ef7",
       "type": "fire",
       "severity": "critical",
       "description": "Major fire reported at a multi-storey commercial complex on MG Road. Thick black smoke visible from over 2km away. Fire tenders have been dispatched and residents in adjacent buildings are being evacuated.",
@@ -11,13 +11,13 @@
         "lng": 77.5946,
         "address": "MG Road, Bengaluru, Karnataka 560001, India"
       },
-      "timestamp": "2026-06-09T04:13:33.219Z",
+      "timestamp": "2026-06-12T17:38:16.783Z",
       "reportedBy": "community",
       "status": "seeded",
-      "walrusBlobId": "VeEq0JKRdToakvl5I1LpCDPVtaVoB1kCsBNu9ta1334"
+      "walrusBlobId": "LqdnG-XDeMe3IPYMl0rIEs8ADG0lLenXAUmBQjWhag4"
     },
     {
-      "id": "f44396a8-7227-490e-b3f0-e48a0c5b71a8",
+      "id": "6d58fc0c-bd33-494b-9b32-3780f12ccfa9",
       "type": "medical",
       "severity": "high",
       "description": "Elderly man collapsed near India Gate metro station. Bystanders performing CPR. Ambulance has been called but has not arrived yet. Patient is unresponsive and requires immediate medical attention.",
@@ -26,13 +26,13 @@
         "lng": 77.2295,
         "address": "India Gate, New Delhi, Delhi 110001, India"
       },
-      "timestamp": "2026-06-09T04:22:33.221Z",
+      "timestamp": "2026-06-12T17:47:16.784Z",
       "reportedBy": "community",
       "status": "seeded",
-      "walrusBlobId": "xS0F3ffIHmnGrNdAqWexUJapNa46SUcxdvDo40rIkAM"
+      "walrusBlobId": "WJ3SrBJQIJbVYxe6SPvrEH03BTOIH9J8Jh_0cekkaGI"
     },
     {
-      "id": "71f13e8d-e1b2-46e5-b208-d3ff8ee8c640",
+      "id": "a7ec81d7-63cc-4b55-9a3e-bde0f70ec3a1",
       "type": "accident",
       "severity": "high",
       "description": "Serious road accident on the Mumbai-Pune Expressway near Khopoli. Two vehicles involved — one truck and one passenger car. Car is overturned. At least 3 people injured, one critically. Traffic backed up for over 4km.",
@@ -41,13 +41,13 @@
         "lng": 73.3441,
         "address": "Mumbai-Pune Expressway, Khopoli, Maharashtra, India"
       },
-      "timestamp": "2026-06-09T03:57:33.221Z",
+      "timestamp": "2026-06-12T17:22:16.784Z",
       "reportedBy": "community",
-      "status": "failed",
-      "error": "fetch failed"
+      "status": "seeded",
+      "walrusBlobId": "KFxaEKoV7GKonnMiuFaFWwLNWuGLKrhaRXSuMhk1JeY"
     },
     {
-      "id": "4ea50409-7131-4118-b0f5-92af99b547af",
+      "id": "0ec37e24-153c-47c8-a262-3e584d581361",
       "type": "natural_disaster",
       "severity": "critical",
       "description": "Flash flooding reported across multiple low-lying areas of Hyderabad following 3 hours of heavy rainfall. Hussain Sagar lake overflow is imminent. Several vehicles stranded on submerged roads. NDRF teams deployed.",
@@ -56,13 +56,13 @@
         "lng": 78.4867,
         "address": "Hussain Sagar, Hyderabad, Telangana 500004, India"
       },
-      "timestamp": "2026-06-09T03:39:33.221Z",
+      "timestamp": "2026-06-12T17:04:16.784Z",
       "reportedBy": "community",
-      "status": "failed",
-      "error": "fetch failed"
+      "status": "seeded",
+      "walrusBlobId": "ENbMisen5WwvUM5_WTks40QC9o0G5J4KzTED0wfQrVQ"
     },
     {
-      "id": "0e3b1195-f157-4155-9fe2-a95670fd3990",
+      "id": "d442ba0a-686a-4757-becd-0fd42d0402cd",
       "type": "crime",
       "severity": "high",
       "description": "Armed robbery reported at a jewellery shop on Park Street, Kolkata. Three masked individuals fled with cash and ornaments estimated at over ₹15 lakhs. Police have been notified and are reviewing CCTV footage from nearby cameras.",
@@ -71,10 +71,10 @@
         "lng": 88.3612,
         "address": "Park Street, Kolkata, West Bengal 700016, India"
       },
-      "timestamp": "2026-06-09T04:05:33.221Z",
+      "timestamp": "2026-06-12T17:30:16.784Z",
       "reportedBy": "community",
-      "status": "failed",
-      "error": "fetch failed"
+      "status": "seeded",
+      "walrusBlobId": "VN6ZB0OAxt_FeCFwfnYv0AnPFM36f-krMNgPZKY2oOk"
     }
   ]
 }

@@ -39,7 +39,7 @@ try {
 // Priority: env var → hardcoded Railway URL
 const PROXY_URL =
   envVars.VITE_PROXY_URL ||
-  'https://sentinelproduction.up.railway.app';
+  'https://sentinel-proxy-production.up.railway.app';
 
 const WALRUS_AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space/v1/blobs';
 
