@@ -20,6 +20,7 @@ import {
   X,
   ShieldCheck,
   ArrowRightLeft,
+  ChevronDown,
 } from 'lucide-react';
 
 import { PROXY_URL } from '../lib/api';
@@ -78,6 +79,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   const [memories, setMemories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'severity'>('newest');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
 
   // Check proxy health on mount
@@ -141,6 +143,11 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   // Filtered
   const filtered = useMemo(() => {
     return sorted.filter((m) => {
+      // Type filter for incidents
+      if (activeTab === 'incidents' && typeFilter !== 'all') {
+        if (!m.rawIncident || m.rawIncident.type !== typeFilter) return false;
+      }
+      
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
@@ -334,26 +341,64 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           <span className="hidden md:inline">{activeTab === 'incidents' ? 'Incidents' : 'Agent Convos'}</span>
         </button>
 
-        {/* Sort Dropdown */}
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value as any)}
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '20px',
-            padding: '6px 12px',
-            color: '#eee',
-            fontSize: '12px',
-            fontWeight: 600,
-            outline: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <option value="newest" style={{ background: '#111' }}>Newest First</option>
-          <option value="oldest" style={{ background: '#111' }}>Oldest First</option>
-          <option value="severity" style={{ background: '#111' }}>Highest Severity</option>
-        </select>
+        {/* Filters Group */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {activeTab === 'incidents' && (
+            <div style={{ position: 'relative' }}>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                style={{
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '20px',
+                  padding: '6px 28px 6px 12px',
+                  color: '#eee',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all" style={{ background: '#111' }}>All Types</option>
+                {Object.entries(TYPE_LABELS).map(([k, v]) => (
+                  <option key={k} value={k} style={{ background: '#111' }}>
+                    {TYPE_ICONS[k]} {v}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} color="#888" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          )}
+
+          {/* Sort Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as any)}
+              style={{
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '20px',
+                padding: '6px 28px 6px 12px',
+                color: '#eee',
+                fontSize: '12px',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="newest" style={{ background: '#111' }}>Newest First</option>
+              <option value="oldest" style={{ background: '#111' }}>Oldest First</option>
+              <option value="severity" style={{ background: '#111' }}>Highest Severity</option>
+            </select>
+            <ChevronDown size={14} color="#888" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
+        </div>
 
         {/* Mobile-responsive wrapper for filters + count */}
         <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
