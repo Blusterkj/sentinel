@@ -815,7 +815,7 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
       });
     }
 
-    res.json({ response: result.text });
+    res.json({ response: resultText });
   } catch (err) {
     console.error(`   ❌ Agent failed:`, err.message || err);
     res.status(502).json({ error: 'Agent failed', detail: err.message || String(err) });
