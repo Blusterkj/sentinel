@@ -641,8 +641,11 @@ app.post('/api/chat', async (req, res) => {
       return match ? match[1].trim() : '';
     };
 
-    // Filter out simulated incidents (Reported By: System)
-    const realMemories = recalled.results.filter(r => !(r.text || '').includes('Reported By: System'));
+    // Filter out simulated incidents (Reported By: System) and old CHAT_HISTORY spam
+    const realMemories = recalled.results.filter(r => {
+      const text = r.text || '';
+      return !text.includes('Reported By: System') && !text.includes('CHAT_HISTORY');
+    });
 
     // Sort descending: most recently stored incident first
     const sorted = [...realMemories].sort(
