@@ -201,6 +201,14 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   const [walrusFetchError, setWalrusFetchError] = React.useState<string | null>(null);
   const [markedFalseAlarm, setMarkedFalseAlarm] = React.useState<string | null>(null);
 
+  const isOwner = React.useMemo(() => {
+    if (!modalIncident) return false;
+    const reporter = (modalIncident.reportedBy || modalIncident.reporter || '').toLowerCase();
+    const externalMatch = modalAccount?.address?.toLowerCase() === reporter;
+    const inAppMatch = modalInAppAddress?.toLowerCase() === reporter;
+    return modalIncident.createdByMe || externalMatch || inAppMatch;
+  }, [modalIncident, modalAccount, modalInAppAddress]);
+
   // Listen for external requests to open or close the incident modal
   React.useEffect(() => {
     const handleOpenModal = (e: Event) => {
@@ -501,7 +509,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               </div>
 
               {/* Row 2: Resolve + False Alarm (only when applicable) */}
-              {(modalIncident.createdByMe || (modalAccount?.address && (modalIncident.reportedBy?.toLowerCase() === modalAccount.address.toLowerCase() || modalIncident.reporter?.toLowerCase() === modalAccount.address.toLowerCase())) || (modalInAppAddress && (modalIncident.reportedBy?.toLowerCase() === modalInAppAddress.toLowerCase() || modalIncident.reporter?.toLowerCase() === modalInAppAddress.toLowerCase()))) && (
+              {isOwner && (
                 <>
                   {modalIncident.status === 'active' && onResolveIncident && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
