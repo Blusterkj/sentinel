@@ -898,6 +898,10 @@ app.get('/api/walrus/read/:blobId', async (req, res) => {
 app.get('/api/memories', async (req, res) => {
   const { wallet } = req.query;
 
+  if (!wallet) {
+    return res.json({ memories: [] });
+  }
+
   let memories = [...memoryRegistry.values()].sort((a, b) => b.timestamp - a.timestamp);
 
   if (wallet) {

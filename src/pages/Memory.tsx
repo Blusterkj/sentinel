@@ -2,6 +2,8 @@
 // On-chain memory visualizer — shows Walrus-stored incident memories
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useAuthStore } from '../lib/authStore';
 import type { Incident } from '../types/incident';
 import {
   Database,
@@ -46,28 +48,55 @@ function timeAgo(timestamp: string): string {
 
 
 
-export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
+export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
+  const account = useCurrentAccount();
+  const { address: inAppAddress } = useAuthStore();
+  const wallet = account?.address ?? inAppAddress ?? null;
+
+  const [activeTab, setActiveTab] = useState<'incidents' | 'agent'>('incidents');
   const [memories, setMemories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
 
-  // Check proxy health on mount and fetch memories
+  // Check proxy health on mount
   useEffect(() => {
     fetch(`${PROXY_URL}/api/health`)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then(() => setProxyOnline(true))
       .catch(() => setProxyOnline(false));
-
-    fetch(`${PROXY_URL}/api/memories`)
-      .then(res => res.json())
-      .then(data => setMemories(data.memories || []))
-      .catch(console.error);
   }, []);
+
+  // Fetch agent memories if tab is active and wallet is connected
+  useEffect(() => {
+    if (activeTab === 'agent' && wallet) {
+      fetch(`${PROXY_URL}/api/memories?wallet=${wallet}`)
+        .then(res => res.json())
+        .then(data => setMemories(data.memories || []))
+        .catch(console.error);
+    } else {
+      setMemories([]);
+    }
+  }, [activeTab, wallet]);
+
+  // Combine data based on active tab
+  const activeData = useMemo(() => {
+    if (activeTab === 'incidents') {
+      return incidents
+        .filter(i => !!i.walrusBlobId)
+        .map(i => ({
+          type: 'incident',
+          blobId: i.walrusBlobId,
+          timestamp: new Date(i.createdAt).getTime(),
+          summary: `[${i.severity.toUpperCase()}] ${i.type} at ${i.location.address}: ${i.description}`,
+        }));
+    }
+    return memories.map(m => ({ ...m, type: 'agent' }));
+  }, [activeTab, incidents, memories]);
 
   // Sorted newest first
   const sorted = useMemo(
-    () => [...memories].sort((a, b) => b.timestamp - a.timestamp),
-    [memories]
+    () => [...activeData].sort((a, b) => b.timestamp - a.timestamp),
+    [activeData]
   );
 
   // Filtered
@@ -84,7 +113,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
   }, [sorted, searchQuery]);
 
   // Stats
-  const totalBytes = memories.length * 1024; // Rough estimate 1KB per memory
+  const totalBytes = activeData.length * 1024; // Rough estimate 1KB per memory
   const oldestTs = sorted.length > 0 ? new Date(sorted[sorted.length - 1].timestamp).toISOString() : null;
   const newestTs = sorted.length > 0 ? new Date(sorted[0].timestamp).toISOString() : null;
 
@@ -119,42 +148,80 @@ export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
+          justifyContent: 'space-between',
         }}
       >
-        <Database size={16} color="#8b5cf6" />
-        <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-          On-Chain Memory Explorer
-        </span>
-        {/* Live indicator — inline next to title */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '10px',
-            color: '#22c55e',
-            background: 'rgba(34, 197, 94, 0.08)',
-            padding: '3px 10px',
-            borderRadius: '20px',
-            border: '1px solid rgba(34, 197, 94, 0.2)',
-            fontFamily: 'monospace',
-            fontWeight: 600,
-          }}
-        >
-          <span
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Database size={16} color="#8b5cf6" />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+            On-Chain Memory Explorer
+          </span>
+          {/* Live indicator */}
+          <div
             style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 8px #22c55e',
-              animation: 'glow-pulse 2s ease-in-out infinite',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '10px',
+              color: '#22c55e',
+              background: 'rgba(34, 197, 94, 0.08)',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              border: '1px solid rgba(34, 197, 94, 0.2)',
+              fontFamily: 'monospace',
+              fontWeight: 600,
             }}
-          />
-          LIVE — synced to Walrus
+          >
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#22c55e',
+                boxShadow: '0 0 8px #22c55e',
+                animation: 'glow-pulse 2s ease-in-out infinite',
+              }}
+            />
+            LIVE — synced to Walrus
+          </div>
+          <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
         </div>
-        <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
+
+        {/* Tab Switcher */}
+        <div style={{ display: 'flex', background: '#111', padding: '4px', borderRadius: '24px', border: '1px solid #222' }}>
+          <button
+            onClick={() => setActiveTab('incidents')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '20px',
+              border: 'none',
+              background: activeTab === 'incidents' ? '#222' : 'transparent',
+              color: activeTab === 'incidents' ? '#fff' : '#888',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            Incidents
+          </button>
+          <button
+            onClick={() => setActiveTab('agent')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '20px',
+              border: 'none',
+              background: activeTab === 'agent' ? '#222' : 'transparent',
+              color: activeTab === 'agent' ? '#fff' : '#888',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            Agent Conversations
+          </button>
+        </div>
       </div>
 
       {/* Stats bar */}
@@ -172,7 +239,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
         <StatCard
           icon={<Layers size={14} color="#3b82f6" />}
           label="Total Memories"
-          value={String(memories.length)}
+          value={String(activeData.length)}
           color="#3b82f6"
         />
         <StatCard
@@ -250,14 +317,25 @@ export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
             borderRadius: '999px',
             background: 'rgba(255,255,255,0.03)',
           }}>
-            {filtered.length} / {memories.length}
+            {filtered.length} / {activeData.length}
           </span>
         </div>
       </div>
 
       {/* Memory entries */}
       <div className="px-5 pt-6 pb-[20px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: 'transparent' }}>
-        {filtered.length === 0 ? (
+        {activeTab === 'agent' && !wallet ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#888',
+              fontSize: '13px',
+            }}
+          >
+            Connect your wallet to view your agent conversation history.
+          </div>
+        ) : filtered.length === 0 ? (
           <div
             style={{
               textAlign: 'center',
