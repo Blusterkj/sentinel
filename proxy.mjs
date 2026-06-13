@@ -42,6 +42,27 @@ try {
 }
 const incidentRegistry = new Map(initialData);
 
+// Memory registry — keyed by blobId.
+const MEMORY_FILE = '/app/data/memories.json';
+let initialMemories = [];
+try {
+  if (fs.existsSync(MEMORY_FILE)) {
+    const raw = fs.readFileSync(MEMORY_FILE, 'utf8');
+    initialMemories = JSON.parse(raw);
+  }
+} catch (e) {
+  console.error("Failed to load /app/data/memories.json", e);
+}
+const memoryRegistry = new Map(initialMemories);
+
+function saveMemoryRegistry() {
+  try {
+    fs.writeFileSync(MEMORY_FILE, JSON.stringify([...memoryRegistry.entries()], null, 2));
+  } catch (e) {
+    console.error("Failed to save /app/data/memories.json", e);
+  }
+}
+
 function saveIncidentRegistry() {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify([...incidentRegistry.entries()], null, 2));
@@ -158,8 +179,8 @@ app.get('/', (_req, res) => {
       'POST /api/chat',
       'GET  /api/walrus/test',
       'GET  /api/walrus/read/:blobId',
-      'POST /api/chat-memory/save',
-      'GET  /api/chat-memory/load',
+      'GET  /api/walrus/read/:blobId',
+      'GET  /api/memories',
     ],
   });
 });
@@ -591,7 +612,7 @@ app.post('/api/incidents/:id/resolve', (req, res) => {
  * Returns: { response }
  */
 app.post('/api/chat', async (req, res) => {
-  const { message, history = [], currentIncidents = [] } = req.body;
+  const { message, history = [], currentIncidents = [], walletAddress } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Missing message field' });
   }
@@ -672,8 +693,23 @@ app.post('/api/chat', async (req, res) => {
     }`;
   }
 
+  // Inject last 5 memories into system prompt for full context
+  let memoryContext = '';
+  if (walletAddress) {
+    const userMemories = [...memoryRegistry.values()]
+      .filter(m => m.walletAddress === walletAddress)
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+      
+    if (userMemories.length > 0) {
+      memoryContext = `\n\n## PREVIOUS CONVERSATION CONTEXT\nHere is your recent conversation history with this exact user:\n${
+        userMemories.map(m => `User: ${m.exchange.user}\nYou: ${m.exchange.agent}`).join('\n\n')
+      }`;
+    }
+  }
+
   const SYSTEM_PROMPT = `You are **Sentinel**, an AI-powered emergency operations agent deployed for the city of Bengaluru. You have permanent, cryptographically-verified memory of every safety incident ever reported — stored immutably on the Walrus blockchain via the MemWal protocol. Your memory cannot be tampered with, erased, or altered.
-${liveContext}
+${liveContext}${memoryContext}
 
 ## Your Core Identity
 You are NOT a generic chatbot. You are a precision intelligence system for community safety. Every response you give should feel like it comes from a senior emergency operations analyst who has been watching this city's safety data for years.
@@ -735,6 +771,23 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
     });
 
     console.log(`   ✅ Agent responded (${result.text.length} chars)`);
+    
+    // SAVE: Immediately save the full exchange to Walrus
+    if (walletAddress) {
+      const exchange = { user: message, agent: result.text };
+      const dataBuffer = Buffer.from(JSON.stringify(exchange));
+      uploadAndVerify(dataBuffer).then(blobId => {
+        if (blobId) {
+          const summary = message.length > 50 ? message.slice(0, 47) + '...' : message;
+          memoryRegistry.set(blobId, { blobId, timestamp: Date.now(), summary, walletAddress, exchange });
+          saveMemoryRegistry();
+          console.log(`   ✅ Chat memory saved to Walrus: ${blobId}`);
+        }
+      }).catch(err => {
+        console.error('   ❌ Chat memory Walrus upload failed:', err.message);
+      });
+    }
+
     res.json({ response: result.text });
   } catch (err) {
     console.error(`   ❌ Agent failed:`, err.message || err);
@@ -810,122 +863,36 @@ app.get('/api/walrus/read/:blobId', async (req, res) => {
 });
 
 /**
- * POST /api/chat-memory/save
+ * GET /api/memories?wallet=...
  *
- * Persists a user's AgentChat conversation history to MemWal.
- * Body: { userId, messages: AgentMessage[], cleared?: boolean }
- * Uses a fixed key tag "CHAT_HISTORY:{userId}" so we can retrieve it deterministically.
- * Non-blocking — failure is silently swallowed on the client side.
+ * Retrieves the most recent chat memories for a user from the memory registry.
+ * Returns: { memories: [{ blobId, timestamp, summary, exchange }] }
  */
-app.post('/api/chat-memory/save', async (req, res) => {
-  const { userId, messages, cleared } = req.body;
-  if (!userId || !Array.isArray(messages)) {
-    return res.status(400).json({ success: false, error: 'userId and messages[] are required' });
+app.get('/api/memories', async (req, res) => {
+  const { wallet } = req.query;
+
+  let memories = [...memoryRegistry.values()].sort((a, b) => b.timestamp - a.timestamp);
+
+  if (wallet) {
+    memories = memories.filter(m => m.walletAddress === wallet);
+    memories = memories.slice(0, 10);
+    
+    // Fetch blob content from Walrus aggregator for each
+    const AGGREGATOR = 'https://aggregator.walrus-testnet.walrus.space/v1/blobs';
+    const enriched = await Promise.all(memories.map(async (m) => {
+      try {
+        const aggRes = await fetch(`${AGGREGATOR}/${m.blobId}`);
+        if (aggRes.ok) {
+          const exchange = await aggRes.json();
+          return { ...m, exchange };
+        }
+      } catch {}
+      return m;
+    }));
+    return res.json({ memories: enriched });
   }
 
-  // Only persist real messages (strip welcome message with id 'welcome')
-  const toSave = messages.filter((m) => m.id !== 'welcome');
-
-  // Format: tagged text blob so recall can find it by userId
-  // Include a timestamp so we can sort multiple results by recency
-  // Save as an object to support the `cleared` flag while maintaining backward compatibility
-  const payload = { cleared: !!cleared, messages: toSave, clearedAt: cleared ? Date.now() : undefined };
-  const text = `CHAT_HISTORY:${userId}\nTIMESTAMP:${Date.now()}\n${JSON.stringify(payload)}`;
-
-  console.log(`\n💬 Chat-memory save: userId=${userId.slice(0, 10)}… (${toSave.length} messages, cleared: ${!!cleared})`);
-
-  try {
-    const result = await memwal.rememberAndWait(text, undefined, {
-      pollIntervalMs: 2000,
-      timeoutMs: 60000,
-    });
-    console.log(`   ✅ Chat-memory saved → blob: ${result.blob_id}`);
-    res.json({ success: true, blobId: result.blob_id });
-  } catch (err) {
-    console.warn(`   ⚠️  Chat-memory save failed (non-blocking):`, err.message || err);
-    // Return 200 so the client doesn't surface this as an error
-    res.json({ success: false, error: err.message || String(err) });
-  }
-});
-
-/**
- * GET /api/chat-memory/load?userId=...
- *
- * Retrieves the most recent chat history for a user from MemWal.
- * Searches by "CHAT_HISTORY:{userId}" tag and returns the closest match.
- * Returns: { found: boolean, cleared?: boolean, messages: AgentMessage[] }
- */
-app.get('/api/chat-memory/load', async (req, res) => {
-  const { userId } = req.query;
-  if (!userId) {
-    return res.status(400).json({ error: 'Missing ?userId= parameter' });
-  }
-
-  const query = `CHAT_HISTORY:${userId}`;
-  console.log(`\n💬 Chat-memory load: userId=${String(userId).slice(0, 10)}…`);
-
-  try {
-    const result = await memwal.recall(query, 10);
-    const items = result.results ?? result ?? [];
-
-    // Find all items that are this user's chat history
-    const matches = items.filter((item) =>
-      item.text && item.text.startsWith(`CHAT_HISTORY:${userId}`)
-    );
-
-    if (matches.length === 0) {
-      console.log(`   ℹ️  No chat history found for userId=${String(userId).slice(0, 10)}…`);
-      return res.json({ found: false, messages: [] });
-    }
-
-    // Sort by timestamp descending (newest first).
-    // If no timestamp is found, it defaults to 0 (older than timestamped ones).
-    matches.sort((a, b) => {
-      const getTs = (text) => {
-        const m = text.match(/TIMESTAMP:(\d+)/);
-        return m ? parseInt(m[1], 10) : 0;
-      };
-      return getTs(b.text) - getTs(a.text);
-    });
-
-    const match = matches[0];
-
-    // Find the JSON array or object
-    const jsonStartIdx = match.text.search(/[{[]/);
-    if (jsonStartIdx === -1) {
-      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}… (No JSON found)`);
-      return res.json({ found: false, messages: [] });
-    }
-
-    const jsonStr = match.text.slice(jsonStartIdx);
-    let messages = [];
-    let isCleared = false;
-
-    try {
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed)) {
-        messages = parsed;
-      } else if (parsed && typeof parsed === 'object') {
-        messages = Array.isArray(parsed.messages) ? parsed.messages : [];
-        isCleared = !!parsed.cleared;
-      }
-    } catch {
-      console.warn(`   ⚠️  Failed to parse chat history JSON for ${String(userId).slice(0, 10)}…`);
-      return res.json({ found: false, messages: [] });
-    }
-
-    // Treat empty message array as cleared state too
-    if (messages.length === 0) {
-      isCleared = true;
-    }
-
-    console.log(`   ✅ Loaded ${messages.length} messages (cleared: ${isCleared}) for userId=${String(userId).slice(0, 10)}…`);
-    res.json({ found: true, cleared: isCleared, messages });
-  } catch (err) {
-    console.error(`   ❌ Chat-memory load failed:`, err.message || err);
-    // Return 200 + empty so client silently falls back to empty chat
-    res.json({ found: false, messages: [], error: err.message || String(err) });
-  }
+  res.json({ memories });
 });
 
 // ─── Start ───────────────────────────────────────────────────
@@ -1137,8 +1104,7 @@ server.listen(PORT, () => {
   console.log(`     POST /api/unflag`);
   console.log(`     POST /api/chat`);
   console.log(`     GET  /api/health`);
-  console.log(`     POST /api/chat-memory/save`);
-  console.log(`     GET  /api/chat-memory/load`);
+  console.log(`     GET  /api/memories`);
   console.log(`   WebSocket: ws://localhost:${PORT}\n`);
 
   // Restore incidents from Walrus after any Railway restart.

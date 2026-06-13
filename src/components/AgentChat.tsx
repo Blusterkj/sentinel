@@ -55,20 +55,25 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
     const loadHistory = async () => {
       setIsRestoring(true);
       try {
-        const res = await fetch(`${PROXY_URL}/api/chat-memory/load?userId=${encodeURIComponent(userId)}`);
+        const res = await fetch(`${PROXY_URL}/api/memories?wallet=${encodeURIComponent(userId)}`);
         if (!res.ok) return; // silently fail — never break the UI
         const data = await res.json();
         
-        if (data.found && data.cleared) {
-          // Explicitly cleared on another device — wipe local state
-          setMessages([WELCOME_MESSAGE]);
-        } else if (data.found && Array.isArray(data.messages) && data.messages.length > 0) {
+        if (data.memories && data.memories.length > 0) {
           // Only restore history if we don't already have in-session messages
           const currentMessages = useAppStore.getState().agentMessages;
           const hasRealMessages = currentMessages.some((m) => m.id !== 'welcome');
           if (!hasRealMessages) {
+            // Reconstruct messages from exchanges (oldest first for chat history)
+            const restoredMsgs: AgentMessage[] = [];
+            [...data.memories].reverse().forEach((m) => {
+              if (m.exchange) {
+                restoredMsgs.push({ id: uuidv4(), role: 'user', content: m.exchange.user, timestamp: new Date(m.timestamp).toISOString() });
+                restoredMsgs.push({ id: uuidv4(), role: 'assistant', content: m.exchange.agent, timestamp: new Date(m.timestamp + 1).toISOString() });
+              }
+            });
             // Prepend the welcome message, then the restored history
-            setMessages([WELCOME_MESSAGE, ...data.messages]);
+            setMessages([WELCOME_MESSAGE, ...restoredMsgs]);
           }
         }
       } catch {
@@ -81,26 +86,6 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
     loadHistory();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
-
-  // ── Debounced MemWal save — fires 2s after the last message change ───────────
-  const scheduleSave = useCallback(
-    (latestMessages: AgentMessage[]) => {
-      if (!userId) return;
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(async () => {
-        try {
-          await fetch(`${PROXY_URL}/api/chat-memory/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, messages: latestMessages }),
-          });
-        } catch {
-          // Silent fail — in-session state is still intact
-        }
-      }, 2000);
-    },
-    [userId]
-  );
 
   // Clean up save timer on unmount
   useEffect(() => {
@@ -135,7 +120,7 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
       const res = await fetch(`${PROXY_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, currentIncidents: incidents }),
+        body: JSON.stringify({ message: text, history, currentIncidents: incidents, walletAddress: userId }),
       });
 
       if (!res.ok) {
@@ -154,8 +139,6 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
 
       setMessages((prev) => {
         const updated = [...prev, agentMsg];
-        // Schedule MemWal save after every assistant reply (debounced 2s)
-        scheduleSave(updated);
         return updated;
       });
     } catch (err) {

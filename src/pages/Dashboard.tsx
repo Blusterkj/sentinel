@@ -134,7 +134,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const activeCount = incidents.filter((i) => i.status === 'active').length;
   const verifiedOnSuiCount = incidents.filter((i) => !!i.suiTxDigest).length;
   const walrusVerifiedCount = incidents.filter((i) => !!i.walrusBlobId).length;
-  const myReportsCount = incidents.filter((i) => i.createdByMe).length;
+  const address = account?.address || inAppAddress;
+  const myReportsCount = incidents.filter((i) => {
+    if (i.createdByMe) return true;
+    if (address && (
+      (i.reportedBy && i.reportedBy.toLowerCase() === address.toLowerCase()) ||
+      (i.reporter && i.reporter.toLowerCase() === address.toLowerCase())
+    )) return true;
+    return false;
+  }).length;
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

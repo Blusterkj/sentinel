@@ -72,7 +72,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
         description: '🆘 SOS EMERGENCY — User triggered panic alert. Immediate assistance required.',
         location: { lat: coords.latitude, lng: coords.longitude, address },
         timestamp: new Date().toISOString(),
-        reportedBy: 'SOS',
+        reportedBy: walletAddress || 'SOS',
         status: 'active',
         createdByMe: true,
         reporter: walletAddress ?? undefined,

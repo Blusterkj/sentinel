@@ -56,18 +56,8 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
               sessionStorage.setItem('sentinel_chat_cleared', '1');
               clearAgentMessages();
               
-              // Overwrite MemWal blob with empty history so it doesn't rehydrate on next load
-              if (userId) {
-                try {
-                  await fetch(`${PROXY_URL}/api/chat-memory/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, messages: [], cleared: true, clearedAt: Date.now() }),
-                  });
-                } catch {
-                  // Silent fail
-                }
-              }
+              // We no longer clear the decentralized memory since we want the memory to be permanent.
+              // We just clear the local session state.
               setIsClearing(false);
             }}
             style={{

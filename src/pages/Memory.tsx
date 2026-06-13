@@ -71,46 +71,46 @@ function estimateSize(incident: Incident): number {
 }
 
 export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
+  const [memories, setMemories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<IncidentType | 'all'>('all');
-  const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
 
-  // Check proxy health on mount
+  // Check proxy health on mount and fetch memories
   useEffect(() => {
     fetch(`${PROXY_URL}/api/health`)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then(() => setProxyOnline(true))
       .catch(() => setProxyOnline(false));
+
+    fetch(`${PROXY_URL}/api/memories`)
+      .then(res => res.json())
+      .then(data => setMemories(data.memories || []))
+      .catch(console.error);
   }, []);
 
   // Sorted newest first
   const sorted = useMemo(
-    () => [...incidents].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [incidents]
+    () => [...memories].sort((a, b) => b.timestamp - a.timestamp),
+    [memories]
   );
 
   // Filtered
   const filtered = useMemo(() => {
-    return sorted.filter((inc) => {
-      if (typeFilter !== 'all' && inc.type !== typeFilter) return false;
-      if (severityFilter !== 'all' && inc.severity !== severityFilter) return false;
+    return sorted.filter((m) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
-          inc.description.toLowerCase().includes(q) ||
-          inc.location.address.toLowerCase().includes(q) ||
-          inc.type.toLowerCase().includes(q)
+          m.summary.toLowerCase().includes(q) || m.blobId.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [sorted, typeFilter, severityFilter, searchQuery]);
+  }, [sorted, searchQuery]);
 
   // Stats
-  const totalBytes = incidents.reduce((sum, inc) => sum + estimateSize(inc), 0);
-  const oldestTs = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : null;
-  const newestTs = sorted.length > 0 ? sorted[0].timestamp : null;
+  const totalBytes = memories.length * 1024; // Rough estimate 1KB per memory
+  const oldestTs = sorted.length > 0 ? new Date(sorted[sorted.length - 1].timestamp).toISOString() : null;
+  const newestTs = sorted.length > 0 ? new Date(sorted[0].timestamp).toISOString() : null;
 
   return (
     <div className="mobile-memory-outer" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -196,7 +196,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         <StatCard
           icon={<Layers size={14} color="#3b82f6" />}
           label="Total Memories"
-          value={String(incidents.length)}
+          value={String(memories.length)}
           color="#3b82f6"
         />
         <StatCard
@@ -265,62 +265,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         {/* Mobile-responsive wrapper for filters + count */}
         <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
           <div className="flex items-center gap-2 flex-1 min-w-0 md:flex-initial">
-            {/* Type filter */}
-            <div className="flex items-center gap-1 min-w-0">
-              <Filter size={14} color="#888" className="flex-shrink-0" />
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as IncidentType | 'all')}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#bbb',
-                  fontSize: '13px',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: 500,
-                  minWidth: 0,
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-            <option value="all" style={{ background: '#111' }}>All Types</option>
-            <option value="medical" style={{ background: '#111' }}>Medical</option>
-            <option value="fire" style={{ background: '#111' }}>Fire</option>
-            <option value="crime" style={{ background: '#111' }}>Crime</option>
-            <option value="accident" style={{ background: '#111' }}>Accident</option>
-            <option value="natural_disaster" style={{ background: '#111' }}>Natural Disaster</option>
-          </select>
-            </div>
-
-            {/* Severity filter */}
-            <select
-              value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#bbb',
-                fontSize: '13px',
-                outline: 'none',
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 500,
-                minWidth: 0,
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-              }}
-            >
-          <option value="all" style={{ background: '#111' }}>All Severities</option>
-          <option value="high" style={{ background: '#111' }}>High</option>
-          <option value="medium" style={{ background: '#111' }}>Medium</option>
-          <option value="low" style={{ background: '#111' }}>Low</option>
-            </select>
-          </div>
-
           {/* Result count */}
           <span className="flex-shrink-0 whitespace-nowrap" style={{
             fontSize: '12px',
@@ -331,7 +275,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             borderRadius: '999px',
             background: 'rgba(255,255,255,0.03)',
           }}>
-            {filtered.length} / {incidents.length}
+            {filtered.length} / {memories.length}
           </span>
         </div>
       </div>
@@ -351,8 +295,8 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {filtered.map((incident, index) => (
-              <MemoryEntry key={incident.id} incident={incident} index={index} isLast={index === filtered.length - 1} />
+            {filtered.map((memory, index) => (
+              <MemoryEntry key={memory.blobId} memory={memory} index={index} isLast={index === filtered.length - 1} />
             ))}
           </div>
         )}
@@ -363,50 +307,13 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
 // ─── Sub-components ─────────────────────────────────────────
 
-const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolean }> = ({ incident, index, isLast }) => {
-  const account = useCurrentAccount();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
-  const [resolving, setResolving] = useState(false);
-  const [resolvedLocal, setResolvedLocal] = useState(incident.status === 'resolved');
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setResolvedLocal(incident.status === 'resolved');
-  }, [incident.status]);
-
-  const handleResolve = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!incident.suiObjectId) return;
-    setResolving(true);
-    try {
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::resolve_incident`,
-        arguments: [tx.object(incident.suiObjectId)],
-      });
-      await signAndExecute({ transaction: tx });
-      setResolvedLocal(true);
-    } catch (err: any) {
-      alert(`Error resolving: ${err.message}`);
-    } finally {
-      setResolving(false);
-    }
-  };
-
-  const blobId = incident.walrusBlobId;
-  const walrusStatus = incident.walrusStatus || 'pending';
-  const byteSize = estimateSize(incident);
-  const typeIcon = TYPE_ICONS[incident.type] || '⚠️';
-  const typeLabel = TYPE_LABELS[incident.type] || incident.type;
+const MemoryEntry: React.FC<{ memory: any; index: number; isLast?: boolean }> = ({ memory, index, isLast }) => {
+  const blobId = memory.blobId;
   const [hovered, setHovered] = useState(false);
   const [showProof, setShowProof] = useState(false);
   const [proofData, setProofData] = useState<string | null>(null);
   const [proofLoading, setProofLoading] = useState(false);
   const [proofError, setProofError] = useState<string | null>(null);
-
-  const isSynced = walrusStatus === 'synced' && !!blobId;
-  const isSyncing = walrusStatus === 'syncing';
-  const isFailed = walrusStatus === 'failed';
 
   const handleVerify = async () => {
     if (showProof) {
@@ -417,19 +324,9 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
     setProofLoading(true);
     setProofError(null);
     try {
-      if (!blobId) throw new Error("No Walrus Blob ID available for this incident.");
+      if (!blobId) throw new Error("No Walrus Blob ID available for this memory.");
 
-      // Go through the proxy which tries multiple aggregator nodes
-      const res = await fetch(`${PROXY_URL}/api/walrus/read/${blobId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.found && json.data) {
-          setProofData(json.data);
-          return;
-        }
-      }
-
-      // Fallback: try direct aggregator nodes in sequence
+      // Fetch from aggregator
       const aggregators = [
         `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`,
         `https://wal-aggregator-testnet.staketab.org/v1/blobs/${blobId}`,
@@ -445,26 +342,8 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
           }
         } catch { /* try next */ }
       }
-      // Auto-heal logic
-      const ageMs = Date.now() - new Date(incident.createdAt || incident.timestamp).getTime();
-      if (ageMs > 5 * 60 * 1000) {
-        const reblobRes = await fetch(`${PROXY_URL}/api/reblob`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ incidentId: incident.id })
-        });
-        const reblobData = await reblobRes.json();
-        if (reblobData.success && reblobData.newBlobId) {
-          const r = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${reblobData.newBlobId}`);
-          if (r.ok) {
-            const text = await r.text();
-            setProofData(text);
-            return;
-          }
-        }
-      }
 
-      throw new Error('Blob not found on any Walrus aggregator — it may still be propagating, try again in 30 seconds');
+      throw new Error('Blob not found on any Walrus aggregator.');
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
         setProofError('Network error connecting to Walrus aggregator.');
@@ -476,23 +355,10 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
     }
   };
 
-  const handleGoToIncident = () => {
-    // 1. Navigate to Dashboard via History API (App.tsx popstate listener sets page to 'dashboard')
-    window.history.pushState({}, '', '/dashboard');
-    window.dispatchEvent(new Event('popstate'));
-    // 2. After Dashboard mounts, fire selectIncident to open the modal
-    setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent('selectIncident', { detail: incident })
-      );
-    }, 200);
-  };
-
   return (
     <>
     <div
       className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent`}
-      onClick={handleGoToIncident}
       style={{
         borderRadius: '8px',
         padding: '14px 16px',
@@ -500,7 +366,6 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         alignItems: 'center',
         gap: '14px',
         animationDelay: `${index * 30}ms`,
-        cursor: 'pointer',
         marginBottom: isLast ? '0' : '4px',
         overflow: 'hidden',
       }}
@@ -523,39 +388,14 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
           flexShrink: 0,
         }}
       >
-        {typeIcon}
+        💬
       </div>
 
       {/* Main content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Row 1: Title/Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>{typeLabel}</span>
-          <SeverityBadge severity={incident.severity} size="sm" />
-          {resolvedLocal ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontSize: '11px', fontWeight: 600, background: 'rgba(34, 197, 94, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-              <CheckCircle size={11} /> Resolved
-            </div>
-          ) : (
-            account?.address === incident.reporter && incident.suiObjectId && (
-              <button 
-                onClick={handleResolve}
-                disabled={resolving}
-                style={{ 
-                  background: 'rgba(34, 197, 94, 0.1)', 
-                  border: '1px solid rgba(34, 197, 94, 0.3)', 
-                  color: '#22c55e', 
-                  fontSize: '11px', 
-                  fontWeight: 600, 
-                  padding: '2px 6px', 
-                  borderRadius: '4px',
-                  cursor: resolving ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {resolving ? '...' : 'Resolve'}
-              </button>
-            )
-          )}
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>Agent Conversation</span>
         </div>
 
         <p
@@ -570,91 +410,41 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
             marginBottom: '6px',
           }}
         >
-          📍 {incident.location.address}
+          {memory.summary}
         </p>
 
         {/* Blob ID row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isSynced && blobId ? (
-            <>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '10px',
-                  color: '#8b5cf6',
-                  background: 'rgba(139, 92, 246, 0.08)',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontFamily: 'monospace',
-                  border: '1px solid rgba(139, 92, 246, 0.15)',
-                }}
-              >
-                <Hexagon size={8} />
-                {truncateBlobId(blobId)}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '10px',
-                  color: '#22c55e',
-                  fontFamily: 'monospace',
-                }}
-              >
-                <CheckCircle size={10} />
-                Verified
-              </div>
-            </>
-          ) : isSyncing ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
-                color: '#8b5cf6',
-                fontFamily: 'monospace',
-              }}
-            >
-              <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />
-              Syncing to Walrus…
-            </div>
-          ) : isFailed ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
-                color: '#f59e0b',
-                fontFamily: 'monospace',
-              }}
-            >
-              <AlertCircle size={10} />
-              Pending sync
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
-                color: '#555',
-                fontFamily: 'monospace',
-              }}
-            >
-              <Hexagon size={8} />
-              Awaiting Walrus sync
-            </div>
-          )}
-
-          <span style={{ fontSize: '10px', color: '#444', fontFamily: 'monospace' }}>
-            {byteSize} B
-          </span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '10px',
+              color: '#8b5cf6',
+              background: 'rgba(139, 92, 246, 0.08)',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+              border: '1px solid rgba(139, 92, 246, 0.15)',
+            }}
+          >
+            <Hexagon size={8} />
+            {truncateBlobId(blobId)}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '10px',
+              color: '#22c55e',
+              fontFamily: 'monospace',
+            }}
+          >
+            <CheckCircle size={10} />
+            Verified
+          </div>
         </div>
       </div>
 
@@ -669,10 +459,9 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
             marginTop: '2px',
           }}
         >
-          {timeAgo(incident.timestamp)}
+          {timeAgo(new Date(memory.timestamp).toISOString())}
         </span>
 
-        {isSynced && blobId ? (
         <button
           onClick={(e) => { e.stopPropagation(); handleVerify(); }}
           style={{
@@ -691,36 +480,11 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
             flexShrink: 0,
             cursor: 'pointer',
           }}
-          title="Verify on-chain memory via MemWal recall"
+          title="Verify on-chain memory via Walrus recall"
         >
           {showProof ? <X size={11} /> : <Eye size={11} />}
           {showProof ? 'Close' : 'Verify'}
         </button>
-      ) : (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            padding: '6px 12px',
-            background: '#111',
-            border: '1px solid #1f1f1f',
-            borderRadius: '6px',
-            color: '#444',
-            fontSize: '11px',
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          {isSyncing ? (
-            <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <ExternalLink size={11} />
-          )}
-          {isSyncing ? 'Syncing…' : 'Pending'}
-        </div>
-      )}
     </div>
   </div>
 
@@ -743,7 +507,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
             ON-CHAIN VERIFICATION
           </span>
           <span style={{ color: '#555', fontFamily: 'monospace', fontSize: '10px', marginLeft: 'auto' }}>
-            via MemWal → SEAL → Walrus
+            Walrus
           </span>
         </div>
 
@@ -763,7 +527,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         {proofLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8b5cf6', padding: '8px 0' }}>
             <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-            <span>Recalling from Walrus via MemWal…</span>
+            <span>Recalling from Walrus…</span>
           </div>
         ) : proofError ? (
           <div style={{ color: '#f59e0b', padding: '8px 0', lineHeight: '1.5' }}>
@@ -788,7 +552,7 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
         <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <CheckCircle size={10} color="#22c55e" />
           <span style={{ color: '#22c55e', fontFamily: 'monospace', fontSize: '10px' }}>
-            Data retrieved from Walrus decentralized storage via SEAL decryption
+            Data retrieved from Walrus decentralized storage
           </span>
         </div>
       </div>
