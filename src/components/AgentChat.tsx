@@ -2,7 +2,7 @@
 // Chat interface with the MemWal-powered AI agent.
 // Chat history is persisted to MemWal (Walrus) — not localStorage.
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Brain, User, Loader2, AlertCircle, CloudDownload } from 'lucide-react';
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';

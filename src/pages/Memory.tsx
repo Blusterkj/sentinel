@@ -2,18 +2,13 @@
 // On-chain memory visualizer — shows Walrus-stored incident memories
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Incident, IncidentType, Severity } from '../types/incident';
-import { SeverityBadge } from '../components/SeverityBadge';
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
-import { Transaction } from '@mysten/sui/transactions';
+import type { Incident } from '../types/incident';
 import {
   Database,
   Search,
-  ExternalLink,
   Clock,
   HardDrive,
   Activity,
-  Filter,
   Hexagon,
   CheckCircle,
   Layers,
@@ -37,23 +32,7 @@ function truncateBlobId(blobId: string): string {
   return `${blobId.slice(0, 10)}…${blobId.slice(-6)}`;
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  medical: '🏥',
-  fire: '🔥',
-  crime: '🚨',
-  accident: '💥',
-  natural_disaster: '🌩️',
-  other: '⚠️',
-};
 
-const TYPE_LABELS: Record<string, string> = {
-  medical: 'Medical',
-  fire: 'Fire',
-  crime: 'Crime',
-  accident: 'Accident',
-  natural_disaster: 'Natural Disaster',
-  other: 'Other',
-};
 
 function timeAgo(timestamp: string): string {
   const diff = Date.now() - new Date(timestamp).getTime();
@@ -65,12 +44,9 @@ function timeAgo(timestamp: string): string {
   return `${days}d ago`;
 }
 
-function estimateSize(incident: Incident): number {
-  // Rough estimate: JSON serialization byte size
-  return new TextEncoder().encode(JSON.stringify(incident)).length;
-}
 
-export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
+
+export const Memory: React.FC<MemoryProps> = ({ incidents: _unused }) => {
   const [memories, setMemories] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
@@ -264,7 +240,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
         {/* Mobile-responsive wrapper for filters + count */}
         <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
-          <div className="flex items-center gap-2 flex-1 min-w-0 md:flex-initial">
           {/* Result count */}
           <span className="flex-shrink-0 whitespace-nowrap" style={{
             fontSize: '12px',

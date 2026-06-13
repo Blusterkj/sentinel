@@ -6,17 +6,9 @@ import { AgentChat } from '../components/AgentChat';
 import { Brain, Database, Network, Trash2 } from 'lucide-react';
 import type { Incident } from '../types/incident';
 import { useAppStore } from '../store/appStore';
-import { useCurrentAccount } from '@mysten/dapp-kit';
-import { useAuthStore } from '../lib/authStore';
-import { PROXY_URL } from '../lib/api';
-
 export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   const { agentMessages, clearAgentMessages } = useAppStore();
-  const account = useCurrentAccount();
-  const { address: inAppAddress } = useAuthStore();
-  const userId = account?.address ?? inAppAddress ?? null;
   const [isClearing, setIsClearing] = React.useState(false);
-  
   return (
     <div
       style={{
