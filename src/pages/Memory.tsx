@@ -112,8 +112,8 @@ const CustomSelect: React.FC<{
               <button
                 key={opt.value}
                 onClick={() => {
-                  onChange(opt.value);
                   setIsOpen(false);
+                  setTimeout(() => onChange(opt.value), 10);
                 }}
                 style={{
                   display: 'flex',
