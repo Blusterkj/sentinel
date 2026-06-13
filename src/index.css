@@ -237,7 +237,7 @@ body {
   .mobile-memory-list {
     flex: none !important;
     overflow-y: visible !important;
-    padding-bottom: 20px !important;
+    padding-bottom: 0px !important;
   }
 
 
