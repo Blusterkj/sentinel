@@ -15,7 +15,7 @@ const INCIDENTS = [
 export async function buildSimulatedIncident(): Promise<Incident> {
   const pick = INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
   const incident: Incident = {
-    id: pick.id,
+    id: `sim-${Date.now()}-${pick.id}`,
     type: pick.type,
     severity: pick.severity,
     description: pick.description,
