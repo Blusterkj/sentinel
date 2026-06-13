@@ -491,14 +491,14 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
   return (
     <>
     <div
-      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent mobile-memory-entry`}
+      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent`}
       onClick={handleGoToIncident}
       style={{
         borderRadius: '8px',
-        padding: '12px 14px',
+        padding: '14px 16px',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '14px',
         animationDelay: `${index * 30}ms`,
         cursor: 'pointer',
         marginBottom: isLast ? '0' : '4px',
@@ -511,7 +511,6 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
       <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-[rgba(139,92,246,0.6)] transition-colors duration-300" />
       {/* Type icon */}
       <div
-        className="mobile-memory-icon"
         style={{
           width: '38px',
           height: '38px',

@@ -237,20 +237,7 @@ body {
   .mobile-memory-list {
     flex: none !important;
     overflow-y: visible !important;
-    padding-bottom: 100px !important; /* increased so the last item scrolls past the SOS button */
-  }
-
-  .mobile-memory-entry {
-    padding: 2px 4px !important;
-    gap: 2px !important;
-    margin-bottom: 2px !important;
-    border-radius: 4px !important;
-  }
-  .mobile-memory-icon {
-    width: 20px !important;
-    height: 20px !important;
-    font-size: 10px !important;
-    border-radius: 4px !important;
+    padding-bottom: 20px !important;
   }
 
 
