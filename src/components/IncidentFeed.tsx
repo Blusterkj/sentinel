@@ -241,7 +241,15 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
     displayedIncidents = displayedIncidents.filter((i) => i.status === 'active');
   }
   if (myReportsFilter) {
-    displayedIncidents = displayedIncidents.filter((i) => i.createdByMe);
+    const address = modalAccount?.address || modalInAppAddress;
+    displayedIncidents = displayedIncidents.filter((i) => {
+      if (i.createdByMe) return true;
+      if (address && (
+        (i.reportedBy && i.reportedBy.toLowerCase() === address.toLowerCase()) ||
+        (i.reporter && i.reporter.toLowerCase() === address.toLowerCase())
+      )) return true;
+      return false;
+    });
   }
 
   return (
@@ -493,7 +501,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
               </div>
 
               {/* Row 2: Resolve + False Alarm (only when applicable) */}
-              {modalIncident.createdByMe && (
+              {(modalIncident.createdByMe || (modalAccount?.address && (modalIncident.reportedBy?.toLowerCase() === modalAccount.address.toLowerCase() || modalIncident.reporter?.toLowerCase() === modalAccount.address.toLowerCase())) || (modalInAppAddress && (modalIncident.reportedBy?.toLowerCase() === modalInAppAddress.toLowerCase() || modalIncident.reporter?.toLowerCase() === modalInAppAddress.toLowerCase()))) && (
                 <>
                   {modalIncident.status === 'active' && onResolveIncident && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
