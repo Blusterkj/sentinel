@@ -694,7 +694,15 @@ export default function App() {
           }}
         />
         {currentPage === 'landing' && <Landing />}
-        <div style={{ display: currentPage === 'dashboard' ? 'contents' : 'none' }}>
+        <div style={{
+          position: currentPage === 'dashboard' ? 'static' : 'absolute',
+          visibility: currentPage === 'dashboard' ? 'visible' : 'hidden',
+          pointerEvents: currentPage === 'dashboard' ? 'auto' : 'none',
+          width: '100%',
+          height: currentPage === 'dashboard' ? '100%' : 0,
+          overflow: 'hidden',
+          top: 0, left: 0,
+        }}>
           <Dashboard 
             incidents={incidents} 
             criticalFilter={criticalFilter}
