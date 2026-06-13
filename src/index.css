@@ -345,7 +345,7 @@ body {
   /* ── Analytics: clip any overflow at the container level ── */
   .mobile-analytics-container {
     overflow-x: hidden !important;
-    padding: 16px 12px 200px !important;
+    padding: 16px 12px 60px !important;
   }
 
   /* ── Analytics subtitle: close the gap below it ── */
