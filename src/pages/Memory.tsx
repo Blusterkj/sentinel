@@ -464,7 +464,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         </span>
 
         {/* Filters Group */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap' }}>
+        <div className="md:ml-auto" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {activeTab === 'incidents' && (
             <CustomSelect
               value={typeFilter}
