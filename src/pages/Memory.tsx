@@ -109,6 +109,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           blobId: i.walrusBlobId,
           timestamp: new Date(i.createdAt || Date.now()).getTime(),
           summary: `[${i.severity.toUpperCase()}] ${i.type} at ${i.location.address}: ${i.description}`,
+          rawIncident: i,
         }));
     }
     return memories.map(m => ({ ...m, type: 'agent' }));
