@@ -19,6 +19,7 @@ import {
   Eye,
   X,
   ShieldCheck,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 import { PROXY_URL } from '../lib/api';
@@ -187,41 +188,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
         </div>
 
-        {/* Tab Switcher */}
-        <div style={{ display: 'flex', background: '#111', padding: '4px', borderRadius: '24px', border: '1px solid #222' }}>
-          <button
-            onClick={() => setActiveTab('incidents')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '20px',
-              border: 'none',
-              background: activeTab === 'incidents' ? '#222' : 'transparent',
-              color: activeTab === 'incidents' ? '#fff' : '#888',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            Incidents
-          </button>
-          <button
-            onClick={() => setActiveTab('agent')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '20px',
-              border: 'none',
-              background: activeTab === 'agent' ? '#222' : 'transparent',
-              color: activeTab === 'agent' ? '#fff' : '#888',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            Agent Conversations
-          </button>
-        </div>
+
       </div>
 
       {/* Stats bar */}
@@ -304,6 +271,30 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             }}
           />
         </div>
+
+        {/* Tab Switcher Toggle */}
+        <button
+          onClick={() => setActiveTab(prev => prev === 'incidents' ? 'agent' : 'incidents')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            background: 'rgba(139, 92, 246, 0.08)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            color: '#8b5cf6',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            flexShrink: 0,
+            fontSize: '12px',
+            fontWeight: 600,
+          }}
+          title="Toggle Memory View"
+        >
+          <ArrowRightLeft size={14} />
+          <span className="hidden md:inline">{activeTab === 'incidents' ? 'Incidents' : 'Agent Convos'}</span>
+        </button>
 
         {/* Mobile-responsive wrapper for filters + count */}
         <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
