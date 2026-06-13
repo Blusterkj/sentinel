@@ -72,6 +72,46 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
   }
 }
 
+// ── One-time startup cleanup ──────────────────────────────────────────────────
+// Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
+{
+  const descSeen = new Map();
+  [...incidentRegistry.values()]
+    .sort((a, b) =>
+      new Date(a.serverTimestamp || a.createdAt || a.timestamp || 0).getTime() -
+      new Date(b.serverTimestamp || b.createdAt || b.timestamp || 0).getTime()
+    )
+    .forEach(inc => {
+      const key = (inc.description || '').trim().toLowerCase().slice(0, 80);
+      if (!key) return;
+      if (descSeen.has(key)) {
+        incidentRegistry.delete(inc.id);
+        console.log(`[SENTINEL] Removed duplicate: "${key.slice(0, 50)}..."`);
+      } else {
+        descSeen.set(key, inc.id);
+      }
+    });
+
+  // Step 2: Reassign ALL sequenceNumbers from scratch so there are no gaps.
+  // Sort by best available timestamp ascending (oldest = #1, newest = #N).
+  const allByTime = [...incidentRegistry.values()]
+    .sort((a, b) =>
+      new Date(a.serverTimestamp || a.createdAt || a.timestamp || 0).getTime() -
+      new Date(b.serverTimestamp || b.createdAt || b.timestamp || 0).getTime()
+    );
+
+  allByTime.forEach((inc, idx) => {
+    inc.sequenceNumber = idx + 1;
+    inc.serverTimestamp = inc.serverTimestamp || inc.createdAt || inc.timestamp;
+    incidentRegistry.set(inc.id, inc);
+  });
+
+  incidentSequence = allByTime.length;
+  saveIncidentRegistry();
+  console.log(`[SENTINEL] Clean registry: ${incidentRegistry.size} incidents, numbered #1–#${incidentSequence}`);
+}
+// ── End startup cleanup ───────────────────────────────────────────────────────
+
 // Memory registry — keyed by blobId.
 const MEMORY_FILE = '/app/data/memories.json';
 let initialMemories = [];
@@ -764,6 +804,14 @@ You are NOT a generic chatbot. You are a precision intelligence system for commu
 
 ## CRITICAL RESPONSE RULES — follow these EVERY time:
 
+### 0. Match response length to question complexity — HIGHEST PRIORITY RULE
+- **Simple factual questions** (how many, what is the latest, who reported, what's the Nth most recent, list all) → answer in 1–4 sentences or a plain bullet list. Zero preamble. No "I can confirm", no "I can provide". Just the answer.
+- **Complex analysis questions** (patterns, trends, predictions, what should we do) → full detailed response with sections.
+- **List requests** → bullet list only. No intro paragraph. No outro paragraph.
+- Never say "I can confirm", "I can provide", "Based on the immutable data", or "stored immutably via the MemWal protocol" more than once per conversation.
+- Never mention Bengaluru coverage area limitations when the question is about incidents that are actually in the registry.
+- The action status line (🟢/🟡/🔴) is ONLY required for analysis questions. Skip it for simple factual answers.
+
 ### 1. Always cite specific data from your memory
 - Reference exact incident counts: "I have **4 crime incidents** logged in the Indiranagar corridor this week"
 - Name specific streets and landmarks: "MG Road, Church Street, Brigade Road, Indiranagar 100ft Road, Silk Board Junction"
@@ -828,7 +876,7 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
           }
         ],
         generationConfig: {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 2000,
           temperature: 0.7
         }
       })
