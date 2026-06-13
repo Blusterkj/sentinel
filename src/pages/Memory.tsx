@@ -593,9 +593,21 @@ const MemoryEntry: React.FC<{ memory: any; index: number; isLast?: boolean }> = 
         animationDelay: `${index * 30}ms`,
         marginBottom: isLast ? '0' : '4px',
         overflow: 'hidden',
+        cursor: memory.type === 'incident' && memory.rawIncident ? 'pointer' : 'default',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => {
+        if (memory.type === 'incident' && memory.rawIncident) {
+          window.history.pushState({}, '', '/dashboard');
+          window.dispatchEvent(new Event('popstate'));
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent('selectIncident', { detail: memory.rawIncident })
+            );
+          }, 200);
+        }
+      }}
     >
       {/* Left accent bar on hover */}
       <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-[rgba(139,92,246,0.6)] transition-colors duration-300" />
