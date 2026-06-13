@@ -23,6 +23,7 @@ const cardStyle: React.CSSProperties = {
   boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
   borderRadius: '16px',
   padding: '24px',
+  minWidth: 0,
 };
 
 // ─── Bar chart (pure SVG) ────────────────────────────────────────────────────
