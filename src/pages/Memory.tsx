@@ -448,8 +448,21 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           <span className="hidden md:inline">{activeTab === 'incidents' ? 'Incidents' : 'Agent Convos'}</span>
         </button>
 
+        {/* Result count */}
+        <span className="flex-shrink-0 whitespace-nowrap" style={{
+          fontSize: '12px',
+          color: '#888',
+          fontFamily: 'monospace',
+          padding: '3px 12px',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '999px',
+          background: 'rgba(255,255,255,0.03)',
+        }}>
+          {filtered.length} / {activeData.length}
+        </span>
+
         {/* Filters Group */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap' }}>
           {activeTab === 'incidents' && (
             <CustomSelect
               value={typeFilter}
@@ -476,22 +489,6 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
               { value: 'severity', label: 'Highest Severity' }
             ]}
           />
-        </div>
-
-        {/* Mobile-responsive wrapper for filters + count */}
-        <div className="flex items-center gap-2 w-full md:w-auto ml-auto">
-          {/* Result count */}
-          <span className="flex-shrink-0 whitespace-nowrap" style={{
-            fontSize: '12px',
-            color: '#888',
-            fontFamily: 'monospace',
-            padding: '3px 12px',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '999px',
-            background: 'rgba(255,255,255,0.03)',
-          }}>
-            {filtered.length} / {activeData.length}
-          </span>
         </div>
       </div>
 
