@@ -334,7 +334,7 @@ body {
 
   /* ── Memory entries list: give breathing room above tab bar ── */
   .mobile-list-scroll {
-    padding-bottom: 20px !important;
+    padding-bottom: 50px !important;
   }
 
   /* ── Analytics: clip any overflow at the container level ── */
