@@ -72,9 +72,11 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
   }
 }
 
-// ── One-time startup cleanup ──────────────────────────────────────────────────
-// Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
-{
+// We define the cleanup function here, but it runs AFTER Walrus rehydration completes.
+function cleanupRegistry() {
+  console.log('[SENTINEL] Running post-rehydration cleanup (dedup + renumber)...');
+  
+  // Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
   const descSeen = new Map();
   [...incidentRegistry.values()]
     .sort((a, b) =>
@@ -110,7 +112,6 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
   saveIncidentRegistry();
   console.log(`[SENTINEL] Clean registry: ${incidentRegistry.size} incidents, numbered #1–#${incidentSequence}`);
 }
-// ── End startup cleanup ───────────────────────────────────────────────────────
 
 // Memory registry — keyed by blobId.
 const MEMORY_FILE = '/app/data/memories.json';
@@ -1153,6 +1154,12 @@ async function rehydrateRegistry(isRetry = false) {
     };
     allItems.sort((a, b) => extractCreatedAt(b) - extractCreatedAt(a));
 
+    // Pre-compute existing descriptions to skip Walrus duplicates on the fly
+    const existingDescs = new Set(
+      [...incidentRegistry.values()]
+        .map(i => (i.description || '').trim().toLowerCase().slice(0, 80))
+    );
+
     let count = 0;
     let skippedJunk = 0;
     let skippedBlocklist = 0;
@@ -1176,6 +1183,13 @@ async function rehydrateRegistry(isRetry = false) {
           continue;
         }
 
+        // Skip duplicates already in registry (by description)
+        const descKey = (incident.description || '').trim().toLowerCase().slice(0, 80);
+        if (descKey && existingDescs.has(descKey)) {
+          console.log(`   🔁 Skipping Walrus duplicate: "${descKey.slice(0, 40)}..."`);
+          continue;
+        }
+
         incidentRegistry.set(incident.id, {
           ...incident,
           // KEY FIX: rehydrated incidents ARE on Walrus — set blobId from the blob we just read
@@ -1193,7 +1207,8 @@ async function rehydrateRegistry(isRetry = false) {
 
     console.log(`[SENTINEL] Rehydrated ${count} incidents | skipped ${skippedJunk} junk + ${skippedBlocklist} blocklisted`);
     
-    saveIncidentRegistry();
+    // Now that all items are loaded from both disk and Walrus, run the cleanup
+    cleanupRegistry();
 
     // Single retry if we got nothing — MemWal may still be warming up after cold start
     if (count === 0 && !isRetry) {
