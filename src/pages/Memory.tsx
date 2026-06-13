@@ -417,6 +417,16 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         {/* Tab Switcher Toggle */}
         <button
           onClick={() => setActiveTab(prev => prev === 'incidents' ? 'agent' : 'incidents')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -427,7 +437,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
             border: '1px solid rgba(139, 92, 246, 0.2)',
             color: '#8b5cf6',
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
             fontSize: '12px',
             fontWeight: 600,
