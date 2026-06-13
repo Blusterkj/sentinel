@@ -240,6 +240,12 @@ body {
     padding-bottom: 100px !important; /* increased so the last item scrolls past the SOS button */
   }
 
+  .mobile-memory-entry {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+
   /* ── Memory result count: sit inline with filters, not pushed to far right ── */
   .mobile-result-count {
     margin-left: 0 !important;

@@ -337,7 +337,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       </div>
 
       {/* Memory entries */}
-      <div className="px-5 pt-6 pb-[120px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: 'transparent' }}>
+      <div className="px-5 pt-6 pb-[20px] md:pb-6 mobile-list-scroll mobile-memory-list" style={{ flex: 1, overflowY: 'auto', background: 'transparent' }}>
         {filtered.length === 0 ? (
           <div
             style={{
@@ -445,6 +445,25 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
           }
         } catch { /* try next */ }
       }
+      // Auto-heal logic
+      const ageMs = Date.now() - new Date(incident.createdAt || incident.timestamp).getTime();
+      if (ageMs > 5 * 60 * 1000) {
+        const reblobRes = await fetch(`${PROXY_URL}/api/reblob`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incidentId: incident.id })
+        });
+        const reblobData = await reblobRes.json();
+        if (reblobData.success && reblobData.newBlobId) {
+          const r = await fetch(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${reblobData.newBlobId}`);
+          if (r.ok) {
+            const text = await r.text();
+            setProofData(text);
+            return;
+          }
+        }
+      }
+
       throw new Error('Blob not found on any Walrus aggregator — it may still be propagating, try again in 30 seconds');
     } catch (err: any) {
       if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
@@ -472,14 +491,14 @@ const MemoryEntry: React.FC<{ incident: Incident; index: number; isLast?: boolea
   return (
     <>
     <div
-      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent`}
+      className={`group relative fade-in-up transition-all duration-300 border border-transparent ${isLast ? '' : 'border-b-white/5'} hover:-translate-y-1 hover:bg-[rgba(139,92,246,0.08)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] hover:border-transparent mobile-memory-entry`}
       onClick={handleGoToIncident}
       style={{
         borderRadius: '8px',
-        padding: '14px 16px',
+        padding: '12px 14px',
         display: 'flex',
         alignItems: 'center',
-        gap: '14px',
+        gap: '10px',
         animationDelay: `${index * 30}ms`,
         cursor: 'pointer',
         marginBottom: isLast ? '0' : '4px',
