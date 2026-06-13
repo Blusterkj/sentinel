@@ -126,7 +126,20 @@ export default function App() {
         // that haven't been echoed back from the proxy yet
         const fetchedIds = new Set(fetched.map((i) => i.id));
         const localOnly = prev.filter((i) => !fetchedIds.has(i.id) && !i.walrusBlobId);
-        return [...localOnly, ...fetched].sort((a, b) => {
+
+        // When a server incident overwrites a local one, preserve uploadStatus so
+        // the "Storing…" dot / "failed" retry button survive the poll cycle.
+        // Once uploadStatus is 'confirmed' we clear it (undefined) so no indicator shows.
+        const merged = fetched.map((serverInc) => {
+          const existing = prev.find((local) => local.id === serverInc.id);
+          const preservedStatus =
+            existing?.uploadStatus === 'confirmed'
+              ? undefined          // confirmed → no indicator needed
+              : existing?.uploadStatus; // pending/failed → keep showing
+          return { ...serverInc, uploadStatus: preservedStatus };
+        });
+
+        return [...localOnly, ...merged].sort((a, b) => {
           const timeA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
           const timeB = new Date(b.timestamp || b.createdAt || 0).getTime() || 0;
           return timeB - timeA;
