@@ -642,7 +642,7 @@ const WeatherStatus: React.FC = () => {
 
   useEffect(() => {
     // Skip the network round-trip if we have fresh cached data
-    if (!isWeatherStale()) return;
+    if (!isWeatherStale() && weather?.city !== 'Your Location') return;
 
     const fetchWeather = async (lat: number, lon: number) => {
       try {
@@ -665,10 +665,10 @@ const WeatherStatus: React.FC = () => {
         let city = 'Your Location';
         try {
           const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
           );
           const geoData = await geoRes.json();
-          city = geoData.address?.city || geoData.address?.town || geoData.address?.county || geoData.address?.state || 'Your Location';
+          city = geoData.city || geoData.locality || geoData.principalSubdivision || 'Your Location';
         } catch { /* fallback to default */ }
 
         // Commit to the global cache — all future Dashboard mounts skip this fetch
