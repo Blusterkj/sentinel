@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import { PROXY_URL } from '../lib/api';
+import { SeverityBadge } from '../components/SeverityBadge';
 
 
 interface MemoryProps {
@@ -48,6 +49,25 @@ function timeAgo(timestamp: string): string {
 }
 
 
+
+
+const TYPE_ICONS: Record<string, string> = {
+  medical: '🏥',
+  fire: '🔥',
+  crime: '🚨',
+  accident: '💥',
+  natural_disaster: '🌩️',
+  other: '⚠️',
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  medical: 'Medical Emergency',
+  fire: 'Fire',
+  crime: 'Crime',
+  accident: 'Accident',
+  natural_disaster: 'Natural Disaster',
+  other: 'Other',
+};
 
 export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   const account = useCurrentAccount();
