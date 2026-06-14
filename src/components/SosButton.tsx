@@ -3,8 +3,10 @@
 
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { v4 as uuidv4 } from 'uuid';
 import type { Incident } from '../types/incident';
 import { PROXY_URL } from '../lib/api';
@@ -20,7 +22,8 @@ type SosState = 'idle' | 'submitting';
 
 export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
   const account = useCurrentAccount();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const { mutateAsync: signTransaction } = useSignTransaction();
+  const suiClient = useSuiClient();
   const { address: inAppAddress } = useAuthStore();
   // Either wallet is sufficient — dapp-kit for desktop Slush, in-app Ed25519 for mobile
   const walletAddress = account?.address ?? inAppAddress ?? null;
@@ -95,22 +98,57 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
             incident = { ...incident, createdAt: storeData.createdAt };
           }
 
-          // Step 5: Sui on-chain tx — only when dapp-kit wallet is connected
-          if (account) {
+          // Step 5: Sponsored Sui on-chain anchor — if any wallet is connected
+          if (walletAddress) {
             try {
-              const tx = new Transaction();
-              tx.moveCall({
-                target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-                arguments: [
-                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId || ''))),
-                  tx.pure.vector('u8', Array.from(new TextEncoder().encode(incident.description))),
-                  tx.object('0x6'),
-                ],
+              // 1. Get sponsored transaction from proxy
+              const sponsorRes = await fetch(`${PROXY_URL}/api/sponsor-create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  blobId,
+                  description: incident.description,
+                  senderAddress: walletAddress,
+                }),
               });
-              const txResult = await signAndExecute({ transaction: tx });
+              const sponsorData = await sponsorRes.json();
+              if (!sponsorData.success) throw new Error(sponsorData.error || 'Sponsor failed');
+
+              const { txBytes, sponsorSignature } = sponsorData;
+              const txBytesBuffer = Uint8Array.from(atob(txBytes), c => c.charCodeAt(0));
+
+              // 2. Sign as sender
+              let senderSignature: string;
+              if (account) {
+                // dapp-kit wallet
+                const signRes = await signTransaction({ transaction: Transaction.from(txBytesBuffer) });
+                senderSignature = signRes.signature;
+              } else {
+                // in-app wallet
+                const pk = useAuthStore.getState().privateKey;
+                if (!pk) throw new Error('In-app wallet private key missing');
+                const { secretKey } = decodeSuiPrivateKey(pk);
+                const keypair = Ed25519Keypair.fromSecretKey(secretKey);
+                senderSignature = (await keypair.signTransaction(txBytesBuffer)).signature;
+              }
+
+              // 3. Execute with both signatures
+              const txResult = await suiClient.executeTransactionBlock({
+                transactionBlock: txBytesBuffer,
+                signature: [senderSignature, sponsorSignature],
+                options: { showObjectChanges: true },
+              });
+
               txDigest = txResult.digest;
+              
+              // Tell the proxy our txDigest so it updates the global registry
+              fetch(`${PROXY_URL}/api/incidents/${incident.id}/tx`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txDigest }),
+              }).catch(e => console.warn('Failed to report txDigest to proxy:', e));
             } catch (txErr) {
-              console.warn('SOS Sui tx failed (non-blocking):', txErr);
+              console.warn('Sui sponsor/anchor failed (non-blocking):', txErr);
             }
           }
         }

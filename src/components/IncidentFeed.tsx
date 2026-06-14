@@ -4,7 +4,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { useNow } from '../hooks/useNow';
 import { Clock, MapPin, AlertTriangle, CheckCircle, ExternalLink, X, Share, ChevronRight, ChevronDown, Loader2, Download, AlertCircle } from 'lucide-react';
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { useAuthStore } from '../lib/authStore';
 import { Transaction } from '@mysten/sui/transactions';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -766,7 +768,11 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   const highlightColor = isCritical ? '#ef4444' : isHigh ? '#f97316' : null;
 
   const account = useCurrentAccount();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const { mutateAsync: signTransaction } = useSignTransaction();
+  const suiClient = useSuiClient();
+  const { address: inAppAddress } = useAuthStore();
+  const walletAddress = account?.address ?? inAppAddress ?? null;
+
   const [resolving, setResolving] = React.useState(false);
   const [resolvedLocal, setResolvedLocal] = React.useState(incident.status === 'resolved');
 
@@ -776,15 +782,49 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
 
   const handleResolve = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!incident.suiObjectId) return;
+    if (!walletAddress) return;
     setResolving(true);
     try {
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::resolve_incident`,
-        arguments: [tx.object(incident.suiObjectId)],
+      if (incident.suiObjectId) {
+        // Sponsored Sui on-chain anchor
+        const sponsorRes = await fetch(`${PROXY_URL}/api/sponsor-resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            suiObjectId: incident.suiObjectId,
+            senderAddress: walletAddress,
+          }),
+        });
+        const sponsorData = await sponsorRes.json();
+        if (!sponsorData.success) throw new Error(sponsorData.error || 'Sponsor failed');
+
+        const { txBytes, sponsorSignature } = sponsorData;
+        const txBytesBuffer = Uint8Array.from(atob(txBytes), c => c.charCodeAt(0));
+
+        let senderSignature: string;
+        if (account) {
+          const signRes = await signTransaction({ transaction: Transaction.from(txBytesBuffer) });
+          senderSignature = signRes.signature;
+        } else {
+          const pk = useAuthStore.getState().privateKey;
+          if (!pk) throw new Error('In-app wallet private key missing');
+          const { secretKey } = decodeSuiPrivateKey(pk);
+          const keypair = Ed25519Keypair.fromSecretKey(secretKey);
+          senderSignature = (await keypair.signTransaction(txBytesBuffer)).signature;
+        }
+
+        await suiClient.executeTransactionBlock({
+          transactionBlock: txBytesBuffer,
+          signature: [senderSignature, sponsorSignature],
+        });
+      }
+
+      // Always notify proxy so it updates global state
+      const res = await fetch(`${PROXY_URL}/api/incidents/${incident.id}/resolve`, {
+        method: 'POST',
       });
-      await signAndExecute({ transaction: tx });
+      if (!res.ok) throw new Error('Proxy resolve failed');
+
       setResolvedLocal(true);
     } catch (err: any) {
       alert(`Error resolving: ${err.message}`);

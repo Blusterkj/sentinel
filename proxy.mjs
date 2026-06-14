@@ -209,26 +209,74 @@ function loadKeypair() {
   return keypair;
 }
 
-async function anchorOnSui(blobId) {
+// ─── Gas Station Sponsored Transactions ─────────────────────────────────────
+app.post('/api/sponsor-create', async (req, res) => {
+  const { blobId, description, senderAddress } = req.body;
+  if (!blobId || !senderAddress) return res.status(400).json({ error: 'Missing parameters' });
+  
   try {
     const keypair = loadKeypair();
     const tx = new Transaction();
+    tx.setSender(senderAddress);
+    tx.setGasOwner(keypair.toSuiAddress());
+    
     tx.moveCall({
-      target: `${PACKAGE_ID}::incident_registry::record_incident`,
-      arguments: [tx.pure.string(blobId)],
+      target: `${PACKAGE_ID}::sentinel::create_incident`,
+      arguments: [
+        tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId))),
+        tx.pure.vector('u8', Array.from(new TextEncoder().encode(description || ''))),
+        tx.object('0x6'),
+      ],
     });
-    const result = await suiClient.signAndExecuteTransaction({
-      signer: keypair,
-      transaction: tx,
-      options: { showEvents: true },
-    });
-    console.log('   ✅ [Sui] Anchored blob on-chain:', result.digest);
-    return result.digest;
+    
+    const txBytes = await tx.build({ client: suiClient });
+    const sponsorSignature = (await keypair.signTransaction(txBytes)).signature;
+    
+    res.json({ success: true, txBytes: Buffer.from(txBytes).toString('base64'), sponsorSignature });
   } catch (err) {
-    console.error('   ❌ [Sui] Anchor failed (non-blocking):', err.message);
-    return null;
+    console.error('❌ [Sponsor] create_incident failed:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
-}
+});
+
+app.post('/api/sponsor-resolve', async (req, res) => {
+  const { suiObjectId, senderAddress } = req.body;
+  if (!suiObjectId || !senderAddress) return res.status(400).json({ error: 'Missing parameters' });
+  
+  try {
+    const keypair = loadKeypair();
+    const tx = new Transaction();
+    tx.setSender(senderAddress);
+    tx.setGasOwner(keypair.toSuiAddress());
+    
+    tx.moveCall({
+      target: `${PACKAGE_ID}::sentinel::resolve_incident`,
+      arguments: [tx.object(suiObjectId)],
+    });
+    
+    const txBytes = await tx.build({ client: suiClient });
+    const sponsorSignature = (await keypair.signTransaction(txBytes)).signature;
+    
+    res.json({ success: true, txBytes: Buffer.from(txBytes).toString('base64'), sponsorSignature });
+  } catch (err) {
+    console.error('❌ [Sponsor] resolve_incident failed:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/incidents/:id/tx', (req, res) => {
+  const { id } = req.params;
+  const { txDigest } = req.body;
+  const incident = incidentRegistry.get(id);
+  if (incident) {
+    incident.suiTxDigest = txDigest;
+    saveIncidentRegistry();
+    broadcast({ type: 'INCIDENT_UPDATED', incident });
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
 
 // ─── Groq Client ─────────────────────────────────────────────
 const groq = createGroq({ apiKey: GROQ_API_KEY });
@@ -494,10 +542,6 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
 
     // Use Walrus publisher blob ID as the primary (publicly verifiable) blob ID
     const blobId = walrusBlobId;
-    let txDigest = undefined;
-    if (blobId) {
-      txDigest = await anchorOnSui(blobId);
-    }
 
     // Persist in in-memory registry for cross-device sync
     // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
@@ -506,7 +550,7 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       ...incident,
       walrusBlobId: blobId,
       walrusStatus: 'synced',
-      suiTxDigest: txDigest || undefined,
+      suiTxDigest: undefined,
       flagCount: 0,
       flaggedBy: [],
       // Only System (demo button) incidents are simulated — SOS and real user reports are NOT

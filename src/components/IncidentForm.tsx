@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
-import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { useAuthStore } from '../lib/authStore';
 import { PROXY_URL } from '../lib/api';
 
@@ -47,7 +49,7 @@ type FormState = 'idle' | 'locating' | 'submitting' | 'done' | 'error';
 
 export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted }) => {
   const account = useCurrentAccount();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const { mutateAsync: signTransaction } = useSignTransaction();
   const suiClient = useSuiClient();
   const { address: inAppAddress } = useAuthStore();
   // Use whichever wallet is active — dapp-kit takes precedence
@@ -196,36 +198,64 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
         if (!blobId) throw new Error('No blobId returned');
 
-        // Sui on-chain anchor — only when dapp-kit wallet connected
-        if (account) {
+        // Sponsored Sui on-chain anchor — if any wallet is connected
+        if (walletAddress) {
           try {
-            const tx = new Transaction();
-            tx.moveCall({
-              target: `${import.meta.env.VITE_PACKAGE_ID}::sentinel::create_incident`,
-              arguments: [
-                tx.pure.vector('u8', Array.from(new TextEncoder().encode(blobId))),
-                tx.pure.vector('u8', Array.from(new TextEncoder().encode(optimisticIncident.description))),
-                tx.object('0x6'),
-              ],
+            // 1. Get sponsored transaction from proxy
+            const sponsorRes = await fetch(`${PROXY_URL}/api/sponsor-create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                blobId,
+                description: optimisticIncident.description,
+                senderAddress: walletAddress,
+              }),
             });
-            const txResult = await signAndExecute({ transaction: tx });
+            const sponsorData = await sponsorRes.json();
+            if (!sponsorData.success) throw new Error(sponsorData.error || 'Sponsor failed');
+
+            const { txBytes, sponsorSignature } = sponsorData;
+            const txBytesBuffer = Uint8Array.from(atob(txBytes), c => c.charCodeAt(0));
+
+            // 2. Sign as sender
+            let senderSignature: string;
+            if (account) {
+              // dapp-kit wallet
+              const signRes = await signTransaction({ transaction: Transaction.from(txBytesBuffer) });
+              senderSignature = signRes.signature;
+            } else {
+              // in-app wallet
+              const pk = useAuthStore.getState().privateKey;
+              if (!pk) throw new Error('In-app wallet private key missing');
+              const { secretKey } = decodeSuiPrivateKey(pk);
+              const keypair = Ed25519Keypair.fromSecretKey(secretKey);
+              senderSignature = (await keypair.signTransaction(txBytesBuffer)).signature;
+            }
+
+            // 3. Execute with both signatures
+            const txResult = await suiClient.executeTransactionBlock({
+              transactionBlock: txBytesBuffer,
+              signature: [senderSignature, sponsorSignature],
+              options: { showObjectChanges: true },
+            });
+
             txDigest = txResult.digest;
-            try {
-              const txRes = await suiClient.waitForTransaction({
-                digest: txDigest,
-                options: { showObjectChanges: true },
-              });
-              if (txRes.objectChanges) {
-                const createdObj = txRes.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
-                if (createdObj && 'objectId' in createdObj) {
-                  suiObjectId = createdObj.objectId;
-                }
+            
+            // Tell the proxy our txDigest so it updates the global registry
+            fetch(`${PROXY_URL}/api/incidents/${tempId}/tx`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ txDigest }),
+            }).catch(e => console.warn('Failed to report txDigest to proxy:', e));
+
+            if (txResult.objectChanges) {
+              const createdObj = txResult.objectChanges.find((c: any) => c.type === 'created' && c.objectType.includes('sentinel::Incident'));
+              if (createdObj && 'objectId' in createdObj) {
+                suiObjectId = createdObj.objectId;
               }
-            } catch (e) {
-              console.warn('Could not fetch object changes', e);
             }
           } catch (txErr) {
-            console.warn('Sui anchor failed (non-blocking):', txErr);
+            console.warn('Sui sponsor/anchor failed (non-blocking):', txErr);
           }
         }
 
