@@ -25,6 +25,7 @@ interface IncidentFeedProps {
   onFlagIncident?: (updated: Incident) => void;
   hideHeader?: boolean;
   fetchError?: boolean;
+  wsConnected?: boolean;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -191,6 +192,7 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   onFlagIncident,
   hideHeader = false,
   fetchError = false,
+  wsConnected = true,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const modalAccount = useCurrentAccount();
@@ -295,19 +297,20 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
             </span>
           )}
         </div>
-        {/* Active count indicator */}
+        {/* Status indicator: green = live WS, amber = polling only, red = offline */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span
             style={{
               width: '7px',
               height: '7px',
               borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 8px #22c55e',
+              background: fetchError ? '#ef4444' : wsConnected ? '#22c55e' : '#eab308',
+              boxShadow: `0 0 8px ${fetchError ? '#ef4444' : wsConnected ? '#22c55e' : '#eab308'}`,
+              transition: 'background 0.3s, box-shadow 0.3s',
             }}
           />
           <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
-            MONITORING
+            {fetchError ? 'OFFLINE' : wsConnected ? 'MONITORING' : 'POLLING'}
           </span>
         </div>
       </div>

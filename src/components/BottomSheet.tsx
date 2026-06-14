@@ -7,6 +7,8 @@ type SheetState = 'collapsed' | 'half' | 'full';
 
 interface BottomSheetProps {
   incidents: Incident[];
+  fetchError?: boolean;
+  wsConnected?: boolean;
   onSelectIncident: (incident: Incident) => void;
   selectedId?: string;
   criticalFilter: boolean;
@@ -24,6 +26,8 @@ const SNAP_HEIGHTS: Record<SheetState, string> = {
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
   incidents,
+  fetchError = false,
+  wsConnected = true,
   onSelectIncident,
   selectedId,
   criticalFilter,
@@ -50,6 +54,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     else if (dy > 40) cycleDown();
   };
 
+  // Status indicator: red = fetch error, amber = WS disconnected (polling only), green = fully live
+  const dotColor = fetchError ? '#ef4444' : wsConnected ? '#22c55e' : '#eab308';
+  const statusLabel = fetchError ? 'OFFLINE' : wsConnected ? 'MONITORING' : 'POLLING';
+
   return (
     <motion.div
       className="flex md:hidden"
@@ -61,14 +69,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
       style={{
         position: 'fixed',
-        bottom: '0', // starts from very bottom — tab bar (z=950) sits on top
+        bottom: '0',
         left: 0,
         right: 0,
         background: '#0a0a0a',
         borderTop: '1px solid #1a1a1a',
         borderTopLeftRadius: '24px',
         borderTopRightRadius: '24px',
-        zIndex: 800, // below tab bar (950) — appears to slide from beneath it
+        zIndex: 800,
         flexDirection: 'column',
         boxShadow: '0 -8px 40px rgba(0,0,0,0.9)',
         touchAction: 'none',
@@ -97,8 +105,15 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             {incidents.length}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
-            <span style={{ fontSize: '9px', fontWeight: 700, color: '#22c55e', letterSpacing: '0.05em' }}>MONITORING</span>
+            <div style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: dotColor,
+              boxShadow: `0 0 8px ${dotColor}`,
+              transition: 'background 0.3s, box-shadow 0.3s',
+            }} />
+            <span style={{ fontSize: '9px', fontWeight: 700, color: dotColor, letterSpacing: '0.05em', transition: 'color 0.3s' }}>
+              {statusLabel}
+            </span>
           </div>
         </div>
       </div>
@@ -110,16 +125,16 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           overflowY: 'auto',
           overflowX: 'hidden',
           overscrollBehaviorY: 'contain',
-          touchAction: 'pan-y', // allow scrolling inside
+          touchAction: 'pan-y',
         }}
         onPointerDown={(e) => {
-          // Stop drag propagation when scrolling the list
           e.stopPropagation();
         }}
       >
         <div style={{ paddingBottom: '84px' }}>
           <IncidentFeed
             incidents={incidents}
+            fetchError={fetchError}
             onSelectIncident={onSelectIncident}
             selectedId={selectedId}
             criticalFilter={criticalFilter}

@@ -100,9 +100,10 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Incident state — loaded from proxy, polled every 15s ──
+  // ── Incident state — loaded from proxy, polled every 5s ──
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [fetchError, setFetchError] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Count of user's own real incidents (for sidebar badge)
@@ -177,7 +178,10 @@ export default function App() {
         console.log('[SENTINEL] WebSocket connecting to:', WS_URL);
         wsRef.current = ws;
 
-        ws.onopen = () => console.log('[SENTINEL] WS connected');
+        ws.onopen = () => {
+          console.log('[SENTINEL] WS connected');
+          setWsConnected(true);
+        };
 
         ws.onmessage = (event) => {
           try {
@@ -204,6 +208,7 @@ export default function App() {
 
         ws.onclose = () => {
           console.log('[SENTINEL] WS closed — reconnecting in 3s');
+          setWsConnected(false);
           reconnectTimer = setTimeout(connect, 3000);
         };
 
@@ -742,6 +747,7 @@ export default function App() {
           <Dashboard 
             incidents={incidents} 
             fetchError={fetchError}
+            wsConnected={wsConnected}
             criticalFilter={criticalFilter}
             setCriticalFilter={setCriticalFilter}
             activeFilter={activeFilter}

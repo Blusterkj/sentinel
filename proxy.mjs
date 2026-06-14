@@ -790,7 +790,7 @@ app.post('/api/chat', async (req, res) => {
     liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are all incidents in STRICT SERIAL ORDER (#1 = first ever reported, highest # = most recent). Use this list to answer any questions about order, recency, or sequence.\n\n${
       topLive.map((i) =>
         `[#${i.sequenceNumber || '?'} - ${i.serverTimestamp || i.createdAt}] ` +
-        `${i.type} | ${i.severity} | ${i.location?.address} — ${i.description}`
+        `${i.type} | ${i.severity} | ${i.location?.address} — ${(i.description || '').slice(0, 80)}`
       ).join('\n')
     }`;
   }

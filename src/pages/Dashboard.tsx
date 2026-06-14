@@ -13,14 +13,7 @@ import { useAppStore } from '../store/appStore';
 interface DashboardProps {
   incidents: Incident[];
   fetchError?: boolean;
-  seeding?: {
-    isSeeding: boolean;
-    progress: number;
-    total: number;
-    isDone: boolean;
-    successCount: number;
-    failedCount: number;
-  };
+  wsConnected?: boolean;
   criticalFilter: boolean;
   setCriticalFilter: (val: boolean) => void;
   activeFilter: boolean;
@@ -35,6 +28,7 @@ const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
 export const Dashboard: React.FC<DashboardProps> = ({ 
   incidents, 
   fetchError = false,
+  wsConnected = true,
   criticalFilter,
   setCriticalFilter,
   activeFilter,
@@ -514,6 +508,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <IncidentFeed
             incidents={incidents}
             fetchError={fetchError}
+            wsConnected={wsConnected}
             onSelectIncident={(i) => {
               setSelectedIncident(i);
               setCenter([i.location.lat, i.location.lng]);
@@ -578,6 +573,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Mobile bottom sheet live feed */}
       <BottomSheet
         incidents={incidents}
+        fetchError={fetchError}
+        wsConnected={wsConnected}
         onSelectIncident={(i) => {
           setSelectedIncident(i);
           setCenter([i.location.lat, i.location.lng]);
