@@ -189,8 +189,16 @@ export default function App() {
             console.log('[SENTINEL] WS message received:', data.type);
             if (data.type === 'NEW_INCIDENT' && data.incident) {
               setIncidents((prev) => {
+                // Preserve uploadStatus from any local optimistic copy
+                // (Sui tx may still be running when proxy broadcasts NEW_INCIDENT)
+                const existing = prev.find(i => i.id === data.incident.id);
+                const preservedStatus =
+                  existing?.uploadStatus === 'confirmed'
+                    ? undefined
+                    : existing?.uploadStatus;
+                const merged = { ...data.incident, uploadStatus: preservedStatus };
                 const filtered = prev.filter(i => i.id !== data.incident.id);
-                return [data.incident, ...filtered].sort((a, b) => {
+                return [merged, ...filtered].sort((a, b) => {
                   const timeA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
                   const timeB = new Date(b.timestamp || b.createdAt || 0).getTime() || 0;
                   return timeB - timeA;

@@ -578,7 +578,11 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer', padding: 0 }}
                   >
                     {showProof ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                    {modalIncident.walrusBlobId ? '⬡ Verified on Walrus Blockchain' : '⛓ Verified on Sui'}
+                    {modalIncident.walrusBlobId && modalIncident.suiTxDigest
+                      ? '⬡ Verified on Walrus  ·  ⛓ Verified on Sui'
+                      : modalIncident.walrusBlobId
+                      ? '⬡ Verified on Walrus Blockchain'
+                      : '⛓ Verified on Sui'}
                   </button>
                   
                   {showProof && (
@@ -914,7 +918,7 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
               ⛓ Verified on Sui
             </span>
           )}
-          {!incident.suiTxDigest && incident.walrusBlobId && (
+          {incident.walrusBlobId && (
             <span style={{
               fontSize: '10px',
               background: 'rgba(139, 92, 246, 0.1)',
