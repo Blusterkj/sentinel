@@ -810,6 +810,8 @@ export default function App() {
       <BottomTabBar
         currentPage={currentPage}
         navigate={(page) => {
+          // Always collapse the live feed before navigating — prevents jitter/bleed-through
+          window.dispatchEvent(new Event('closeFeed'));
           setCurrentPage(page as Page);
           window.history.pushState({}, '', `/${page}`);
           window.dispatchEvent(new Event('popstate'));

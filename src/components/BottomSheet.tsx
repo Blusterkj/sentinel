@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { IncidentFeed } from './IncidentFeed';
 import type { Incident } from '../types/incident';
@@ -47,6 +47,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     if (sheetState === 'full') setSheetState('half');
     else if (sheetState === 'half') setSheetState('collapsed');
   };
+
+  // Collapse instantly when navigating away from dashboard
+  useEffect(() => {
+    const handler = () => setSheetState('collapsed');
+    window.addEventListener('closeFeed', handler);
+    return () => window.removeEventListener('closeFeed', handler);
+  }, []);
 
   const handleDragEnd = (_: unknown, info: { offset: { y: number } }) => {
     const dy = info.offset.y;
