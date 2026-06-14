@@ -201,8 +201,12 @@ const memwal = MemWal.create({
 const PACKAGE_ID = '0xd871fbe56f82f958db58978f13aaa777a714284a971a6075b6498604a3e92c7e';
 const suiClient = new SuiJsonRpcClient({ url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' });
 
-// Load keypair from Sui keystore
+// Load keypair from Sui keystore or environment variable
 function loadKeypair() {
+  if (process.env.SUI_PRIVATE_KEY) {
+    return Ed25519Keypair.fromSecretKey(fromBase64(process.env.SUI_PRIVATE_KEY).slice(1));
+  }
+  
   const keystorePath = `${os.homedir()}/.sui/sui_config/sui.keystore`;
   const keystore = JSON.parse(fs.readFileSync(keystorePath, 'utf8'));
   const keypair = Ed25519Keypair.fromSecretKey(fromBase64(keystore[0]).slice(1));
