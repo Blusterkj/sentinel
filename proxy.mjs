@@ -76,7 +76,7 @@ let incidentSequence = [...incidentRegistry.values()].reduce(
 function cleanupRegistry() {
   console.log('[SENTINEL] Running post-rehydration cleanup (dedup + renumber)...');
   
-  // Step 0: Permanently remove simulated/demo incidents
+  // Step 0a: Permanently remove simulated/demo incidents
   [...incidentRegistry.values()].forEach(inc => {
     if (
       inc.isSimulated === true ||
@@ -88,6 +88,20 @@ function cleanupRegistry() {
       console.log(`[SENTINEL] Removed simulated: ${inc.id}`);
     }
   });
+
+  // Step 0b: Remove incidents that are not verified on Sui (no suiTxDigest).
+  // These are legacy incidents from before the gas station was working.
+  // Walrus blobs remain immutable but we don't surface them.
+  let legacyRemoved = 0;
+  [...incidentRegistry.values()].forEach(inc => {
+    if (!inc.suiTxDigest) {
+      incidentRegistry.delete(inc.id);
+      legacyRemoved++;
+    }
+  });
+  if (legacyRemoved > 0) {
+    console.log(`[SENTINEL] Removed ${legacyRemoved} legacy incidents (no Sui verification)`);
+  }
 
   // Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
   const descSeen = new Map();
