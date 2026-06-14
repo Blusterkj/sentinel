@@ -176,8 +176,11 @@ export default function App() {
 
     const connect = () => {
       try {
-        ws = new WebSocket(WS_URL);
-        console.log('[SENTINEL] WebSocket connecting to:', WS_URL);
+        // Include wallet address so server can scope AGENT_CHAT_CLEARED to same wallet only
+        const walletAddr = account?.address || inAppAddress || '';
+        const wsWithWallet = walletAddr ? `${WS_URL}?wallet=${encodeURIComponent(walletAddr)}` : WS_URL;
+        ws = new WebSocket(wsWithWallet);
+        console.log('[SENTINEL] WebSocket connecting to:', wsWithWallet);
         wsRef.current = ws;
 
         ws.onopen = () => {

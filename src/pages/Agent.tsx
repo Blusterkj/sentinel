@@ -7,8 +7,13 @@ import { Brain, Database, Network, Trash2 } from 'lucide-react';
 import type { Incident } from '../types/incident';
 import { useAppStore } from '../store/appStore';
 import { PROXY_URL } from '../lib/api';
+import { useAuthStore } from '../lib/authStore';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   const { agentMessages, clearAgentMessages } = useAppStore();
+  const { address: inAppAddress } = useAuthStore();
+  const account = useCurrentAccount();
+  const walletAddress = account?.address ?? inAppAddress ?? null;
   const [isClearing, setIsClearing] = React.useState(false);
   return (
     <div
@@ -48,9 +53,11 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
               setIsClearing(true);
               // Clear locally first (instant feedback)
               clearAgentMessages();
-              // Hit server → broadcasts AGENT_CHAT_CLEARED to ALL devices via WS
+              // Hit server → broadcasts AGENT_CHAT_CLEARED ONLY to same-wallet sessions
+              // Judges on different wallets are completely unaffected
               try {
-                await fetch(`${PROXY_URL}/api/admin/clear-memories`, {
+                const params = walletAddress ? `?wallet=${encodeURIComponent(walletAddress)}` : '';
+                await fetch(`${PROXY_URL}/api/admin/clear-memories${params}`, {
                   method: 'POST',
                   headers: { 'x-admin-secret': 'sentinel-purge-2026' },
                 });

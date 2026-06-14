@@ -788,11 +788,30 @@ app.post('/api/admin/clear-memories', (req, res) => {
   if (secret !== (process.env.ADMIN_SECRET || 'sentinel-purge-2026')) {
     return res.status(403).json({ error: 'Forbidden' });
   }
+  // Scope to wallet if provided — so only THAT wallet's sessions get the broadcast
+  const wallet = req.query.wallet || req.body?.wallet || null;
   const count = memoryRegistry.size;
   memoryRegistry.clear();
   saveMemoryRegistry();
-  broadcast({ type: 'AGENT_CHAT_CLEARED' });
-  console.log(`[SENTINEL] 🧠 Cleared ${count} agent memories on admin request`);
+  
+  // Only broadcast to sessions matching the same wallet address
+  if (wss && wallet) {
+    const msg = JSON.stringify({ type: 'AGENT_CHAT_CLEARED' });
+    wss.clients.forEach((client) => {
+      // Find the session with this client ws
+      for (const [, session] of sessions.entries()) {
+        if (session.ws === client && session.wallet === wallet && client.readyState === 1) {
+          client.send(msg);
+          break;
+        }
+      }
+    });
+  } else if (!wallet) {
+    // No wallet specified — admin-only global clear (used by purge-legacy)
+    broadcast({ type: 'AGENT_CHAT_CLEARED' });
+  }
+  
+  console.log(`[SENTINEL] 🧠 Cleared ${count} agent memories${wallet ? ` for wallet ${wallet.slice(0,8)}...` : ' (global)'}`);
   res.json({ success: true, cleared: count });
 });
 
@@ -1159,9 +1178,12 @@ app.get('/api/memories', async (req, res) => {
 const server = createServer(app);
 wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   const sessionId = uuidv4();
-  sessions.set(sessionId, { ws, lat: null, lng: null });
+  // Extract wallet address from WS URL query param (?wallet=0x...)
+  const urlParams = new URLSearchParams(req.url?.split('?')[1] || '');
+  const walletAddress = urlParams.get('wallet') || null;
+  sessions.set(sessionId, { ws, lat: null, lng: null, wallet: walletAddress });
   ws.send(JSON.stringify({ type: 'session', sessionId }));
 
   ws.on('message', (data) => {
