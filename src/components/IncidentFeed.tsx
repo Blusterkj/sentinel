@@ -24,6 +24,7 @@ interface IncidentFeedProps {
   onResolveIncident?: (id: string) => void;
   onFlagIncident?: (updated: Incident) => void;
   hideHeader?: boolean;
+  fetchError?: boolean;
 }
 
 const TYPE_ICONS: Record<IncidentType, string> = {
@@ -183,12 +184,13 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
   incidents,
   onSelectIncident,
   selectedId,
-  criticalFilter,
-  activeFilter,
-  myReportsFilter,
+  criticalFilter = false,
+  activeFilter = false,
+  myReportsFilter = false,
   onResolveIncident,
   onFlagIncident,
   hideHeader = false,
+  fetchError = false,
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const modalAccount = useCurrentAccount();
@@ -313,7 +315,34 @@ export const IncidentFeed: React.FC<IncidentFeedProps> = ({
 
       {/* Feed list */}
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-        {displayedIncidents.length === 0 ? (
+        {fetchError ? (
+          // ⚠️ Network error state — clearly distinct from the "no incidents" empty state
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '200px',
+              gap: '12px',
+            }}
+          >
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '50%',
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AlertCircle size={22} color="#ef4444" />
+            </div>
+            <span style={{ fontSize: '13px', color: '#fca5a5', fontWeight: 600 }}>
+              Unable to reach live data
+            </span>
+            <span style={{ fontSize: '11px', color: '#555', textAlign: 'center', lineHeight: '1.5', maxWidth: '200px' }}>
+              Check your connection — retrying automatically every 5s
+            </span>
+          </div>
+        ) : displayedIncidents.length === 0 ? (
           <div
             style={{
               display: 'flex',

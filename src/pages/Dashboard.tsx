@@ -12,6 +12,7 @@ import { useAppStore } from '../store/appStore';
 
 interface DashboardProps {
   incidents: Incident[];
+  fetchError?: boolean;
   seeding?: {
     isSeeding: boolean;
     progress: number;
@@ -33,6 +34,7 @@ const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]; // Bangalore, India
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   incidents, 
+  fetchError = false,
   criticalFilter,
   setCriticalFilter,
   activeFilter,
@@ -256,6 +258,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setSelectedCluster(clusterIncidents);
             }}
           />
+          {/* ⚠️ Network error banner — shown when GET /api/incidents fails */}
+          {fetchError && (
+            <div
+              className="fade-in-up"
+              style={{
+                position: 'absolute',
+                top: '12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 900,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(20,10,10,0.88)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(239,68,68,0.4)',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+              }}
+            >
+              <AlertTriangle size={14} color="#ef4444" />
+              <span style={{ fontSize: '12px', color: '#fca5a5', fontWeight: 600 }}>
+                Live data unavailable
+              </span>
+              <span style={{ fontSize: '11px', color: '#888' }}>
+                — retrying every 5s
+              </span>
+            </div>
+          )}
           {/* Mobile Stats Pills Overlay */}
           <div 
             className="flex md:hidden absolute top-[8px] left-[8px] right-[8px] z-[800] overflow-x-auto" 
@@ -479,6 +513,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         >
           <IncidentFeed
             incidents={incidents}
+            fetchError={fetchError}
             onSelectIncident={(i) => {
               setSelectedIncident(i);
               setCenter([i.location.lat, i.location.lng]);

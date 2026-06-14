@@ -102,6 +102,7 @@ export default function App() {
 
   // ── Incident state — loaded from proxy, polled every 15s ──
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [fetchError, setFetchError] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Count of user's own real incidents (for sidebar badge)
@@ -118,9 +119,13 @@ export default function App() {
       const url = `${PROXY_URL}/api/incidents`;
       console.log('[SENTINEL] fetchIncidents URL:', url);
       const res = await fetch(url);
-      if (!res.ok) return;
+      if (!res.ok) {
+        setFetchError(true);
+        return;
+      }
       const data = await res.json();
       const fetched: Incident[] = data.incidents ?? [];
+      setFetchError(false);
       setIncidents((prev) => {
         // Merge: keep any optimistic local-only incidents (no walrusBlobId yet)
         // that haven't been echoed back from the proxy yet
@@ -147,6 +152,7 @@ export default function App() {
       });
     } catch {
       // Network unavailable — keep current state, retry next tick
+      setFetchError(true);
     }
   }, []);
 
@@ -735,6 +741,7 @@ export default function App() {
         }}>
           <Dashboard 
             incidents={incidents} 
+            fetchError={fetchError}
             criticalFilter={criticalFilter}
             setCriticalFilter={setCriticalFilter}
             activeFilter={activeFilter}
