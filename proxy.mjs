@@ -198,7 +198,7 @@ const memwal = MemWal.create({
 });
 
 // ─── Sui Client & Anchor ─────────────────────────────────────
-const PACKAGE_ID = '0xd871fbe56f82f958db58978f13aaa777a714284a971a6075b6498604a3e92c7e';
+const PACKAGE_ID = '0xe418ca986c677725f062657ad0751dd846165eb690cf7bff6b724f9e0ed1e539';
 const suiClient = new SuiJsonRpcClient({ url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' });
 
 // Load keypair from Sui keystore or environment variable
