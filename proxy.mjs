@@ -210,6 +210,23 @@ function loadKeypair() {
 }
 
 // ─── Gas Station Sponsored Transactions ─────────────────────────────────────
+
+// ─── Groq Client ─────────────────────────────────────────────
+const groq = createGroq({ apiKey: GROQ_API_KEY });
+
+// ─── Express App ─────────────────────────────────────────────
+const app = express();
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    /\.vercel\.app$/,
+  ],
+  credentials: true,
+}));
+app.use(express.json());
+
+// ─── Gas Station Sponsored Transactions ─────────────────────────────────────
 app.post('/api/sponsor-create', async (req, res) => {
   const { blobId, description, senderAddress } = req.body;
   if (!blobId || !senderAddress) return res.status(400).json({ error: 'Missing parameters' });
@@ -277,21 +294,6 @@ app.post('/api/incidents/:id/tx', (req, res) => {
     res.status(404).json({ error: 'Not found' });
   }
 });
-
-// ─── Groq Client ─────────────────────────────────────────────
-const groq = createGroq({ apiKey: GROQ_API_KEY });
-
-// ─── Express App ─────────────────────────────────────────────
-const app = express();
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:4173',
-    /\.vercel\.app$/,
-  ],
-  credentials: true,
-}));
-app.use(express.json());
 
 /**
  * GET / — version manifest (helps verify Railway is running current proxy.mjs)
