@@ -725,6 +725,51 @@ app.post('/api/incidents/:id/delete', (req, res) => {
 });
 
 /**
+ * POST /api/admin/purge-legacy
+ * Removes all incidents that do NOT have a suiTxDigest (unverified on Sui).
+ * This is a one-way operation — purged incidents are gone from registry + disk.
+ * Also clears agent memory so the AI has no recall of them.
+ */
+app.post('/api/admin/purge-legacy', (req, res) => {
+  const secret = req.headers['x-admin-secret'];
+  if (secret !== (process.env.ADMIN_SECRET || 'sentinel-purge-2026')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const purgedIds = [];
+  const kept = [];
+
+  for (const [id, inc] of incidentRegistry.entries()) {
+    if (!inc.suiTxDigest) {
+      incidentRegistry.delete(id);
+      purgedIds.push(id);
+      console.log(`   🗑️  [Purge] Removed legacy (no Sui tx): ${id} — "${(inc.description || '').slice(0, 40)}"`);
+    } else {
+      kept.push(id);
+    }
+  }
+
+  // Renumber the remaining incidents
+  const remaining = [...incidentRegistry.values()].sort((a, b) =>
+    new Date(a.serverTimestamp || a.createdAt || 0).getTime() -
+    new Date(b.serverTimestamp || b.createdAt || 0).getTime()
+  );
+  remaining.forEach((inc, idx) => {
+    inc.sequenceNumber = idx + 1;
+    incidentRegistry.set(inc.id, inc);
+  });
+  incidentSequence = remaining.length;
+
+  saveIncidentRegistry();
+
+  // Broadcast deletions to all connected clients
+  purgedIds.forEach(id => broadcast({ type: 'INCIDENT_DELETED', incidentId: id }));
+
+  console.log(`[SENTINEL] 🧹 Purge complete: removed ${purgedIds.length}, kept ${kept.length}`);
+  res.json({ success: true, purged: purgedIds.length, kept: kept.length, keptIds: kept });
+});
+
+/**
  * POST /api/incidents/:id/resolve
  * Marks an incident as resolved in the registry and broadcasts to all clients.
  */
