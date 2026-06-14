@@ -595,7 +595,7 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
       }
     }
 
-    res.json({ success: true, blobId, tx_digest: txDigest, createdAt: incident.createdAt });
+    res.json({ success: true, blobId, createdAt: incident.createdAt });
   } catch (err) {
     console.error('   ❌ Store Error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
