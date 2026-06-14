@@ -366,7 +366,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
         <StatCard
           icon={<HardDrive size={14} color="#f59e0b" />}
           label="Storage Used"
-          value={totalBytes > 1024 ? `${(totalBytes / 1024).toFixed(1)} KB` : `${totalBytes} B`}
+          value={totalBytes >= 1024 ? `${(totalBytes / 1024).toFixed(1)} KB` : `${totalBytes} B`}
           color="#f59e0b"
         />
       </div>
