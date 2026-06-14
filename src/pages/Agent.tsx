@@ -6,6 +6,7 @@ import { AgentChat } from '../components/AgentChat';
 import { Brain, Database, Network, Trash2 } from 'lucide-react';
 import type { Incident } from '../types/incident';
 import { useAppStore } from '../store/appStore';
+import { PROXY_URL } from '../lib/api';
 export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) => {
   const { agentMessages, clearAgentMessages } = useAppStore();
   const [isClearing, setIsClearing] = React.useState(false);
@@ -45,11 +46,15 @@ export const Agent: React.FC<{ incidents?: Incident[] }> = ({ incidents = [] }) 
             onClick={async () => {
               if (isClearing) return;
               setIsClearing(true);
-              sessionStorage.setItem('sentinel_chat_cleared', '1');
+              // Clear locally first (instant feedback)
               clearAgentMessages();
-              
-              // We no longer clear the decentralized memory since we want the memory to be permanent.
-              // We just clear the local session state.
+              // Hit server → broadcasts AGENT_CHAT_CLEARED to ALL devices via WS
+              try {
+                await fetch(`${PROXY_URL}/api/admin/clear-memories`, {
+                  method: 'POST',
+                  headers: { 'x-admin-secret': 'sentinel-purge-2026' },
+                });
+              } catch { /* non-blocking */ }
               setIsClearing(false);
             }}
             style={{

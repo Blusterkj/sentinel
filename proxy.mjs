@@ -765,8 +765,35 @@ app.post('/api/admin/purge-legacy', (req, res) => {
   // Broadcast deletions to all connected clients
   purgedIds.forEach(id => broadcast({ type: 'INCIDENT_DELETED', incidentId: id }));
 
-  console.log(`[SENTINEL] 🧹 Purge complete: removed ${purgedIds.length}, kept ${kept.length}`);
-  res.json({ success: true, purged: purgedIds.length, kept: kept.length, keptIds: kept });
+  // Also wipe all agent conversation memories from disk
+  const memCount = memoryRegistry.size;
+  memoryRegistry.clear();
+  saveMemoryRegistry();
+  console.log(`[SENTINEL] 🧠 Cleared ${memCount} agent memories from registry`);
+
+  // Broadcast chat-cleared to all connected devices so mobile/desktop sync
+  broadcast({ type: 'AGENT_CHAT_CLEARED' });
+
+  console.log(`[SENTINEL] 🧹 Purge complete: removed ${purgedIds.length} incidents, kept ${kept.length}, cleared ${memCount} memories`);
+  res.json({ success: true, purged: purgedIds.length, kept: kept.length, keptIds: kept, memoriesCleared: memCount });
+});
+
+/**
+ * POST /api/admin/clear-memories
+ * Wipes all agent conversation memories (without touching incidents).
+ * Broadcasts AGENT_CHAT_CLEARED so all tabs/devices clear their UI.
+ */
+app.post('/api/admin/clear-memories', (req, res) => {
+  const secret = req.headers['x-admin-secret'];
+  if (secret !== (process.env.ADMIN_SECRET || 'sentinel-purge-2026')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const count = memoryRegistry.size;
+  memoryRegistry.clear();
+  saveMemoryRegistry();
+  broadcast({ type: 'AGENT_CHAT_CLEARED' });
+  console.log(`[SENTINEL] 🧠 Cleared ${count} agent memories on admin request`);
+  res.json({ success: true, cleared: count });
 });
 
 /**

@@ -39,6 +39,7 @@ import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
 import { AuthModal } from './components/AuthModal';
 import { useAuthStore } from './lib/authStore';
+import { useAppStore } from './store/appStore';
 import { loadWallet, generateWallet, saveWallet, clearWallet } from './lib/inAppWallet';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
@@ -65,6 +66,7 @@ export default function App() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
   const { address: inAppAddress, setInAppAuth, clearAuth } = useAuthStore();
+  const { clearAgentMessages } = useAppStore();
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showDesktopAuthModal, setShowDesktopAuthModal] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>(
@@ -210,6 +212,9 @@ export default function App() {
               );
             } else if (data.type === 'INCIDENT_DELETED' && data.incidentId) {
               setIncidents((prev) => prev.filter((i) => i.id !== data.incidentId));
+            } else if (data.type === 'AGENT_CHAT_CLEARED') {
+              // Sync chat clear across all devices (mobile + desktop)
+              clearAgentMessages();
             }
           } catch { /* ignore malformed messages */ }
         };
