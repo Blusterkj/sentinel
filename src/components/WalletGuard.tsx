@@ -5,15 +5,13 @@
 
 import React, { useState } from 'react';
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import { Capacitor } from '@capacitor/core';
 import { AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../lib/authStore';
-import { generateWallet, saveWallet } from '../lib/inAppWallet';
 import { AuthModal } from './AuthModal';
 
 export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const account = useCurrentAccount(); // dapp-kit
-  const { address, setInAppAuth } = useAuthStore(); // in-app wallet
+  const { address } = useAuthStore(); // in-app wallet
   const [showModal, setShowModal] = useState(false);
 
   // Either auth method is sufficient
@@ -23,24 +21,7 @@ export const WalletGuard: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Not authenticated ────────────────────────────────────────────────────
 
-  if (Capacitor.isNativePlatform()) {
-    // APK should never reach here after first launch (App.tsx handles init).
-    // Safety fallback: silently generate + save a wallet.
-    (async () => {
-      try {
-        const wallet = await generateWallet();
-        await saveWallet(wallet.privateKey);
-        setInAppAuth(wallet.address, wallet.privateKey);
-      } catch {
-        // Ignore — will retry on next render
-      }
-    })();
-
-    // Render nothing while generating
-    return null;
-  }
-
-  // ── Web (desktop or mobile web) — show AuthModal ─────────────────────────
+  // Show AuthModal prompt for all platforms
 
   return (
     <>
