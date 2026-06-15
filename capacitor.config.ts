@@ -8,6 +8,11 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#0a0a0a',
+      overlaysWebView: false,
+    },
   },
   android: {
     // Use Android Studio bundled JDK
