@@ -10,8 +10,15 @@
 const RAILWAY_HTTP = 'https://sentinelproduction.up.railway.app';
 const RAILWAY_WSS  = 'wss://sentinelproduction.up.railway.app';
 
+// On Capacitor (native Android/iOS), window.location.hostname is 'localhost'
+// even though the app is running natively — always use Railway in that case.
+const isCapacitorNative =
+  typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.() === true;
+
 const isLocalhost =
-  typeof window !== 'undefined' && window.location.hostname.includes('localhost');
+  !isCapacitorNative &&
+  typeof window !== 'undefined' &&
+  window.location.hostname.includes('localhost');
 
 export const PROXY_URL: string =
   import.meta.env.VITE_PROXY_URL ||
