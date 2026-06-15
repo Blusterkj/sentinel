@@ -43,11 +43,23 @@ try {
   console.error('[SENTINEL] ❌ Firebase Admin init failed:', e.message);
 }
 
-/** Send a push notification to all registered FCM tokens */
-async function sendFcmNotification({ title, body, data = {} }) {
+/** Send a push notification to devices within 20km of the incident */
+async function sendFcmNotification({ title, body, data = {}, incidentLat = null, incidentLng = null }) {
   if (!fcmApp) return;
-  const tokens = [...fcmTokenRegistry.values()].map(t => t.token).filter(Boolean);
+  
+  // Filter tokens: send to ALL if no incident location, or within 20km if location known
+  const allTokenEntries = [...fcmTokenRegistry.values()];
+  const eligible = allTokenEntries.filter(t => {
+    if (!t.token) return false;
+    if (incidentLat == null || incidentLng == null) return true; // no location filter
+    if (t.lat == null || t.lng == null) return true; // device has no location → send anyway
+    const dist = haversineDistance(incidentLat, incidentLng, t.lat, t.lng);
+    return dist <= 20; // 20km radius
+  });
+  
+  const tokens = eligible.map(t => t.token);
   if (tokens.length === 0) return;
+  
   try {
     const response = await admin.messaging().sendEachForMulticast({
       tokens,
@@ -57,13 +69,14 @@ async function sendFcmNotification({ title, body, data = {} }) {
         priority: 'high',
         notification: {
           sound: 'default',
-          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
           channelId: 'sentinel_alerts',
+          icon: 'ic_stat_sentinel',
+          color: '#eab308',
         },
       },
     });
-    console.log(`[SENTINEL] 🔔 FCM sent to ${response.successCount}/${tokens.length} devices`);
-    // Remove failed tokens
+    console.log(`[SENTINEL] 🔔 FCM sent to ${response.successCount}/${tokens.length} devices (radius filter: ${incidentLat ? '20km' : 'none'})`);
+    // Remove failed/expired tokens
     response.responses.forEach((r, i) => {
       if (!r.success && (r.error?.code === 'messaging/invalid-registration-token' ||
           r.error?.code === 'messaging/registration-token-not-registered')) {
@@ -696,6 +709,8 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
         type: storedIncident.type,
         severity: storedIncident.severity,
       },
+      incidentLat: storedIncident.location?.lat ?? null,
+      incidentLng: storedIncident.location?.lng ?? null,
     }).catch(() => {});
   } catch (err) {
     console.error('   ❌ Store Error:', err.message);
@@ -709,12 +724,19 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
  * Called by the app after PushNotifications.register() returns a token.
  */
 app.post('/api/fcm/register', (req, res) => {
-  const { token, wallet, platform, deviceId } = req.body;
+  const { token, wallet, platform, deviceId, lat, lng } = req.body;
   if (!token) return res.status(400).json({ error: 'token required' });
-  const key = deviceId || token.slice(-16); // Use last 16 chars as stable key if no deviceId
-  fcmTokenRegistry.set(key, { token, wallet: wallet || null, platform: platform || 'android', registeredAt: new Date().toISOString() });
+  const key = deviceId || token.slice(-16);
+  fcmTokenRegistry.set(key, {
+    token,
+    wallet: wallet || null,
+    platform: platform || 'android',
+    lat: lat ? parseFloat(lat) : null,
+    lng: lng ? parseFloat(lng) : null,
+    registeredAt: new Date().toISOString(),
+  });
   saveFcmTokenRegistry();
-  console.log(`[SENTINEL] 🔔 FCM token registered (${fcmTokenRegistry.size} total)`);
+  console.log(`[SENTINEL] 🔔 FCM token registered (${fcmTokenRegistry.size} total, location: ${lat ? `${lat},${lng}` : 'unknown'})`);
   res.json({ success: true, registered: fcmTokenRegistry.size });
 });
 

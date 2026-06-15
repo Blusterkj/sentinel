@@ -280,9 +280,25 @@ export default function App() {
 
   const handleNewIncident = (incident: Incident) => {
     // Optimistically prepend — the 15s poll will confirm it from the proxy.
-    // Calling again with the same id (e.g. after background Walrus confirms) merges the update.
     setIncidents((prev) => [incident, ...prev.filter((i) => i.id !== incident.id)]);
   };
+
+  // Handle tap on FCM push notification → navigate to dashboard and open incident on map
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const incidentId = (e as CustomEvent).detail as string;
+      if (!incidentId) return;
+      // Navigate to dashboard
+      setCurrentPage('dashboard');
+      window.history.pushState({}, '', '/dashboard');
+      // Fire openIncidentOnMap so Dashboard can center the map on this incident
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openIncidentOnMap', { detail: incidentId }));
+      }, 300);
+    };
+    window.addEventListener('openIncidentFromNotification', handler);
+    return () => window.removeEventListener('openIncidentFromNotification', handler);
+  }, []);
 
 
   // Merge updated flag data from POST /api/unflag response

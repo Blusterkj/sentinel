@@ -1,10 +1,38 @@
 // src/hooks/usePushNotifications.ts
-// Registers FCM token with proxy server and handles incoming push notifications.
+// Registers FCM token + GPS location with proxy for 20km proximity filtering.
 // Only active when running as native Android app (Capacitor).
 
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PROXY_URL } from '../lib/api';
+
+/** Get current GPS position (returns null if unavailable) */
+function getPosition(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => resolve(null),
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  });
+}
+
+async function registerToken(token: string, walletAddress: string | null) {
+  const location = await getPosition();
+  await fetch(`${PROXY_URL}/api/fcm/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token,
+      wallet: walletAddress,
+      platform: 'android',
+      lat: location?.lat ?? null,
+      lng: location?.lng ?? null,
+    }),
+  });
+  console.log('[FCM] Registered token with location:', location);
+}
 
 // Lazy import — only runs on native Android, never in browser
 async function setupPush(walletAddress: string | null) {
@@ -19,35 +47,39 @@ async function setupPush(walletAddress: string | null) {
   // Register with FCM
   await PushNotifications.register();
 
-  // Send FCM token to proxy so it can push new incident alerts
+  // Send FCM token + GPS to proxy
   PushNotifications.addListener('registration', async (token) => {
     console.log('[FCM] Token received:', token.value);
     try {
-      await fetch(`${PROXY_URL}/api/fcm/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: token.value,
-          wallet: walletAddress,
-          platform: 'android',
-        }),
-      });
+      await registerToken(token.value, walletAddress);
     } catch (e) {
       console.warn('[FCM] Token registration failed:', e);
     }
   });
 
-  // Handle incoming foreground notifications
+  // Check if app was opened from a killed state via notification
+  const delivered = await PushNotifications.getDeliveredNotifications();
+  if (delivered.notifications?.length > 0) {
+    const latest = delivered.notifications[0];
+    if (latest.data?.incidentId) {
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('openIncidentFromNotification', { detail: latest.data.incidentId })
+        );
+      }, 1500); // wait for app to fully mount
+    }
+  }
+
+  // Handle incoming foreground notifications — emit event for in-app toast
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[FCM] Foreground notification:', notification);
-    // App is open — WS already shows the incident, no extra UI needed
+    window.dispatchEvent(new CustomEvent('fcmForegroundAlert', { detail: notification }));
   });
 
-  // Handle tap on background notification
+  // Handle tap on background/killed notification → open incident on map
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     const data = action.notification.data;
     console.log('[FCM] Notification tapped:', data);
-    // Navigate to dashboard if an incidentId is in the payload
     if (data?.incidentId) {
       window.dispatchEvent(
         new CustomEvent('openIncidentFromNotification', { detail: data.incidentId })
@@ -59,7 +91,6 @@ async function setupPush(walletAddress: string | null) {
 export function usePushNotifications(walletAddress: string | null) {
   useEffect(() => {
     setupPush(walletAddress).catch(console.warn);
-    // Only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

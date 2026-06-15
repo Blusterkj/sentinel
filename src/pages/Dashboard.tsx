@@ -77,6 +77,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return () => window.removeEventListener('selectIncident', handleSelectIncident);
   }, []);
 
+  // Handle FCM notification tap → find incident by ID and open it on the map
+  useEffect(() => {
+    const handleOpenFromNotification = (e: Event) => {
+      const incidentId = (e as CustomEvent<string>).detail;
+      if (!incidentId) return;
+      const incident = incidents.find((i) => i.id === incidentId);
+      if (incident) {
+        setSelectedCluster(null);
+        setSelectedIncident(incident);
+        setCenter([incident.location.lat, incident.location.lng]);
+      }
+    };
+    window.addEventListener('openIncidentOnMap', handleOpenFromNotification);
+    return () => window.removeEventListener('openIncidentOnMap', handleOpenFromNotification);
+  }, [incidents]);
+
   // Try to get user location on mount and center the map on them
   // Only update center if no incident is currently selected (avoids snapping away from modal)
   useEffect(() => {
