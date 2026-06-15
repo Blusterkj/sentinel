@@ -5,6 +5,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { PROXY_URL, WS_URL } from './lib/api';
 import { AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Analytics } from './pages/Analytics';
@@ -87,6 +89,12 @@ export default function App() {
 
   // ── Load persisted in-app wallet on mount ──
   useEffect(() => {
+    // Configure Native Status Bar
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Dark }).catch(console.error);
+      StatusBar.setBackgroundColor({ color: '#0a0a0a' }).catch(console.error);
+    }
+
     (async () => {
       const existing = await loadWallet();
       if (Capacitor.isNativePlatform()) {
