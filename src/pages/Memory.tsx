@@ -181,7 +181,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
 
   // Check proxy health on mount
   useEffect(() => {
-    fetch(`${PROXY_URL}/api/health`)
+    fetch(`${PROXY_URL}/api/incidents`, { method: 'GET' })
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then(() => setProxyOnline(true))
       .catch(() => setProxyOnline(false));
