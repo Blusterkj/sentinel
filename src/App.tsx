@@ -6,7 +6,6 @@ import { PROXY_URL, WS_URL } from './lib/api';
 import { AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { PushNotifications } from '@capacitor/push-notifications';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Analytics } from './pages/Analytics';
