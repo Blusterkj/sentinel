@@ -73,9 +73,18 @@ export default function App() {
   usePushNotifications(walletAddress);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showDesktopAuthModal, setShowDesktopAuthModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState<Page>(
-    'landing'
-  );
+  const [currentPage, setCurrentPage] = useState<Page>(() => {
+    if (Capacitor.isNativePlatform()) return 'dashboard';
+    const path = window.location.pathname;
+    if (path === '/dashboard') return 'dashboard';
+    if (path === '/analytics') return 'analytics';
+    if (path === '/report') return 'report';
+    if (path === '/memory') return 'memory';
+    if (path === '/agent') return 'agent';
+    if (path === '/activity') return 'activity';
+    return 'landing';
+  });
+
 
   // ── Load persisted in-app wallet on mount ──
   useEffect(() => {
@@ -246,7 +255,7 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
-      if (path === '/') setCurrentPage('landing');
+      if (path === '/') setCurrentPage(Capacitor.isNativePlatform() ? 'dashboard' : 'landing');
       else if (path === '/dashboard') setCurrentPage('dashboard');
       else if (path === '/analytics') setCurrentPage('analytics');
       else if (path === '/report') setCurrentPage('report');
