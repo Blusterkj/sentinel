@@ -17,7 +17,6 @@ import { Logo } from './components/Logo';
 import { MobileHeader } from './components/MobileHeader';
 import { BottomTabBar } from './components/BottomTabBar';
 import { SosButton } from './components/SosButton';
-import { KeyBackupScreen } from './components/KeyBackupScreen';
 import { DemoTrigger } from './components/DemoTrigger';
 import { buildSimulatedIncident } from './components/DemoButton';
 import { useSecretDemo } from './hooks/useSecretDemo';
