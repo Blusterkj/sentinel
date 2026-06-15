@@ -89,15 +89,17 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const existing = await loadWallet();
-      if (existing) {
-        // Wallet found — silently authenticate
+      if (Capacitor.isNativePlatform()) {
+        // Android: always show the auth modal so user can freely choose
+        // Slush / import / or continue with existing in-app wallet.
+        // The auth modal will auto-close if Slush connects or user confirms.
+        setShowDesktopAuthModal(true);
+      } else if (existing) {
+        // Web: silently authenticate with existing wallet
         setInAppAuth(existing.address, existing.privateKey);
       } else {
-        // Web: auto-show auth modal on first visit.
-        // Native Android: don't auto-pop — user taps Sign In when ready.
-        if (!Capacitor.isNativePlatform()) {
-          setShowDesktopAuthModal(true);
-        }
+        // Web first visit: show auth modal
+        setShowDesktopAuthModal(true);
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
