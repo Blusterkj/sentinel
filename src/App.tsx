@@ -40,7 +40,7 @@ import { WalletGuard } from './components/WalletGuard';
 import { AuthModal } from './components/AuthModal';
 import { useAuthStore } from './lib/authStore';
 import { useAppStore } from './store/appStore';
-import { loadWallet, generateWallet, saveWallet, clearWallet } from './lib/inAppWallet';
+import { loadWallet, clearWallet } from './lib/inAppWallet';
 import { usePushNotifications } from './hooks/usePushNotifications';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
@@ -77,12 +77,6 @@ export default function App() {
     'landing'
   );
 
-  // ── APK KeyBackupScreen state ──
-  const [showKeyBackup, setShowKeyBackup] = useState(false);
-  const [backupWallet, setBackupWallet] = useState<{
-    address: string; privateKey: string; mnemonic: string;
-  } | null>(null);
-
   // ── Load persisted in-app wallet on mount ──
   useEffect(() => {
     (async () => {
@@ -90,18 +84,10 @@ export default function App() {
       if (existing) {
         // Wallet found — silently authenticate
         setInAppAuth(existing.address, existing.privateKey);
-      } else if (Capacitor.isNativePlatform()) {
-        // APK first launch — auto-generate wallet and show backup screen
-        try {
-          const wallet = await generateWallet();
-          await saveWallet(wallet.privateKey);
-          setBackupWallet(wallet);
-          setShowKeyBackup(true);
-        } catch (err) {
-          console.error('Failed to generate wallet on APK first launch', err);
-        }
+      } else {
+        // First launch - show auth modal for all platforms (Web and Android)
+        setShowDesktopAuthModal(true);
       }
-      // Web (no wallet) — WalletGuard handles auth prompting
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -334,23 +320,6 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── APK first launch: show full-screen KeyBackupScreen ──
-  if (showKeyBackup && backupWallet && Capacitor.isNativePlatform()) {
-    return (
-      <AnimatePresence>
-        <KeyBackupScreen
-          key="key-backup"
-          address={backupWallet.address}
-          privateKey={backupWallet.privateKey}
-          mnemonic={backupWallet.mnemonic}
-          onContinue={() => {
-            setInAppAuth(backupWallet.address, backupWallet.privateKey);
-            setShowKeyBackup(false);
-          }}
-        />
-      </AnimatePresence>
-    );
-  }
 
   return (
     <div
