@@ -47,7 +47,10 @@ export const KeyBackupScreen: React.FC<KeyBackupScreenProps> = ({
         background: '#0a0a0a',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '24px 20px', overflowY: 'auto',
+        padding: '24px 20px',
+        paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+        overflowY: 'auto',
       }}
     >
       <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
