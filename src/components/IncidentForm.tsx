@@ -2,18 +2,7 @@
 // Form to report a new incident — stores it in MemWal and shows pattern analysis
 
 import React, { useState, useEffect } from 'react';
-import {
-  MapPin,
-  Send,
-  Loader2,
-  CheckCircle2,
-  ExternalLink,
-  Search,
-  CheckCircle,
-  Link,
-  Radio,
-  Shield,
-} from 'lucide-react';
+import { Send, MapPin, Search, Loader2, CheckCircle2, ExternalLink, CheckCircle, Link, Radio, Shield } from 'lucide-react';
 import type { Incident, IncidentType, Severity } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 import { useCurrentAccount, useSignTransaction, useSuiClient } from '@mysten/dapp-kit';
@@ -22,6 +11,7 @@ import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { useAuthStore } from '../lib/authStore';
 import { PROXY_URL } from '../lib/api';
+import { getCurrentPosition } from '../lib/location';
 
 
 
@@ -108,35 +98,30 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ onIncidentSubmitted 
 
 
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation not supported by your browser.');
-      return;
-    }
+  const handleGetLocation = async () => {
     setFormState('locating');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setCoords({ lat: latitude, lng: longitude });
+    try {
+      const pos = await getCurrentPosition();
+      if (!pos) throw new Error('Could not get location');
+      
+      const { latitude, longitude } = pos;
+      setCoords({ lat: latitude, lng: longitude });
 
-        // Reverse geocode with Nominatim
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await res.json();
-          setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        } catch {
-          setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        }
-        setFormState('idle');
-      },
-      (err) => {
-        setError(`Location error: ${err.message}`);
-        setFormState('error');
-      },
-      { timeout: 10000 }
-    );
+      // Reverse geocode with Nominatim
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+        );
+        const data = await res.json();
+        setAddress(data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      } catch {
+        setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      }
+      setFormState('idle');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Location error');
+      setFormState('error');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

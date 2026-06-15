@@ -25,7 +25,6 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ currentPage, navigat
         right: 0,
         height: '64px',
         background: '#0a0a0a',
-        borderTop: '1px solid #1a1a1a',
         zIndex: 950,
         alignItems: 'center',
         justifyContent: 'space-around',

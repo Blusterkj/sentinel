@@ -96,17 +96,25 @@ export default function App() {
 
     (async () => {
       const existing = await loadWallet();
-      if (Capacitor.isNativePlatform()) {
-        // Android: always show the auth modal so user can freely choose
-        // Slush / import / or continue with existing in-app wallet.
-        // The auth modal will auto-close if Slush connects or user confirms.
-        setShowDesktopAuthModal(true);
-      } else if (existing) {
-        // Web: silently authenticate with existing wallet
+      if (existing) {
+        // Silently authenticate with the persisted wallet (works on both web and APK)
         setInAppAuth(existing.address, existing.privateKey);
       } else {
-        // Web first visit: show auth modal
+        // No saved wallet — show auth modal so user can create or import one
         setShowDesktopAuthModal(true);
+      }
+
+      // On native APK: eagerly request location + notification permissions on launch
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Geolocation } = await import('@capacitor/geolocation');
+          const locPerm = await Geolocation.checkPermissions();
+          if (locPerm.location !== 'granted') {
+            await Geolocation.requestPermissions();
+          }
+        } catch (e) {
+          console.warn('[Permissions] Location request failed:', e);
+        }
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,8 +159,10 @@ export default function App() {
         const merged = fetched.map((serverInc) => {
           const existing = prev.find((local) => local.id === serverInc.id);
           const preservedStatus =
-            existing?.uploadStatus === 'confirmed'
-              ? undefined          // confirmed → no indicator needed
+            serverInc.walrusBlobId
+              ? undefined          // Server confirms it's fully stored
+              : existing?.uploadStatus === 'confirmed'
+              ? undefined          // confirmed locally → no indicator needed
               : existing?.uploadStatus; // pending/failed → keep showing
           return { ...serverInc, uploadStatus: preservedStatus };
         });
@@ -208,7 +218,9 @@ export default function App() {
                 // (Sui tx may still be running when proxy broadcasts NEW_INCIDENT)
                 const existing = prev.find(i => i.id === data.incident.id);
                 const preservedStatus =
-                  existing?.uploadStatus === 'confirmed'
+                  data.incident.walrusBlobId
+                    ? undefined
+                    : existing?.uploadStatus === 'confirmed'
                     ? undefined
                     : existing?.uploadStatus;
                 const merged = { ...data.incident, uploadStatus: preservedStatus };

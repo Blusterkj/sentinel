@@ -10,10 +10,11 @@
 const RAILWAY_HTTP = 'https://sentinelproduction.up.railway.app';
 const RAILWAY_WSS  = 'wss://sentinelproduction.up.railway.app';
 
+import { Capacitor } from '@capacitor/core';
+
 // On Capacitor (native Android/iOS), window.location.hostname is 'localhost'
 // even though the app is running natively — always use Railway in that case.
-const isCapacitorNative =
-  typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.() === true;
+const isCapacitorNative = Capacitor.isNativePlatform();
 
 const isLocalhost =
   !isCapacitorNative &&

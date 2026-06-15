@@ -68,7 +68,6 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         style={{
           height: '48px',
           background: '#0a0a0a',
-          borderBottom: '1px solid #1a1a1a',
           zIndex: 2000,
           alignItems: 'center',
           justifyContent: 'space-between',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getCurrentPosition } from '../lib/location';
 import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import { BottomSheet } from '../components/BottomSheet';
@@ -96,25 +97,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Try to get user location on mount and center the map on them
   // Only update center if no incident is currently selected (avoids snapping away from modal)
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setUserLocation(loc);
-          setCachedUserLocation(loc); // persist for next navigation back
-          setLocationObtained(true);
-          // Only pan to user location if no incident is currently selected
-          setSelectedIncident((current) => {
-            if (!current) setCenter(loc);
-            return current;
-          });
-        },
-        () => {
-          // Silently fall back to default center if denied
-        },
-        { timeout: 5000 }
-      );
-    }
+    (async () => {
+      const pos = await getCurrentPosition();
+      if (pos) {
+        const loc: [number, number] = [pos.latitude, pos.longitude];
+        setUserLocation(loc);
+        setCachedUserLocation(loc); // persist for next navigation back
+        setLocationObtained(true);
+        // Only pan to user location if no incident is currently selected
+        setSelectedIncident((current) => {
+          if (!current) setCenter(loc);
+          return current;
+        });
+      } else {
+        setLocationObtained(true);
+      }
+    })();
   }, []);
 
   // Sync selectedIncident with latest data from incidents list (or clear if deleted)
@@ -744,18 +742,15 @@ const WeatherStatus: React.FC = () => {
       }
     };
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-        () => {
-          // Permission denied — fallback to Bengaluru
-          fetchWeather(12.9716, 77.5946);
-        },
-        { timeout: 5000 }
-      );
-    } else {
-      fetchWeather(12.9716, 77.5946);
-    }
+    (async () => {
+      const pos = await getCurrentPosition();
+      if (pos) {
+        fetchWeather(pos.latitude, pos.longitude);
+      } else {
+        // Permission denied / error — fallback to Bengaluru
+        fetchWeather(12.9716, 77.5946);
+      }
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

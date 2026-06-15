@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { WS_URL } from '../lib/api';
 import type { Incident } from '../types/incident';
 
+import { getCurrentPosition } from '../lib/location';
+
 export interface NearbyAlert {
   type: string;
   severity: string;
@@ -29,7 +31,7 @@ export function useNearbyAlerts(options: UseNearbyAlertsOptions = {}) {
     console.log('[SENTINEL] WebSocket connecting to:', WS_URL);
     ws.current = new WebSocket(WS_URL);
 
-    ws.current.onopen = () => {
+    ws.current.onopen = async () => {
       setConnected(true);
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
@@ -37,16 +39,13 @@ export function useNearbyAlerts(options: UseNearbyAlertsOptions = {}) {
       }
 
       // Share location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          ws.current?.send(JSON.stringify({
-            type: 'location',
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          }));
-        }, (err) => {
-          console.error("Geolocation error:", err);
-        });
+      const pos = await getCurrentPosition();
+      if (pos) {
+        ws.current?.send(JSON.stringify({
+          type: 'location',
+          lat: pos.latitude,
+          lng: pos.longitude,
+        }));
       }
     };
 

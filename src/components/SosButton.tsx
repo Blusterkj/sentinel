@@ -10,6 +10,7 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { v4 as uuidv4 } from 'uuid';
 import type { Incident } from '../types/incident';
 import { PROXY_URL } from '../lib/api';
+import { getCurrentPosition } from '../lib/location';
 import { useAuthStore } from '../lib/authStore';
 
 
@@ -46,14 +47,8 @@ export const SosButton: React.FC<SosButtonProps> = ({ onSosSubmitted }) => {
 
     try {
       // Step 1: Get GPS
-      const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
-        if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve(pos.coords),
-          (err) => reject(err),
-          { timeout: 10000, enableHighAccuracy: true }
-        );
-      });
+      const coords = await getCurrentPosition();
+      if (!coords) throw new Error('Location required for SOS');
 
       // Step 2: Reverse geocode
       let address = `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;

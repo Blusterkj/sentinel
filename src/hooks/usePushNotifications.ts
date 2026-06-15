@@ -6,20 +6,10 @@ import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PROXY_URL } from '../lib/api';
 
-/** Get current GPS position (returns null if unavailable) */
-function getPosition(): Promise<{ lat: number; lng: number } | null> {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(null);
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => resolve(null),
-      { timeout: 5000, maximumAge: 60000 }
-    );
-  });
-}
+import { getCurrentPosition } from '../lib/location';
 
 async function registerToken(token: string, walletAddress: string | null) {
-  const location = await getPosition();
+  const location = await getCurrentPosition();
   await fetch(`${PROXY_URL}/api/fcm/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,8 +17,8 @@ async function registerToken(token: string, walletAddress: string | null) {
       token,
       wallet: walletAddress,
       platform: 'android',
-      lat: location?.lat ?? null,
-      lng: location?.lng ?? null,
+      lat: location?.latitude ?? null,
+      lng: location?.longitude ?? null,
     }),
   });
   console.log('[FCM] Registered token with location:', location);
