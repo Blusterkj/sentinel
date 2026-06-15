@@ -1,8 +1,8 @@
 // src/components/AuthModal.tsx
-// Platform-aware authentication modal for web (desktop + mobile web).
-// NEVER rendered on APK — APK uses KeyBackupScreen instead.
+// Platform-aware authentication modal for web and native.
 
 import React, { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import { ConnectButton, useCurrentAccount, useCurrentWallet } from '@mysten/dapp-kit';
 import { Copy, Check, Eye, EyeOff, AlertTriangle, Wallet, Key, X, ChevronLeft } from 'lucide-react';
@@ -335,15 +335,19 @@ const ModalContent: React.FC<ModalProps & { slushId: string }> = ({ onClose, set
       <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>Sign in to continue</p>
     </div>
 
-    {/* Slush — primary */}
-    <SlushButton id={slushId} />
+    {!Capacitor.isNativePlatform() && (
+      <>
+        {/* Slush — primary */}
+        <SlushButton id={slushId} />
 
-    {/* Divider */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '18px 0' }}>
-      <div style={{ flex: 1, height: '1px', background: '#1e1e1e' }} />
-      <span style={{ color: '#374151', fontSize: '12px' }}>or use in-app wallet</span>
-      <div style={{ flex: 1, height: '1px', background: '#1e1e1e' }} />
-    </div>
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '18px 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#1e1e1e' }} />
+          <span style={{ color: '#374151', fontSize: '12px' }}>or use in-app wallet</span>
+          <div style={{ flex: 1, height: '1px', background: '#1e1e1e' }} />
+        </div>
+      </>
+    )}
 
     {/* In-App Wallet */}
     <InAppWalletPanel onClose={onClose} setInAppAuth={setInAppAuth} />
