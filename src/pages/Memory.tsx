@@ -178,13 +178,17 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'severity'>('newest');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [proxyOnline, setProxyOnline] = useState<boolean | null>(null);
+  const [proxyError, setProxyError] = useState<string | null>(null);
 
   // Check proxy health on mount
   useEffect(() => {
     fetch(`${PROXY_URL}/api/incidents`, { method: 'GET' })
-      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((r) => r.ok ? r.json() : Promise.reject(`Status: ${r.status}`))
       .then(() => setProxyOnline(true))
-      .catch(() => setProxyOnline(false));
+      .catch((err) => {
+        setProxyOnline(false);
+        setProxyError(err?.message || String(err));
+      });
   }, []);
 
   // Fetch agent memories if tab is active and wallet is connected
@@ -278,7 +282,7 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           }}
         >
           <AlertCircle size={12} />
-          <span>Verification proxy offline — run <code style={{ background: '#1a1a1a', padding: '1px 6px', borderRadius: '3px', fontFamily: 'monospace', fontSize: '10px' }}>npm run proxy</code> to enable live on-chain recall</span>
+          <span>Proxy offline: {proxyError}</span>
         </div>
       )}
       {/* Page header */}
