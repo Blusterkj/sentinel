@@ -93,8 +93,11 @@ export default function App() {
         // Wallet found — silently authenticate
         setInAppAuth(existing.address, existing.privateKey);
       } else {
-        // First launch - show auth modal for all platforms (Web and Android)
-        setShowDesktopAuthModal(true);
+        // Web: auto-show auth modal on first visit.
+        // Native Android: don't auto-pop — user taps Sign In when ready.
+        if (!Capacitor.isNativePlatform()) {
+          setShowDesktopAuthModal(true);
+        }
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
