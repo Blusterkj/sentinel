@@ -23,6 +23,59 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { fromBase64 } from '@mysten/sui/utils';
 import fs from 'fs';
 import os from 'os';
+import admin from 'firebase-admin';
+
+// ─── Firebase Admin (FCM) ─────────────────────────────────────────────
+let fcmApp = null;
+try {
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    : null;
+  if (serviceAccount) {
+    fcmApp = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log('[SENTINEL] 🔔 Firebase Admin initialized for FCM push notifications');
+  } else {
+    console.warn('[SENTINEL] ⚠️  FIREBASE_SERVICE_ACCOUNT not set — FCM push disabled');
+  }
+} catch (e) {
+  console.error('[SENTINEL] ❌ Firebase Admin init failed:', e.message);
+}
+
+/** Send a push notification to all registered FCM tokens */
+async function sendFcmNotification({ title, body, data = {} }) {
+  if (!fcmApp) return;
+  const tokens = [...fcmTokenRegistry.values()].map(t => t.token).filter(Boolean);
+  if (tokens.length === 0) return;
+  try {
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: { title, body },
+      data,
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'default',
+          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+          channelId: 'sentinel_alerts',
+        },
+      },
+    });
+    console.log(`[SENTINEL] 🔔 FCM sent to ${response.successCount}/${tokens.length} devices`);
+    // Remove failed tokens
+    response.responses.forEach((r, i) => {
+      if (!r.success && (r.error?.code === 'messaging/invalid-registration-token' ||
+          r.error?.code === 'messaging/registration-token-not-registered')) {
+        const key = [...fcmTokenRegistry.entries()].find(([, v]) => v.token === tokens[i])?.[0];
+        if (key) { fcmTokenRegistry.delete(key); saveFcmTokenRegistry(); }
+      }
+    });
+  } catch (e) {
+    console.error('[SENTINEL] ❌ FCM send failed:', e.message);
+  }
+}
+
 
 // Connected sessions: Map<sessionId, { ws, lat, lng }>
 const sessions = new Map();
@@ -167,6 +220,22 @@ function saveIncidentRegistry() {
   } catch (e) {
     console.error("Failed to save /app/data/incidents.json", e);
   }
+}
+
+// FCM Token registry — keyed by deviceId, stores { token, wallet, registeredAt }
+const FCM_TOKEN_FILE = '/app/data/fcm-tokens.json';
+let initialFcmTokens = [];
+try {
+  if (fs.existsSync(FCM_TOKEN_FILE)) {
+    initialFcmTokens = JSON.parse(fs.readFileSync(FCM_TOKEN_FILE, 'utf8'));
+  }
+} catch (e) { /* start fresh */ }
+const fcmTokenRegistry = new Map(initialFcmTokens);
+
+function saveFcmTokenRegistry() {
+  try {
+    fs.writeFileSync(FCM_TOKEN_FILE, JSON.stringify([...fcmTokenRegistry.entries()], null, 2));
+  } catch (e) { /* non-critical */ }
 }
 
 // WebSocket server — assigned in the Start section below.
@@ -614,10 +683,54 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
     }
 
     res.json({ success: true, blobId, createdAt: incident.createdAt });
+
+    // Send FCM push notification to all registered Android devices (non-blocking)
+    const typeEmoji = { fire: '🔥', medical: '🏥', crime: '🚨', accident: '💥', natural_disaster: '🌩️', other: '⚠️' };
+    const emoji = typeEmoji[storedIncident.type] || '⚠️';
+    const capType = (storedIncident.type || 'incident').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    sendFcmNotification({
+      title: `${emoji} New ${capType} Alert`,
+      body: `${storedIncident.description?.slice(0, 80) || 'New incident reported'} — ${storedIncident.location?.address?.split(',')[0] || 'Unknown location'}`,
+      data: {
+        incidentId: storedIncident.id,
+        type: storedIncident.type,
+        severity: storedIncident.severity,
+      },
+    }).catch(() => {});
   } catch (err) {
     console.error('   ❌ Store Error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
+});
+
+/**
+ * POST /api/fcm/register
+ * Registers an Android device FCM token for push notifications.
+ * Called by the app after PushNotifications.register() returns a token.
+ */
+app.post('/api/fcm/register', (req, res) => {
+  const { token, wallet, platform, deviceId } = req.body;
+  if (!token) return res.status(400).json({ error: 'token required' });
+  const key = deviceId || token.slice(-16); // Use last 16 chars as stable key if no deviceId
+  fcmTokenRegistry.set(key, { token, wallet: wallet || null, platform: platform || 'android', registeredAt: new Date().toISOString() });
+  saveFcmTokenRegistry();
+  console.log(`[SENTINEL] 🔔 FCM token registered (${fcmTokenRegistry.size} total)`);
+  res.json({ success: true, registered: fcmTokenRegistry.size });
+});
+
+/**
+ * POST /api/fcm/unregister
+ * Removes an FCM token (called on logout).
+ */
+app.post('/api/fcm/unregister', (req, res) => {
+  const { token } = req.body;
+  if (token) {
+    for (const [key, val] of fcmTokenRegistry.entries()) {
+      if (val.token === token) { fcmTokenRegistry.delete(key); break; }
+    }
+    saveFcmTokenRegistry();
+  }
+  res.json({ success: true });
 });
 
 /**

@@ -41,6 +41,7 @@ import { AuthModal } from './components/AuthModal';
 import { useAuthStore } from './lib/authStore';
 import { useAppStore } from './store/appStore';
 import { loadWallet, generateWallet, saveWallet, clearWallet } from './lib/inAppWallet';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 type Page = 'landing' | 'dashboard' | 'analytics' | 'report' | 'memory' | 'agent' | 'activity';
 
@@ -67,6 +68,9 @@ export default function App() {
   const { mutate: disconnect } = useDisconnectWallet();
   const { address: inAppAddress, setInAppAuth, clearAuth } = useAuthStore();
   const { clearAgentMessages } = useAppStore();
+  const walletAddress = account?.address ?? inAppAddress ?? null;
+  // Register FCM push token on Android (no-op in browser)
+  usePushNotifications(walletAddress);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showDesktopAuthModal, setShowDesktopAuthModal] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>(
