@@ -163,7 +163,11 @@ export default function App() {
               : existing?.uploadStatus === 'confirmed'
               ? undefined          // confirmed locally → no indicator needed
               : existing?.uploadStatus; // pending/failed → keep showing
-          return { ...serverInc, uploadStatus: preservedStatus };
+          return {
+            ...serverInc,
+            uploadStatus: preservedStatus,
+            suiTxDigest: serverInc.suiTxDigest || existing?.suiTxDigest,
+          };
         });
 
         return [...localOnly, ...merged].sort((a, b) => {
@@ -222,7 +226,11 @@ export default function App() {
                     : existing?.uploadStatus === 'confirmed'
                     ? undefined
                     : existing?.uploadStatus;
-                const merged = { ...data.incident, uploadStatus: preservedStatus };
+                const merged = { 
+                  ...data.incident, 
+                  uploadStatus: preservedStatus,
+                  suiTxDigest: data.incident.suiTxDigest || existing?.suiTxDigest,
+                };
                 const filtered = prev.filter(i => i.id !== data.incident.id);
                 return [merged, ...filtered].sort((a, b) => {
                   const timeA = new Date(a.timestamp || a.createdAt || 0).getTime() || 0;
