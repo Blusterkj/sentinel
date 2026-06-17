@@ -701,6 +701,7 @@ const WeatherStatus: React.FC = () => {
 
   // ── Cache-first: read from appStore, only fetch when stale (TTL: 10 min) ───
   const { weather, setWeather, isWeatherStale } = useAppStore();
+  const userLocation = useAppStore(state => state.userLocation);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -708,8 +709,18 @@ const WeatherStatus: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Skip the network round-trip if we have fresh cached data
-    if (!isWeatherStale() && weather?.city !== 'Your Location') return;
+    // Check if the current userLocation (GPS) has moved significantly from the weather's fetched location
+    const isSignificantlyDifferent = () => {
+      if (!userLocation) return false; // Can't tell, keep cached
+      if (!weather?.lat || !weather?.lon) return true; // Cached weather has no coordinates, fetch for GPS
+      
+      const dLat = Math.abs(weather.lat - userLocation[0]);
+      const dLon = Math.abs(weather.lon - userLocation[1]);
+      return dLat > 0.05 || dLon > 0.05; // approx > 5km
+    };
+
+    // Skip the network round-trip if we have fresh cached data for THIS location
+    if (!isWeatherStale() && weather?.city !== 'Your Location' && !isSignificantlyDifferent()) return;
 
     const fetchWeather = async (lat: number, lon: number) => {
       try {
@@ -746,6 +757,8 @@ const WeatherStatus: React.FC = () => {
           windSpeed: weatherData.current.wind_speed_10m,
           aqi,
           city,
+          lat,
+          lon,
         });
       } catch {
         // Weather API failed — do NOT fabricate data. Leave whatever was already
@@ -775,7 +788,7 @@ const WeatherStatus: React.FC = () => {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userLocation]);
 
   const hours = time.getHours();
   const isNight = hours < 6 || hours >= 19;

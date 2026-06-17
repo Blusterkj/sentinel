@@ -15,6 +15,8 @@ export interface WeatherData {
   humidity?: number;
   windSpeed?: number;
   aqi?: number;
+  lat?: number;
+  lon?: number;
 }
 
 // ─── TTLs ─────────────────────────────────────────────────────────────────────
