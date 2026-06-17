@@ -369,8 +369,8 @@ export default function App() {
         onHide={() => setActionVisible(false)}
       />
 
-      {/* Desktop wallet button — absolute positioned, only shown on desktop */}
-      <div className="hidden md:flex" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000, alignItems: 'center', gap: '8px' }}>
+      {/* Desktop wallet button — absolute positioned, only shown on desktop (not on landing) */}
+      {currentPage !== 'landing' && <div className="hidden md:flex" style={{ position: 'absolute', top: '8px', right: '20px', zIndex: 1000, alignItems: 'center', gap: '8px' }}>
         {/* Inline ⚡ button — only when actionVisible */}
         {actionVisible && (
           <button
@@ -479,12 +479,12 @@ export default function App() {
             Sign In
           </button>
         )}
-      </div>
+      </div>}
 
       {/* Content row: sidebar (desktop only) + main */}
       <div className="flex flex-row flex-1 overflow-hidden">
-      {/* Sidebar */}
-      <aside
+      {/* Sidebar — hidden on landing page */}
+      {currentPage !== 'landing' && <aside
         className="hidden md:flex"
         style={{
           width: sidebarCollapsed ? '60px' : '220px',
@@ -762,7 +762,7 @@ export default function App() {
             </span>
           </div>
         </div>
-      </aside>
+      </aside>}
 
       {/* Main content */}
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>

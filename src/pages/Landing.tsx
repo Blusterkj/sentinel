@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Activity, Zap, Database } from 'lucide-react';
+import { Shield, Activity, Zap, Database, Brain, Hexagon } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 
 export const Landing: React.FC = () => {
@@ -230,29 +230,114 @@ export const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        <motion.div variants={containerVariants} className="mobile-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '100px', width: '100%' }}>
+        {/* ── Stats / highlights bar ── */}
+        <motion.div
+          variants={itemVariants}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            justifyContent: 'center',
+            marginTop: '56px',
+            marginBottom: '0px',
+          }}
+        >
           {[
-            { icon: <Database size={26} color="#c084fc" />, color: '#c084fc', title: 'Immutable Memory', desc: 'Incidents permanently archived on the Walrus network, bypassing censorship and data loss.' },
-            { icon: <Activity size={26} color="#4ade80" />, color: '#4ade80', title: 'Real-Time Telemetry', desc: 'Instantly broadcasts verified incidents to nearby citizens and first responder nodes.' },
-            { icon: <Shield size={26} color="#60a5fa" />, color: '#60a5fa', title: 'Agentic Analysis', desc: 'Gemini 2.5 Flash agent continuously triages, analyzes, and correlates incoming threats.' },
+            { icon: <Database size={14} color="#a78bfa" />, label: 'Decentralized Walrus Storage', accent: '#a78bfa' },
+            { icon: <Activity size={14} color="#4ade80" />, label: 'Real-Time FCM Alerts', accent: '#4ade80' },
+            { icon: <span style={{ fontSize: '14px', lineHeight: 1 }}>📡</span>, label: '20km Alert Radius', accent: '#38bdf8' },
+            { icon: <Hexagon size={14} color="#fb923c" />, label: 'On-Chain Verified Proof', accent: '#fb923c' },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 18px',
+                background: `${stat.accent}0d`,
+                border: `1px solid ${stat.accent}28`,
+                borderRadius: '999px',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background = `${stat.accent}1a`;
+                (e.currentTarget as HTMLDivElement).style.borderColor = `${stat.accent}55`;
+                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background = `${stat.accent}0d`;
+                (e.currentTarget as HTMLDivElement).style.borderColor = `${stat.accent}28`;
+                (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+              }}
+            >
+              {stat.icon}
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#a1a1aa', letterSpacing: '0.02em' }}>
+                {stat.label}
+              </span>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* ── Feature cards ── */}
+        <motion.div variants={containerVariants} className="mobile-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '56px', width: '100%' }}>
+          {[
+            {
+              icon: <Database size={26} color="#c084fc" />,
+              color: '#c084fc',
+              title: 'Dual-Store Persistence',
+              desc: 'Every incident write goes to both MemWal (encrypted, agent-queryable) and the Walrus Testnet Publisher — returning a publicly verifiable blob ID you can check on Walruscan. Nothing is mocked.',
+            },
+            {
+              icon: <Activity size={26} color="#4ade80" />,
+              color: '#4ade80',
+              title: 'Real-Time Radius Alerting',
+              desc: 'WebSocket layer pushes nearby-incident alerts using Haversine distance filtering — 5km for in-app, 20km for FCM push — with anonymous session IDs so alerting never requires an account.',
+            },
+            {
+              icon: <Shield size={26} color="#60a5fa" />,
+              color: '#60a5fa',
+              title: 'On-Chain Verified Proof',
+              desc: 'A Move smart contract deployed to Sui testnet anchors incident integrity. Incident views surface the blockchain proof without burying the human-readable report — proof collapsed by default.',
+            },
+            {
+              icon: <Brain size={26} color="#f472b6" />,
+              color: '#f472b6',
+              title: 'AI Agent with Split Memory',
+              desc: 'Built on MemWal + Gemini 2.5 Flash. Personal chat memory is wallet-filtered and private; incident memory is a public transparency ledger — toggled via separate tabs in the Memory Explorer.',
+            },
+            {
+              icon: <Hexagon size={26} color="#fb923c" />,
+              color: '#fb923c',
+              title: 'Cross-Platform Wallet',
+              desc: 'Desktop users connect via Slush wallet; mobile/APK users get an in-app Ed25519 keypair (BIP39-backed, Capacitor Preferences) — no wallet app dependency to use Sentinel on a phone.',
+            },
+            {
+              icon: <Zap size={26} color="#fbbf24" />,
+              color: '#fbbf24',
+              title: 'Hyperlocal Safety Network',
+              desc: 'Your neighbor gets a push notification while the situation is still relevant, not a headline the next morning. Every report is permanent, publicly auditable, and instantly actionable.',
+            },
           ].map((feat, i) => (
-            <motion.div 
-              key={i} 
+            <motion.div
+              key={i}
               variants={itemVariants}
               whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              style={{ 
-                background: 'linear-gradient(180deg, rgba(24,24,27,0.8) 0%, rgba(9,9,11,0.8) 100%)', 
-                border: '1px solid rgba(255,255,255,0.05)', 
-                borderRadius: '24px', 
-                padding: '40px 32px', 
+              style={{
+                background: 'linear-gradient(180deg, rgba(24,24,27,0.8) 0%, rgba(9,9,11,0.8) 100%)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderTop: `2px solid ${feat.color}55`,
+                borderRadius: '24px',
+                padding: '40px 32px',
                 backdropFilter: 'blur(20px)',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             >
               {/* Subtle top border glow on cards */}
-              <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px', background: `linear-gradient(90deg, transparent, ${feat.color}60, transparent)` }} />
-              
+              <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px', background: `linear-gradient(90deg, transparent, ${feat.color}80, transparent)` }} />
+
               <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `${feat.color}15`, border: `1px solid ${feat.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: `0 8px 24px ${feat.color}20` }}>
                 {feat.icon}
               </div>
@@ -261,8 +346,42 @@ export const Landing: React.FC = () => {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Footer attribution */}
+        <motion.div
+          variants={itemVariants}
+          style={{
+            marginTop: '80px',
+            paddingBottom: '40px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Hexagon size={12} color="#8b5cf6" />
+            <span style={{ fontSize: '11px', color: '#444', fontFamily: 'monospace', letterSpacing: '0.08em' }}>
+              POWERED BY WALRUS · SUI TESTNET · MEMWAL · GEMINI 2.5 FLASH
+            </span>
+            <Hexagon size={12} color="#8b5cf6" />
+          </div>
+          <a
+            href="https://github.com/Blusterkj/sentinel"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: '12px', color: '#555', textDecoration: 'none', fontFamily: 'monospace' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = '#888'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = '#555'; }}
+          >
+            github.com/blusterkj/sentinel
+          </a>
+        </motion.div>
+
       </motion.div>
       </div> {/* End Inner Relative Container */}
     </div>
   );
 };
+
