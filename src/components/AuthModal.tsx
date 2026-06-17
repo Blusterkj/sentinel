@@ -258,20 +258,23 @@ const ImportWalletView: React.FC<{
   const [loading, setLoading] = useState(false);
 
   const handleImport = async () => {
-    // Strip ALL whitespace + invisible Unicode chars that mobile keyboards add
-    const trimmed = key.replace(/[\s\u200B\u200C\u200D\uFEFF]/g, '');
-    if (!trimmed) { setError('Paste your private key first.'); return; }
-    if (trimmed.startsWith('0x')) { setError("That's an address, not a private key."); return; }
+    // Strip invisible Unicode chars that mobile keyboards sometimes add, and trim edges
+    const noInvisible = key.replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
+    // If it looks like a phrase (has spaces), keep them. Otherwise strip all spaces (for bech32 keys).
+    const parsedKey = noInvisible.includes(' ') ? noInvisible : noInvisible.replace(/\s/g, '');
+    
+    if (!parsedKey) { setError('Paste your private key or recovery phrase first.'); return; }
+    if (parsedKey.startsWith('0x')) { setError("That's an address, not a private key/phrase."); return; }
     setLoading(true);
     setError('');
     try {
-      const wallet = importWallet(trimmed);
+      const wallet = importWallet(parsedKey);
       await saveWallet(wallet.privateKey);
       setInAppAuth(wallet.address, wallet.privateKey);
       onClose();
     } catch (e: any) {
-      console.error('[ImportWallet] failed:', e?.message, '| key prefix:', trimmed.slice(0, 20));
-      setError('Invalid private key — must start with suiprivkey1');
+      console.error('[ImportWallet] failed:', e?.message, '| key prefix:', parsedKey.slice(0, 20));
+      setError('Invalid private key or recovery phrase');
     } finally {
       setLoading(false);
     }
@@ -293,7 +296,7 @@ const ImportWalletView: React.FC<{
             if (!loading && key.trim()) handleImport();
           }
         }}
-        placeholder="Paste private key (suiprivkey1…)"
+        placeholder="Paste private key or 12-word recovery phrase"
         rows={3}
         style={keyTextareaStyle}
       />

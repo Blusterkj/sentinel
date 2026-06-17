@@ -60,11 +60,26 @@ export async function generateWallet(): Promise<{
  * Import a wallet from a bech32 private key string (suiprivkey... format).
  * This is the format produced by getSecretKey() and stored in preferences.
  */
-export function importWallet(privateKey: string): {
+export function importWallet(input: string): {
   address: string;
   privateKey: string;
 } {
-  const trimmed = privateKey.trim();
+  const trimmed = input.trim();
+  
+  // If it's a multi-word phrase, try to parse as mnemonic
+  if (trimmed.includes(' ')) {
+    // Replace multiple spaces/newlines with single spaces
+    const phrase = trimmed.replace(/\s+/g, ' ').trim();
+    if (!isValidMnemonic(phrase)) {
+      throw new Error('Invalid recovery phrase');
+    }
+    const keypair = Ed25519Keypair.deriveKeypair(phrase);
+    const privateKey = keypair.getSecretKey();
+    const address = keypair.getPublicKey().toSuiAddress();
+    return { address, privateKey };
+  }
+
+  // Otherwise, assume it's a bech32 private key (suiprivkey...)
   const { scheme, secretKey } = decodeSuiPrivateKey(trimmed);
   
   let keypair;
