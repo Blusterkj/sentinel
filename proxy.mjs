@@ -642,14 +642,14 @@ JSONDATA: ${JSON.stringify(cleanIncident)}`;
     // Include walrusBlobId so the JSONDATA footer in future blobs is self-contained
     // Assign server-side sequence number and timestamp — never trust client-provided values.
     const storedIncident = {
-      ...incident,
+      ...cleanIncident,
       walrusBlobId: blobId,
       walrusStatus: 'synced',
       suiTxDigest: undefined,
       flagCount: 0,
       flaggedBy: [],
       // Only System (demo button) incidents are simulated — SOS and real user reports are NOT
-      isSimulated: incident.reportedBy === 'System',
+      isSimulated: cleanIncident.reportedBy === 'System',
       sequenceNumber: ++incidentSequence,
       serverTimestamp: new Date().toISOString(),
     };
