@@ -169,6 +169,14 @@ function cleanupRegistry() {
     console.log(`[SENTINEL] Removed ${legacyRemoved} legacy incidents (no Sui verification)`);
   }
 
+  // Step 0c: Purge leaked client-side state from persistent volume
+  [...incidentRegistry.values()].forEach(inc => {
+    if (inc.createdByMe !== undefined) {
+      delete inc.createdByMe;
+      incidentRegistry.set(inc.id, inc);
+    }
+  });
+
   // Step 1: Remove exact-description duplicates, keeping only the chronologically earliest.
   const descSeen = new Map();
   [...incidentRegistry.values()]
