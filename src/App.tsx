@@ -500,22 +500,31 @@ export default function App() {
         {/* Header: Hamburger + Logo */}
         <div
           style={{
-            padding: sidebarCollapsed ? '20px 12px' : '20px 20px',
+            padding: sidebarCollapsed ? '20px 0' : '20px 20px',
             borderBottom: '1px solid #1a1a1a',
             display: 'flex',
-            flexDirection: sidebarCollapsed ? 'column-reverse' : 'row',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: sidebarCollapsed ? '16px' : '10px',
+            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+            gap: sidebarCollapsed ? '0' : '10px',
             flexShrink: 0,
+            height: '70px',
+            overflow: 'hidden',
           }}
         >
           {/* Logo + title — tap 5x on mobile to activate ⚡ */}
-          <DemoTrigger onActivate={() => setActionVisible(true)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: sidebarCollapsed ? '0px' : '10px' }}>
-              <div style={{ flexShrink: 0 }}>
-                <Logo size={28} />
-              </div>
+          <div style={{ 
+            display: 'flex', 
+            opacity: sidebarCollapsed ? 0 : 1, 
+            width: sidebarCollapsed ? 0 : 'auto', 
+            overflow: 'hidden',
+            transition: 'all 0.15s ease'
+          }}>
+            <DemoTrigger onActivate={() => setActionVisible(true)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ flexShrink: 0 }}>
+                  <Logo size={28} />
+                </div>
               <div style={{ 
                 opacity: sidebarCollapsed ? 0 : 1, 
                 width: sidebarCollapsed ? 0 : '110px',
@@ -550,8 +559,9 @@ export default function App() {
                   SUI OVERFLOW 2026
                 </div>
               </div>
-            </div>
-          </DemoTrigger>
+              </div>
+            </DemoTrigger>
+          </div>
 
           {/* Collapse toggle */}
           <button
@@ -567,7 +577,7 @@ export default function App() {
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s',
-              marginRight: sidebarCollapsed ? '0px' : '8px',
+              marginRight: '0px',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
