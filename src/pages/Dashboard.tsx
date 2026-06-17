@@ -700,7 +700,7 @@ const WeatherStatus: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
 
   // ── Cache-first: read from appStore, only fetch when stale (TTL: 10 min) ───
-  const { weather, setWeather, isWeatherStale } = useAppStore();
+  const { weather, setWeather, isWeatherStale, setUserLocation: setGlobalUserLocation } = useAppStore();
   const userLocation = useAppStore(state => state.userLocation);
 
   useEffect(() => {
@@ -774,6 +774,8 @@ const WeatherStatus: React.FC = () => {
         const ipData = await ipRes.json();
         if (typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
           await fetchWeather(ipData.latitude, ipData.longitude);
+          // Sync the map to this IP fallback location so map and weather are perfectly consistent!
+          setGlobalUserLocation([ipData.latitude, ipData.longitude]);
         }
       } catch { /* IP lookup failed too — leave weather as-is, no fake data */ }
     };
