@@ -766,28 +766,16 @@ const WeatherStatus: React.FC = () => {
       }
     };
 
-    // IP-based fallback when GPS is unavailable/denied. Resolves to the device's
-    // real approximate location instead of a hardcoded city.
-    const fetchWeatherByIp = async () => {
-      try {
-        const ipRes = await fetch('https://ipapi.co/json/');
-        const ipData = await ipRes.json();
-        if (typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
-          await fetchWeather(ipData.latitude, ipData.longitude);
-        }
-      } catch { /* IP lookup failed too — leave weather as-is, no fake data */ }
-    };
-
     (async () => {
       const pos = await getCurrentPosition();
       if (pos) {
         fetchWeather(pos.latitude, pos.longitude);
       } else if (userLocation) {
-        // Fall back to the cached precise location (from a previous session) instead of IP
+        // Fall back to the cached precise location (from a previous session)
         fetchWeather(userLocation[0], userLocation[1]);
       } else {
-        // GPS completely unavailable and no cache — resolve via IP
-        fetchWeatherByIp();
+        // GPS completely unavailable and no cache — fall back to Bangalore (demo center)
+        fetchWeather(12.9716, 77.5946); // DEFAULT_CENTER
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
