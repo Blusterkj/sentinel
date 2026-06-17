@@ -217,6 +217,20 @@ body {
     flex-shrink: 0 !important;
   }
 
+  /* ── Hide Walrus Testnet tech pill on mobile (saves horizontal space) ── */
+  .mobile-techpill-hidden {
+    display: none !important;
+  }
+
+  /* ── Memory title: smaller font so it wraps at most 2 lines ── */
+  .mobile-memory-title {
+    font-size: 11px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
   /* ── 4-column stat grids → 2 columns ── */
   .mobile-stat-grid-4 {
     grid-template-columns: repeat(2, 1fr) !important;

@@ -331,45 +331,56 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '10px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Database size={16} color="#8b5cf6" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+        {/* Left: icon + title + Walrus Testnet pill (desktop only) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+          <Database size={16} color="#8b5cf6" style={{ flexShrink: 0 }} />
+          <span
+            className="mobile-memory-title"
+            style={{ fontSize: '13px', fontWeight: 600, color: '#ddd', lineHeight: 1.3 }}
+          >
             On-Chain Memory Explorer
           </span>
-          {/* Live indicator */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '10px',
-              color: '#22c55e',
-              background: 'rgba(34, 197, 94, 0.08)',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              border: '1px solid rgba(34, 197, 94, 0.2)',
-              fontFamily: 'monospace',
-              fontWeight: 600,
-            }}
-          >
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#22c55e',
-                boxShadow: '0 0 8px #22c55e',
-                animation: 'glow-pulse 2s ease-in-out infinite',
-              }}
-            />
-            LIVE — synced to Walrus
+          {/* Walrus Testnet pill — hidden on mobile */}
+          <div className="mobile-techpill-hidden" style={{ flexShrink: 0 }}>
+            <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
           </div>
-          <TechPill icon={<Hexagon size={10} />} label="Walrus Testnet" color="#8b5cf6" />
         </div>
 
-
+        {/* Right: LIVE indicator — always visible, pushed to right */}
+        <div
+          className="wallet-badge"
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '10px',
+            color: '#22c55e',
+            background: 'rgba(34, 197, 94, 0.08)',
+            padding: '3px 10px',
+            borderRadius: '20px',
+            border: '1px solid rgba(34, 197, 94, 0.2)',
+            fontFamily: 'monospace',
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#22c55e',
+              boxShadow: '0 0 8px #22c55e',
+              animation: 'glow-pulse 2s ease-in-out infinite',
+              flexShrink: 0,
+            }}
+          />
+          LIVE — synced to Walrus
+        </div>
       </div>
 
       {/* Stats bar */}
