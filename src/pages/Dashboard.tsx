@@ -782,8 +782,11 @@ const WeatherStatus: React.FC = () => {
       const pos = await getCurrentPosition();
       if (pos) {
         fetchWeather(pos.latitude, pos.longitude);
+      } else if (userLocation) {
+        // Fall back to the cached precise location (from a previous session) instead of IP
+        fetchWeather(userLocation[0], userLocation[1]);
       } else {
-        // GPS unavailable — resolve via IP instead of hardcoded city
+        // GPS completely unavailable and no cache — resolve via IP
         fetchWeatherByIp();
       }
     })();
