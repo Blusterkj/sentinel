@@ -105,43 +105,47 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
         }}
       >
         <User size={16} color="#8b5cf6" />
-        <div>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
-            My Incidents
-          </span>
-          {shortAddr && (
-            <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '2px' }}>
-              {shortAddr}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>
+                My Incidents
+              </span>
+              {/* Wallet badge — inline with title */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '10px',
+                  color: '#22c55e',
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  padding: '3px 10px',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(34, 197, 94, 0.2)',
+                  fontFamily: 'monospace',
+                  fontWeight: 600,
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    boxShadow: '0 0 8px #22c55e',
+                    display: 'inline-block',
+                  }}
+                />
+                WALLET CONNECTED
+              </div>
             </div>
-          )}
-        </div>
-        {/* Wallet badge — inline next to title */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '10px',
-            color: '#22c55e',
-            background: 'rgba(34, 197, 94, 0.08)',
-            padding: '3px 10px',
-            borderRadius: '20px',
-            border: '1px solid rgba(34, 197, 94, 0.2)',
-            fontFamily: 'monospace',
-            fontWeight: 600,
-          }}
-        >
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 8px #22c55e',
-              display: 'inline-block',
-            }}
-          />
-          WALLET CONNECTED
+            {shortAddr && (
+              <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '2px' }}>
+                {shortAddr}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
