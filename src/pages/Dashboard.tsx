@@ -4,7 +4,7 @@ import { Map } from '../components/Map';
 import { IncidentFeed } from '../components/IncidentFeed';
 import { BottomSheet } from '../components/BottomSheet';
 import type { Incident } from '../types/incident';
-import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock, CheckCircle, Brain, BarChart3 } from 'lucide-react';
+import { AlertTriangle, Activity, Link as LinkIcon, Plus, X, MapPin, Clock, CheckCircle } from 'lucide-react';
 import { SeverityBadge, getSeverityColor } from '../components/SeverityBadge';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
@@ -245,92 +245,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             Allow location for accurate centering
           </span>
         )}
-      </div>
-
-      {/* Quick Actions Row */}
-      <div
-        className="shrink-0 border-b border-[#1a1a1a]"
-        style={{
-          background: '#0a0a0a',
-          padding: '12px 20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '10px',
-        }}
-      >
-        {[
-          {
-            id: 'report-incident-btn',
-            icon: <AlertTriangle size={16} color="#ef4444" />,
-            label: 'Report Incident',
-            accent: '#ef4444',
-            path: '/report',
-          },
-          {
-            id: 'view-map-btn',
-            icon: <MapPin size={16} color="#3b82f6" />,
-            label: 'View Map',
-            accent: '#3b82f6',
-            path: '/dashboard',
-          },
-          {
-            id: 'ai-agent-btn',
-            icon: <Brain size={16} color="#a855f7" />,
-            label: 'AI Agent',
-            accent: '#a855f7',
-            path: '/agent',
-          },
-          {
-            id: 'analytics-btn',
-            icon: <BarChart3 size={16} color="#22c55e" />,
-            label: 'Analytics',
-            accent: '#22c55e',
-            path: '/analytics',
-          },
-        ].map((action) => (
-          <button
-            key={action.id}
-            id={action.id}
-            onClick={() => {
-              window.history.pushState({}, '', action.path);
-              window.dispatchEvent(new Event('popstate'));
-            }}
-            style={{
-              minHeight: '48px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '5px',
-              padding: '10px 8px',
-              background: `${action.accent}0c`,
-              border: `1px solid ${action.accent}22`,
-              borderRadius: '12px',
-              color: '#e5e5e5',
-              cursor: 'pointer',
-              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onMouseEnter={(e) => {
-              const btn = e.currentTarget as HTMLButtonElement;
-              btn.style.background = `${action.accent}1f`;
-              btn.style.borderColor = `${action.accent}44`;
-              btn.style.transform = 'translateY(-2px)';
-              btn.style.boxShadow = `0 4px 14px ${action.accent}20`;
-            }}
-            onMouseLeave={(e) => {
-              const btn = e.currentTarget as HTMLButtonElement;
-              btn.style.background = `${action.accent}0c`;
-              btn.style.borderColor = `${action.accent}22`;
-              btn.style.transform = 'translateY(0)';
-              btn.style.boxShadow = 'none';
-            }}
-          >
-            {action.icon}
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#a1a1aa', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
-              {action.label}
-            </span>
-          </button>
-        ))}
       </div>
 
       {/* Main area: map + feed */}
