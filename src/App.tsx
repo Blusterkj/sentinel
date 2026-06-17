@@ -260,7 +260,7 @@ export default function App() {
     };
   }, [walletAddress]);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [criticalFilter, setCriticalFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
   const [actionVisible, setActionVisible] = useState(false);
