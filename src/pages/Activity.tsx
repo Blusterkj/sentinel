@@ -95,7 +95,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
       <div
         className="mobile-header-strip"
         style={{
-          padding: '16px 24px',
+          padding: '9px 24px',
           borderBottom: '1px solid #1a1a1a',
           background: 'transparent',
           flexShrink: 0,
