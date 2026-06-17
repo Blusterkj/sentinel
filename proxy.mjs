@@ -958,6 +958,43 @@ app.post('/api/admin/clear-memories', (req, res) => {
 });
 
 /**
+ * POST /api/chat/reset
+ * Broadcasts AGENT_CHAT_CLEARED to same-wallet WS sessions so all devices
+ * clear their chat UI. Does NOT touch memoryRegistry — past conversations
+ * remain visible on the Memory page as immutable on-chain records.
+ * Body or query: { wallet }
+ */
+app.post('/api/chat/reset', (req, res) => {
+  const wallet = req.query.wallet || req.body?.wallet || null;
+
+  if (wallet) {
+    // Hide all existing memories for this wallet from the chat UI
+    for (const m of memoryRegistry.values()) {
+      if (m.walletAddress === wallet) {
+        m.hiddenFromChat = true;
+      }
+    }
+    saveMemoryRegistry();
+
+    // Broadcast WS event to all connected devices for this wallet
+    if (wss) {
+      const msg = JSON.stringify({ type: 'AGENT_CHAT_CLEARED' });
+      wss.clients.forEach((client) => {
+        for (const [, session] of sessions.entries()) {
+          if (session.ws === client && session.wallet === wallet && client.readyState === 1) {
+            client.send(msg);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  console.log(`[SENTINEL] 🔄 Chat reset broadcast${wallet ? ` for wallet ${wallet.slice(0,8)}...` : ''} (memories preserved)`);
+  res.json({ success: true });
+});
+
+/**
  * POST /api/incidents/:id/resolve
  * Marks an incident as resolved in the registry and broadcasts to all clients.
  */
@@ -984,7 +1021,7 @@ app.post('/api/incidents/:id/resolve', (req, res) => {
  * Returns: { response }
  */
 app.post('/api/chat', async (req, res) => {
-  const { message, history = [], currentIncidents = [], walletAddress } = req.body;
+  const { message, history = [], currentIncidents = [], walletAddress, userLat = null, userLng = null } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Missing message field' });
   }
@@ -1064,17 +1101,40 @@ app.post('/api/chat', async (req, res) => {
     const activeCount = realCurrentIncidents.filter(i => i.status === 'active').length;
     const resolvedCount = realCurrentIncidents.filter(i => i.status === 'resolved').length;
     
-    // Sort by sequenceNumber ascending — server-assigned serial order, never client timestamps.
-    // Incidents without a sequenceNumber (legacy) sort first (treated as 0).
-    const sortedLive = [...realCurrentIncidents]
-      .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
-    const topLive = sortedLive.slice(0, 50); // Cap to avoid massive context
+    // If user location is present AND total incidents exceed the cap (50), sort by distance
+    // to keep the 50 *closest* incidents — then re-sort by sequence for consistent numbering.
+    // Without location (or under cap), keep existing sequence-only sort — no behavior change.
+    let topLive;
+    if (userLat !== null && userLng !== null && realCurrentIncidents.length > 50) {
+      const byDistance = [...realCurrentIncidents].sort((a, b) => {
+        const dA = (a.location?.lat != null && a.location?.lng != null)
+          ? haversineDistance(userLat, userLng, a.location.lat, a.location.lng) : Infinity;
+        const dB = (b.location?.lat != null && b.location?.lng != null)
+          ? haversineDistance(userLat, userLng, b.location.lat, b.location.lng) : Infinity;
+        return dA - dB;
+      });
+      // Closest 50, then re-sort by sequence so #1/#2/etc stay meaningful
+      topLive = byDistance.slice(0, 50).sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+    } else {
+      topLive = [...realCurrentIncidents]
+        .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0))
+        .slice(0, 50);
+    }
 
-    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are all incidents in STRICT SERIAL ORDER (#1 = first ever reported, highest # = most recent). Use this list to answer any questions about order, recency, or sequence.\n\n${
-      topLive.map((i) =>
-        `[#${i.sequenceNumber || '?'} - ${i.serverTimestamp || i.createdAt}] ` +
-        `${i.type} | ${i.severity} | ${i.location?.address} — ${(i.description || '').slice(0, 80)}`
-      ).join('\n')
+    const locationNote = (userLat !== null && userLng !== null)
+      ? ' Distances shown below are calculated from the user\'s current location.'
+      : ' The user\'s current location was not provided — if asked about nearby incidents, ask them to share their location rather than guessing.';
+
+    liveContext = `\n\n## LIVE INCIDENT STATE (REAL-TIME DASHBOARD DATA)\nCurrently, there are ${activeCount} active incidents and ${resolvedCount} resolved incidents. Below are all incidents in STRICT SERIAL ORDER (#1 = first ever reported, highest # = most recent). Use this list to answer any questions about order, recency, or sequence.${locationNote}\n\n${
+      topLive.map((i) => {
+        const hasUserLoc = userLat !== null && userLng !== null;
+        const hasIncidentLoc = i.location?.lat != null && i.location?.lng != null;
+        const distStr = (hasUserLoc && hasIncidentLoc)
+          ? ` (${haversineDistance(userLat, userLng, i.location.lat, i.location.lng).toFixed(1)}km away)`
+          : '';
+        return `[#${i.sequenceNumber || '?'} - ${i.serverTimestamp || i.createdAt}] ` +
+          `${i.type} | ${i.severity} | ${i.location?.address}${distStr} — ${(i.description || '').slice(0, 80)}`;
+      }).join('\n')
     }`;
   }
 
@@ -1093,11 +1153,11 @@ app.post('/api/chat', async (req, res) => {
     }
   }
 
-  const SYSTEM_PROMPT = `You are **Sentinel**, an AI-powered emergency operations agent deployed for the city of Bengaluru. You have permanent, cryptographically-verified memory of every safety incident ever reported — stored immutably on the Walrus blockchain via the MemWal protocol. Your memory cannot be tampered with, erased, or altered.
+  const SYSTEM_PROMPT = `You are **Sentinel**, an AI-powered emergency operations agent for hyperlocal community safety, covering any region where incidents are reported. You have permanent, cryptographically-verified memory of every safety incident ever reported — stored immutably on the Walrus blockchain via the MemWal protocol. Your memory cannot be tampered with, erased, or altered.
 ${liveContext}${memoryContext}
 
 ## Your Core Identity
-You are NOT a generic chatbot. You are a precision intelligence system for community safety. Every response you give should feel like it comes from a senior emergency operations analyst who has been watching this city's safety data for years.
+You are NOT a generic chatbot. You are a precision intelligence system for community safety. Every response you give should feel like it comes from a senior emergency operations analyst who has been watching this area's safety data for years.
 
 ## CRITICAL RESPONSE RULES — follow these EVERY time:
 
@@ -1106,23 +1166,29 @@ You are NOT a generic chatbot. You are a precision intelligence system for commu
 - **Complex analysis questions** (patterns, trends, predictions, what should we do) → full detailed response with sections.
 - **List requests** → bullet list only. No intro paragraph. No outro paragraph.
 - Never say "I can confirm", "I can provide", "Based on the immutable data", or "stored immutably via the MemWal protocol" more than once per conversation.
-- Never mention Bengaluru coverage area limitations when the question is about incidents that are actually in the registry.
 - The action status line (🟢/🟡/🔴) is ONLY required for analysis questions. Skip it for simple factual answers.
 
+### 0.5. NEVER fabricate incidents, IDs, or details
+- Only reference incidents, sequence numbers, locations, or details that are EXPLICITLY present in the LIVE INCIDENT STATE data provided above.
+- If asked about a location, incident type, or timeframe with no matching data in the live registry, say so plainly: "I don't have any incidents matching that in my Walrus memory." Do NOT invent an incident to satisfy the question.
+- If a user corrects or challenges something you said, re-check the actual LIVE INCIDENT STATE data and respond based on what's really there — never fabricate new data to resolve the disagreement.
+- It is always better to say "I don't have that information" than to invent a plausible-sounding but false answer.
+
 ### 1. Always cite specific data from your memory
-- Reference exact incident counts: "I have **4 crime incidents** logged in the Indiranagar corridor this week"
-- Name specific streets and landmarks: "MG Road, Church Street, Brigade Road, Indiranagar 100ft Road, Silk Board Junction"
-- Give time context: "The last medical emergency on MG Road was 12 minutes ago"
+- Reference exact incident counts from the LIVE INCIDENT STATE only: "I have **2 incidents** logged in the Ganjam, Odisha area"
+- Name specific locations based on actual registry data — never invent city or street names not present in the data
+- Give time context: "The last medical emergency was reported on 2026-06-15"
 - NEVER say vague things like "there have been some incidents" — always be specific
 
 ### 2. Always identify time patterns
-- Look for day-of-week patterns: "Crime incidents spike on Friday and Saturday nights — 3 of the last 5 snatching reports occurred between 9 PM and midnight on weekends"
-- Look for time-of-day patterns: "Traffic accidents cluster during morning rush (8-10 AM) and evening rush (5-7 PM)"
-- Look for escalation: "This is the 3rd chain-snatching near Indiranagar in 10 days — the frequency is increasing"
+- Look for day-of-week patterns: "Incidents spike on Friday and Saturday nights — 3 of the last 5 reports occurred between 9 PM and midnight on weekends"
+- Look for time-of-day patterns: "Accidents cluster during morning rush (8-10 AM) and evening rush (5-7 PM)"
+- Look for escalation: "This is the 3rd incident of this type in 10 days — the frequency is increasing"
 
 ### 3. Always identify geographic clusters
-- Name the hotspot: "The MG Road — Church Street — Brigade Road triangle has the highest incident density in the system"
-- Cross-reference types: "Indiranagar shows a pattern of property crime (chain snatching + burglary) while Silk Board area concentrates vehicle accidents"
+- Name the hotspot using actual registry locations — never invent city names not present in the data
+- Cross-reference types based on real data: "Odisha shows 2 medical/accident incidents while Delhi has 1 fire incident"
+- When asked about "near me" or "nearby": use the distance annotations in the LIVE INCIDENT STATE list if present (e.g. "3.2km away"). If no distance data is available, ask the user to share their location or specify an area — never guess or assume a city.
 
 ### 4. Always end with an action recommendation
 End EVERY response with one of these three levels, formatted exactly like this:
@@ -1144,7 +1210,7 @@ Say: "I don't have prior incidents matching this query in my Walrus memory. Howe
 - Reference that your data is stored on Walrus blockchain when it adds credibility
 
 ## Your coverage area
-Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church Street, Commercial Street, Indiranagar (100ft Road, CMH Road, HAL 2nd Stage), Koramangala, Whitefield (ITPL Road), Silk Board Junction, Outer Ring Road (Marathahalli, Bellandur), Bannerghatta Road, Hebbal (Bellary Road), Majestic, KR Puram, Lalbagh, Cubbon Park, VV Puram, Sankey Road, Avenue Road (Chickpet), and Rajajinagar.`;
+You operate wherever incidents are reported in the live registry — there is no fixed city or regional limitation. Always reference the actual locations present in the LIVE INCIDENT STATE data above.`;
 
   try {
     // Build the user message with recalled context prepended
@@ -1188,8 +1254,22 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
     const resultText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     console.log(`   ✅ Agent responded (${resultText.length} chars)`);
-    
-    // SAVE: Immediately save the full exchange to Walrus
+
+    // IMMEDIATE broadcast — send the exchange to all same-wallet devices RIGHT NOW,
+    // before Walrus upload, so cross-device sync is instant (not gated on upload time).
+    if (walletAddress && wss) {
+      const instantEvent = JSON.stringify({
+        type: 'NEW_CHAT_MESSAGE',
+        walletAddress,
+        timestamp: Date.now(),
+        exchange: { user: message, agent: resultText }
+      });
+      wss.clients.forEach(client => {
+        if (client.readyState === 1) client.send(instantEvent);
+      });
+    }
+
+    // SAVE: Asynchronously save the full exchange to Walrus (does not block the response)
     if (walletAddress) {
       const exchange = { user: message, agent: resultText };
       const dataBuffer = Buffer.from(JSON.stringify(exchange));
@@ -1199,6 +1279,18 @@ Bengaluru, India — with detailed knowledge of: MG Road, Brigade Road, Church S
           memoryRegistry.set(blobId, { blobId, timestamp: Date.now(), summary, walletAddress, exchange });
           saveMemoryRegistry();
           console.log(`   ✅ Chat memory saved to Walrus: ${blobId}`);
+          // Also broadcast NEW_MEMORY_SAVED so Memory page updates its blob list
+          if (wss) {
+            const memEvent = JSON.stringify({
+              type: 'NEW_MEMORY_SAVED',
+              blobId,
+              walletAddress,
+              timestamp: Date.now()
+            });
+            wss.clients.forEach(client => {
+              if (client.readyState === 1) client.send(memEvent);
+            });
+          }
         }
       }).catch(err => {
         console.error('   ❌ Chat memory Walrus upload failed:', err.message);
@@ -1286,7 +1378,7 @@ app.get('/api/walrus/read/:blobId', async (req, res) => {
  * Returns: { memories: [{ blobId, timestamp, summary, exchange }] }
  */
 app.get('/api/memories', async (req, res) => {
-  const { wallet } = req.query;
+  const { wallet, chat } = req.query;
 
   if (!wallet) {
     return res.json({ memories: [] });
@@ -1296,6 +1388,9 @@ app.get('/api/memories', async (req, res) => {
 
   if (wallet) {
     memories = memories.filter(m => m.walletAddress === wallet);
+    if (chat === 'true') {
+      memories = memories.filter(m => !m.hiddenFromChat);
+    }
     memories = memories.slice(0, 10);
     
     // Fetch blob content from Walrus aggregator for each

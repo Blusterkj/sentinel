@@ -737,9 +737,21 @@ const WeatherStatus: React.FC = () => {
           city,
         });
       } catch {
-        // Fallback to hardcoded if API fails — still commit so we don't retry every mount
-        setWeather({ temp: 28, code: 2, city: 'Bengaluru', humidity: 65, windSpeed: 12, aqi: 45 });
+        // Weather API failed — do NOT fabricate data. Leave whatever was already
+        // cached (or null) alone; the UI handles weather === null gracefully.
       }
+    };
+
+    // IP-based fallback when GPS is unavailable/denied. Resolves to the device's
+    // real approximate location instead of a hardcoded city.
+    const fetchWeatherByIp = async () => {
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipData = await ipRes.json();
+        if (typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
+          await fetchWeather(ipData.latitude, ipData.longitude);
+        }
+      } catch { /* IP lookup failed too — leave weather as-is, no fake data */ }
     };
 
     (async () => {
@@ -747,8 +759,8 @@ const WeatherStatus: React.FC = () => {
       if (pos) {
         fetchWeather(pos.latitude, pos.longitude);
       } else {
-        // Permission denied / error — fallback to Bengaluru
-        fetchWeather(12.9716, 77.5946);
+        // GPS unavailable — resolve via IP instead of hardcoded city
+        fetchWeatherByIp();
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps

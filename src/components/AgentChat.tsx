@@ -2,12 +2,13 @@
 // Chat interface with the MemWal-powered AI agent.
 // Chat history is persisted to MemWal (Walrus) — not localStorage.
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Brain, User, Loader2, AlertCircle, CloudDownload } from 'lucide-react';
 import type { AgentMessage, Incident } from '../types/incident';
 import { v4 as uuidv4 } from 'uuid';
 
-import { PROXY_URL } from '../lib/api';
+import { PROXY_URL, WS_URL } from '../lib/api';
+import { getCurrentPosition } from '../lib/location';
 import { useAppStore } from '../store/appStore';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
@@ -30,6 +31,8 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasRestoredRef = useRef(false); // ensure we only attempt restore once per mount
+  // Session-scoped location cache — fetched once, reused for up to 5 minutes
+  const locationCacheRef = useRef<{ lat: number; lng: number; fetchedAt: number } | null>(null);
 
   // ── Resolve wallet userId (dapp-kit preferred, in-app fallback) ──────────────
   const account = useCurrentAccount();
@@ -41,51 +44,105 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // ── Fetch history logic extracted so WS listener can also use it ─────────────
+  const loadHistory = useCallback(async () => {
+    if (!userId) return;
+    setIsRestoring(true);
+    try {
+      const res = await fetch(`${PROXY_URL}/api/memories?wallet=${encodeURIComponent(userId)}&chat=true`);
+      if (!res.ok) return; // silently fail — never break the UI
+      const data = await res.json();
+      
+      if (data.memories && data.memories.length > 0) {
+        // Reconstruct messages from exchanges (oldest first for chat history)
+        const restoredMsgs: AgentMessage[] = [];
+        [...data.memories].reverse().forEach((m) => {
+          if (m.exchange) {
+            restoredMsgs.push({ id: `user-${m.timestamp}`, role: 'user', content: m.exchange.user, timestamp: new Date(m.timestamp).toISOString() });
+            restoredMsgs.push({ id: `agent-${m.timestamp}`, role: 'assistant', content: m.exchange.agent, timestamp: new Date(m.timestamp + 1).toISOString() });
+          }
+        });
+        
+        // Always overwrite with server state to ensure perfect cross-device sync
+        setMessages([WELCOME_MESSAGE, ...restoredMsgs]);
+      } else {
+        // If server returns empty (e.g. after a clear), reset to welcome message
+        setMessages([WELCOME_MESSAGE]);
+      }
+    } catch {
+      // Network error — silently fall back
+    } finally {
+      setIsRestoring(false);
+    }
+  }, [userId, setMessages]);
+
   // ── Load chat history from MemWal on mount (once per wallet session) ──────────
   useEffect(() => {
     if (!userId || hasRestoredRef.current) return;
     hasRestoredRef.current = true;
 
-    // Safety net for immediate refresh race condition
+    // Skip restore if user explicitly started a new conversation this session
+    const skipFlag = sessionStorage.getItem('sentinel-skip-history-restore');
+    if (skipFlag === 'true') {
+      sessionStorage.removeItem('sentinel-skip-history-restore');
+      return; // don't restore — user clicked "New Conversation"
+    }
+
+    // Safety net for immediate refresh race condition (legacy flag)
     if (sessionStorage.getItem('sentinel_chat_cleared') === '1') {
       setTimeout(() => sessionStorage.removeItem('sentinel_chat_cleared'), 3000);
       return;
     }
 
-    const loadHistory = async () => {
-      setIsRestoring(true);
-      try {
-        const res = await fetch(`${PROXY_URL}/api/memories?wallet=${encodeURIComponent(userId)}`);
-        if (!res.ok) return; // silently fail — never break the UI
-        const data = await res.json();
-        
-        if (data.memories && data.memories.length > 0) {
-          // Only restore history if we don't already have in-session messages
-          const currentMessages = useAppStore.getState().agentMessages;
-          const hasRealMessages = currentMessages.some((m) => m.id !== 'welcome');
-          if (!hasRealMessages) {
-            // Reconstruct messages from exchanges (oldest first for chat history)
-            const restoredMsgs: AgentMessage[] = [];
-            [...data.memories].reverse().forEach((m) => {
-              if (m.exchange) {
-                restoredMsgs.push({ id: uuidv4(), role: 'user', content: m.exchange.user, timestamp: new Date(m.timestamp).toISOString() });
-                restoredMsgs.push({ id: uuidv4(), role: 'assistant', content: m.exchange.agent, timestamp: new Date(m.timestamp + 1).toISOString() });
-              }
-            });
-            // Prepend the welcome message, then the restored history
-            setMessages([WELCOME_MESSAGE, ...restoredMsgs]);
-          }
-        }
-      } catch {
-        // Network error — silently fall back to empty chat
-      } finally {
-        setIsRestoring(false);
-      }
-    };
-
     loadHistory();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  // ── WebSocket listener — real-time cross-device sync ──────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+    let ws: WebSocket;
+
+    try {
+      ws = new WebSocket(WS_URL);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'NEW_CHAT_MESSAGE' && data.walletAddress === userId && data.exchange) {
+            // Instant cross-device sync — append the exchange directly from WS payload,
+            // no re-fetch needed. Skip if this device already has the message (sent it).
+            setMessages(prev => {
+              const lastMsg = prev[prev.length - 1];
+              // 1. If we already have this exact agent message (HTTP finished first), do nothing
+              if (lastMsg?.role === 'assistant' && lastMsg?.content === data.exchange.agent) return prev;
+              
+              const ts = new Date(data.timestamp).toISOString();
+              
+              // 2. If we are the SENDER waiting for the HTTP response, we already appended the user message locally.
+              // Just append the agent message so we don't duplicate our own user message.
+              if (lastMsg?.role === 'user' && lastMsg?.content === data.exchange.user) {
+                return [
+                  ...prev,
+                  { id: `agent-${data.timestamp}`, role: 'assistant' as const, content: data.exchange.agent, timestamp: ts }
+                ];
+              }
+
+              // 3. We are a SECONDARY device (or sender refreshed the page). Append both.
+              return [
+                ...prev,
+                { id: `user-${data.timestamp}`, role: 'user' as const, content: data.exchange.user, timestamp: ts },
+                { id: `agent-${data.timestamp}`, role: 'assistant' as const, content: data.exchange.agent, timestamp: ts },
+              ];
+            });
+          }
+        } catch { /* ignore malformed messages */ }
+      };
+    } catch { /* WebSocket not available (SSR/test) */ }
+
+    return () => {
+      ws?.close();
+    };
+  }, [userId, loadHistory]);
 
   // Clean up save timer on unmount
   useEffect(() => {
@@ -117,10 +174,26 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
       .map((m) => ({ role: m.role, content: m.content }));
 
     try {
+      // Resolve user location (best-effort — never blocks sending the message)
+      let userLat: number | null = null;
+      let userLng: number | null = null;
+      const cached = locationCacheRef.current;
+      if (cached && (Date.now() - cached.fetchedAt) < 5 * 60 * 1000) {
+        userLat = cached.lat;
+        userLng = cached.lng;
+      } else {
+        const pos = await getCurrentPosition();
+        if (pos) {
+          locationCacheRef.current = { lat: pos.latitude, lng: pos.longitude, fetchedAt: Date.now() };
+          userLat = pos.latitude;
+          userLng = pos.longitude;
+        }
+      }
+
       const res = await fetch(`${PROXY_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, currentIncidents: incidents, walletAddress: userId }),
+        body: JSON.stringify({ message: text, history, currentIncidents: incidents, walletAddress: userId, userLat, userLng }),
       });
 
       if (!res.ok) {
@@ -138,8 +211,10 @@ export const AgentChat: React.FC<{ incidents?: Incident[] }> = ({ incidents = []
       };
 
       setMessages((prev) => {
-        const updated = [...prev, agentMsg];
-        return updated;
+        const lastMsg = prev[prev.length - 1];
+        // Deduplicate: if the WebSocket broadcast beat the HTTP response and already appended this, ignore
+        if (lastMsg?.role === 'assistant' && lastMsg?.content === data.response) return prev;
+        return [...prev, agentMsg];
       });
     } catch (err) {
       console.error('Agent error:', err);

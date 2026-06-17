@@ -18,7 +18,7 @@ A hyperlocal community safety monitoring system powered by an AI agent with perm
 | Frontend | Vite + React + TypeScript |
 | Styling | Tailwind CSS v4 |
 | AI Memory | `@mysten-incubation/memwal` (Walrus) |
-| AI Model | Claude 3.5 Haiku via `@ai-sdk/anthropic` |
+| AI Model | Gemini 2.5 Flash (via Google AI REST API) |
 | Map | react-leaflet + Leaflet.js |
 | Icons | lucide-react |
 
@@ -35,7 +35,8 @@ Edit `.env` with your credentials:
 VITE_MEMWAL_KEY=<your Ed25519 delegate key hex>
 VITE_MEMWAL_ACCOUNT_ID=<your MemWalAccount object ID>
 VITE_MEMWAL_SERVER_URL=https://relayer.memwal.ai
-VITE_ANTHROPIC_API_KEY=<your Anthropic API key>
+GEMINI_API_KEY=<your Google AI API key>  # server-side (Railway env var)
+VITE_GROQ_API_KEY=<unused, kept for reference>
 ```
 
 ### 3. Run

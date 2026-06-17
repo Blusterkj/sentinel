@@ -131,14 +131,20 @@ export const useAppStore = create<AppStore>()(
       setAgentMessages: (updater) => set((state) => ({
         agentMessages: typeof updater === 'function' ? updater(state.agentMessages) : updater
       })),
-      clearAgentMessages: () => set({ 
-        agentMessages: [{
-          id: 'welcome',
-          role: 'assistant',
-          content: `I'm **Sentinel**, your AI community safety agent. I have permanent, cryptographically-verified memory of every incident ever reported in this system — stored on the Walrus blockchain via MemWal.\n\nAsk me anything: patterns, historical incidents, area status, triage recommendations, or emerging threats. My memory never fades.`,
-          timestamp: new Date().toISOString(),
-        }]
-      }),
+      clearAgentMessages: () => {
+        // Tell AgentChat's mount-restore effect to skip one restore cycle —
+        // user explicitly started a new conversation this session.
+        // sessionStorage clears on tab/app close, so a fresh open always restores.
+        sessionStorage.setItem('sentinel-skip-history-restore', 'true');
+        set({
+          agentMessages: [{
+            id: 'welcome',
+            role: 'assistant',
+            content: `I'm **Sentinel**, your AI community safety agent. I have permanent, cryptographically-verified memory of every incident ever reported in this system — stored on the Walrus blockchain via MemWal.\n\nAsk me anything: patterns, historical incidents, area status, triage recommendations, or emerging threats. My memory never fades.`,
+            timestamp: new Date().toISOString(),
+          }]
+        });
+      },
     }),
     {
       name: 'sentinel-app-cache',

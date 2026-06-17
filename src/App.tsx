@@ -4,6 +4,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { PROXY_URL, WS_URL } from './lib/api';
 import { AnimatePresence } from 'framer-motion';
+import { useAppStore } from './store/appStore';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Landing } from './pages/Landing';
@@ -39,7 +40,6 @@ import { useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { WalletGuard } from './components/WalletGuard';
 import { AuthModal } from './components/AuthModal';
 import { useAuthStore } from './lib/authStore';
-import { useAppStore } from './store/appStore';
 import { loadWallet, clearWallet } from './lib/inAppWallet';
 import { usePushNotifications } from './hooks/usePushNotifications';
 
@@ -67,7 +67,6 @@ export default function App() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
   const { address: inAppAddress, setInAppAuth, clearAuth } = useAuthStore();
-  const { clearAgentMessages } = useAppStore();
   const walletAddress = account?.address ?? inAppAddress ?? null;
   // Register FCM push token on Android (no-op in browser)
   usePushNotifications(walletAddress);
@@ -239,7 +238,7 @@ export default function App() {
               setIncidents((prev) => prev.filter((i) => i.id !== data.incidentId));
             } else if (data.type === 'AGENT_CHAT_CLEARED') {
               // Sync chat clear across all devices (mobile + desktop)
-              clearAgentMessages();
+              useAppStore.getState().clearAgentMessages();
             }
           } catch { /* ignore malformed messages */ }
         };
@@ -259,8 +258,7 @@ export default function App() {
       clearTimeout(reconnectTimer);
       wsRef.current?.close();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [walletAddress]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [criticalFilter, setCriticalFilter] = useState(false);

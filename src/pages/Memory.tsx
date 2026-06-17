@@ -1,7 +1,7 @@
 // src/pages/Memory.tsx
 // On-chain memory visualizer — shows Walrus-stored incident memories
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useAuthStore } from '../lib/authStore';
 import type { Incident } from '../types/incident';
@@ -23,7 +23,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import { PROXY_URL } from '../lib/api';
+import { PROXY_URL, WS_URL } from '../lib/api';
 import { SeverityBadge } from '../components/SeverityBadge';
 
 
@@ -191,17 +191,52 @@ export const Memory: React.FC<MemoryProps> = ({ incidents }) => {
       });
   }, []);
 
+  // Named fetch so the WS listener can re-invoke it without duplicating logic
+  const fetchMemories = useCallback(() => {
+    if (!wallet) return;
+    fetch(`${PROXY_URL}/api/memories?wallet=${wallet}`)
+      .then(res => res.json())
+      .then(data => setMemories(data.memories || []))
+      .catch(console.error);
+  }, [wallet]);
+
   // Fetch agent memories if tab is active and wallet is connected
   useEffect(() => {
     if (activeTab === 'agent' && wallet) {
-      fetch(`${PROXY_URL}/api/memories?wallet=${wallet}`)
-        .then(res => res.json())
-        .then(data => setMemories(data.memories || []))
-        .catch(console.error);
+      fetchMemories();
     } else {
       setMemories([]);
     }
-  }, [activeTab, wallet]);
+  }, [activeTab, wallet, fetchMemories]);
+
+  // WebSocket listener — re-fetches memories when the proxy confirms a new one
+  // is saved for this wallet, with a 1500ms debounce to let the aggregator catch up
+  useEffect(() => {
+    let ws: WebSocket;
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    try {
+      ws = new WebSocket(WS_URL);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (
+            data.type === 'NEW_MEMORY_SAVED' &&
+            data.walletAddress === wallet &&
+            activeTab === 'agent'
+          ) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchMemories, 1500);
+          }
+        } catch { /* ignore malformed messages */ }
+      };
+    } catch { /* WebSocket not available (SSR/test) */ }
+
+    return () => {
+      clearTimeout(debounceTimer);
+      ws?.close();
+    };
+  }, [wallet, activeTab, fetchMemories]);
 
   // Combine data based on active tab
   const activeData = useMemo(() => {
