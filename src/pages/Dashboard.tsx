@@ -539,7 +539,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Floating Action Button */}
       {sidebarCollapsed && (
-        <div style={{ position: 'absolute', bottom: '24px', right: '344px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+        <div className="hidden md:flex" style={{ position: 'absolute', bottom: '24px', right: '344px', zIndex: 1000, flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
         {showToast && (
           <div className="fade-in-up" style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)' }}>
             Please connect your wallet first
