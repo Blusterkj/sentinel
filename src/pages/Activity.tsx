@@ -113,6 +113,7 @@ export const Activity: React.FC<ActivityProps> = ({ incidents, onNavigateReport 
               </span>
               {/* Wallet badge — inline with title */}
               <div
+                className="wallet-badge"
                 style={{
                   display: 'flex',
                   alignItems: 'center',

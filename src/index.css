@@ -204,7 +204,17 @@ body {
 
   /* ── Page header strips: remove the giant right-padding (160-180px) ── */
   .mobile-header-strip {
-    padding: 12px 16px !important;
+    padding: 8px 14px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  /* ── Header wallet badge: shrink on mobile so it stays inline ── */
+  .mobile-header-strip .wallet-badge {
+    font-size: 9px !important;
+    padding: 2px 7px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
   /* ── 4-column stat grids → 2 columns ── */
