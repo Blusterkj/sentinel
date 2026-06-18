@@ -25,11 +25,10 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; isDesktop: boolean; cl
 };
 
 export const Landing: React.FC = () => {
-  const [isDesktop, setIsDesktop] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth > 768 : true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsDesktop(window.innerWidth > 768);
     const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
