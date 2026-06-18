@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Shield, Activity, Zap, Database, Brain, Hexagon } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 
-const ScrollReveal: React.FC<{ children: React.ReactNode; isDesktop: boolean; className?: string; style?: React.CSSProperties; scrollRef: React.RefObject<HTMLDivElement> }> = ({ children, isDesktop, className, style, scrollRef }) => {
+const ScrollReveal: React.FC<{ children: React.ReactNode; isDesktop: boolean; className?: string; style?: React.CSSProperties; scrollRef: React.RefObject<HTMLDivElement | null> }> = ({ children, isDesktop, className, style, scrollRef }) => {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
