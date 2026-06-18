@@ -5,6 +5,7 @@
 Sentinel turns hyperlocal incident reporting into a self-healing, cryptographically verifiable safety network. Every report a user files is pushed to decentralized Walrus storage and indexed on Sui, then fanned out as a real-time push alert to anyone within a 20km radius — so the community knows what's happening near them within seconds, with a public, tamper-proof record of what was reported and when.
 
 **Live app:** [sentinelproduction.vercel.app](https://sentinelproduction.vercel.app)  
+**Android APK:** [Download app-debug.apk](https://github.com/Blusterkj/sentinel/releases/download/v1.0.0/app-debug.apk)  
 **Repo:** [github.com/blusterkj/sentinel](https://github.com/blusterkj/sentinel)
 
 ---
@@ -34,7 +35,7 @@ Neighborhood safety information today is scattered across group chats, word of m
 | Mobile | Capacitor (Android) | Native APK with platform-aware geolocation and wallet flow |
 
 **Smart contract (Sui testnet):**  
-`0xd871fbe56f82f958db58978f13aaa777a714284a971a6075b6498604a3e92c7e`
+`0xe418ca986c677725f062657ad0751dd846165eb690cf7bff6b724f9e0ed1e539`
 
 ## Core features
 
