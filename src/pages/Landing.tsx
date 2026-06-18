@@ -1,8 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Activity, Zap, Database, Brain, Hexagon } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 
+const ScrollReveal: React.FC<{ children: React.ReactNode; isDesktop: boolean; className?: string; style?: React.CSSProperties }> = ({ children, isDesktop, className, style }) => {
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+    }
+  };
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: !isDesktop, amount: 0.1, margin: isDesktop ? "0px 0px -50px 0px" : "0px" }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 export const Landing: React.FC = () => {
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    setIsDesktop(window.innerWidth > 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const navigate = () => {
     window.history.pushState({}, '', '/dashboard');
     window.dispatchEvent(new Event('popstate'));
@@ -114,13 +144,11 @@ export const Landing: React.FC = () => {
           </defs>
         </svg>
       </div>
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+      <div 
         className="mobile-hero"
         style={{ maxWidth: '1200px', margin: '0 auto', padding: '100px 24px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', zIndex: 1, position: 'relative' }}
       >
+        <ScrollReveal isDesktop={isDesktop} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <motion.div variants={itemVariants} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 20px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '999px', marginBottom: '32px', boxShadow: '0 0 20px rgba(59,130,246,0.2)' }}>
           <Zap size={14} color="#60a5fa" style={{ filter: 'drop-shadow(0 0 4px rgba(96,165,250,0.8))' }} />
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#93c5fd', letterSpacing: '0.1em', textTransform: 'uppercase' }}>SUI OVERFLOW 2026</span>
@@ -229,8 +257,10 @@ export const Landing: React.FC = () => {
             </a>
           </motion.div>
         </div>
+        </ScrollReveal>
 
         {/* ── Stats / highlights bar ── */}
+        <ScrollReveal isDesktop={isDesktop}>
         <motion.div
           variants={itemVariants}
           style={{
@@ -279,9 +309,10 @@ export const Landing: React.FC = () => {
             </div>
           ))}
         </motion.div>
+        </ScrollReveal>
 
         {/* ── Feature cards ── */}
-        <motion.div variants={containerVariants} className="mobile-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '56px', width: '100%' }}>
+        <ScrollReveal isDesktop={isDesktop} className="mobile-feature-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '56px', width: '100%' }}>
           {[
             {
               icon: <Database size={26} color="#c084fc" />,
@@ -345,9 +376,10 @@ export const Landing: React.FC = () => {
               <p style={{ fontSize: '15px', color: '#a1a1aa', lineHeight: 1.6 }}>{feat.desc}</p>
             </motion.div>
           ))}
-        </motion.div>
+        </ScrollReveal>
 
         {/* Footer attribution */}
+        <ScrollReveal isDesktop={isDesktop}>
         <motion.div
           variants={itemVariants}
           style={{
@@ -378,8 +410,9 @@ export const Landing: React.FC = () => {
             github.com/blusterkj/sentinel
           </a>
         </motion.div>
+        </ScrollReveal>
 
-      </motion.div>
+      </div>
       </div> {/* End Inner Relative Container */}
     </div>
   );
