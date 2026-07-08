@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { MemWal } from '@mysten-incubation/memwal';
 import { createGroq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { fromBase64 } from '@mysten/sui/utils';
@@ -303,7 +303,7 @@ const memwal = MemWal.create({
 
 // ─── Sui Client & Anchor ─────────────────────────────────────
 const PACKAGE_ID = '0xe418ca986c677725f062657ad0751dd846165eb690cf7bff6b724f9e0ed1e539';
-const suiClient = new SuiJsonRpcClient({ url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' });
+const suiClient = new SuiGrpcClient({ network: 'testnet', baseUrl: 'https://fullnode.testnet.sui.io:443' });
 
 // Load keypair from Sui keystore or environment variable
 function loadKeypair() {
